@@ -14,6 +14,12 @@ A single-page web application for reading RSS feeds on Kindle devices. Displays 
 - **Feed Persistence** - Saves feed URL in browser for easy reload
 - **Kindle Browser Compatible** - Uses ES3 JavaScript for maximum compatibility
 
+# Screenshots
+
+![Main](./screenshots/main.png)
+
+![Full Article](./screenshots/full_article.png)
+
 ## Usage
 
 1. Open `index.html` in your Kindle's browser (or any web browser)
