@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RSS Reader for Kindle</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Georgia, serif;
+            background-color: #fff;
+            color: #000;
+            line-height: 1.5;
+            padding: 10px;
+            font-size: 16px;
+            letter-spacing: 0px;
+            word-spacing: 0px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 5px;
+        }
+
+        h2 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #000;
+            background-color: #f5f5f5;
+        }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .control-label {
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        button {
+            font-family: Georgia, serif;
+            font-size: 1em;
+            padding: 8px 15px;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            min-width: 40px;
+        }
+
+        button:active {
+            background-color: #333;
+        }
+
+        button.secondary {
+            background-color: #fff;
+            color: #000;
+            border: 2px solid #000;
+        }
+
+        button.secondary:active {
+            background-color: #ddd;
+        }
+
+        input[type="text"] {
+            font-family: Georgia, serif;
+            font-size: 1em;
+            padding: 8px;
+            border: 2px solid #000;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .feed-input-section {
+            margin-bottom: 15px;
+        }
+
+        .article-list {
+            list-style: none;
+        }
+
+        .article-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .article-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #000;
+            text-decoration: underline;
+            cursor: pointer;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .article-title:active {
+            background-color: #ddd;
+        }
+
+        .article-meta {
+            font-size: 0.85em;
+            color: #444;
+        }
+
+        .article-description {
+            font-size: 0.95em;
+            margin-top: 5px;
+            color: #333;
+        }
+
+        .article-content {
+            display: none;
+            padding: 15px;
+            border: 1px solid #000;
+            margin-top: 15px;
+            background-color: #fafafa;
+        }
+
+        .article-content.visible {
+            display: block;
+        }
+
+        .article-content h1,
+        .article-content h2,
+        .article-content h3 {
+            margin: 15px 0 10px 0;
+        }
+
+        .article-content p {
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+
+        .article-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 10px 0;
+        }
+
+        .back-btn {
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            padding: 20px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .error {
+            padding: 15px;
+            background-color: #f5f5f5;
+            border: 2px solid #000;
+            margin: 10px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #feed-view,
+        #article-view {
+            display: none;
+        }
+
+        #feed-view.active,
+        #article-view.active {
+            display: block;
+        }
+
+        #input-view.active {
+            display: block;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>RSS Reader</h1>
+
+        <div class="controls">
+            <div class="control-row">
+                <div class="control-group">
+                    <span class="control-label">Font:</span>
+                    <button onclick="adjustFontSize(-2)" aria-label="Decrease font size">
+                        A-
+                    </button>
+                    <button onclick="adjustFontSize(2)" aria-label="Increase font size">
+                        A+
+                    </button>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Spacing:</span>
+                    <button onclick="adjustSpacing(-1)" aria-label="Decrease spacing">
+                        -
+                    </button>
+                    <button onclick="adjustSpacing(1)" aria-label="Increase spacing">
+                        +
+                    </button>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Line:</span>
+                    <button onclick="adjustLineHeight(-0.1)" aria-label="Decrease line height">
+                        -
+                    </button>
+                    <button onclick="adjustLineHeight(0.1)" aria-label="Increase line height">
+                        +
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="input-view" class="active">
+            <div class="feed-input-section">
+                <label for="feed-url"><strong>Enter RSS Feed URL:</strong></label>
+                <input type="text" id="feed-url" placeholder="https://example.com/feed.xml" />
+                <button onclick="loadFeed()">Load Feed</button>
+            </div>
+            <div id="input-error" class="error hidden"></div>
+        </div>
+
+        <div id="feed-view">
+            <div class="nav-buttons">
+                <button class="secondary" onclick="showInputView()">New Feed</button>
+            </div>
+            <h2 id="feed-title">Feed Articles</h2>
+            <div id="feed-loading" class="loading hidden">Loading feed...</div>
+            <ul id="article-list" class="article-list"></ul>
+        </div>
+
+        <div id="article-view">
+            <div class="nav-buttons">
+                <button class="secondary" onclick="showFeedView()">
+                    Back to List
+                </button>
+                <button onclick="fetchFullArticle()">Get Full Article</button>
+                <button onclick="downloadArticle()">Download</button>
+            </div>
+            <div id="article-loading" class="loading hidden">
+                Loading article...
+            </div>
+            <div id="article-content" class="article-content visible"></div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let currentFontSize = 16;
+        let currentLetterSpacing = 0;
+        let currentLineHeight = 1.5;
+        let currentArticles = [];
+        let currentArticleIndex = -1;
+        let currentArticleUrl = "";
+
+        async function fetchUrl(url) {
+            const useProxy = true;
+            if (useProxy) {
+                url = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+            }
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("Fetch failed");
+            return await response.text();
+        }
+
+        // Font and spacing controls
+        function adjustFontSize(delta) {
+            currentFontSize = Math.max(12, Math.min(32, currentFontSize + delta));
+            document.body.style.fontSize = currentFontSize + "px";
+        }
+
+        function adjustSpacing(delta) {
+            currentLetterSpacing = Math.max(
+                -1,
+                Math.min(5, currentLetterSpacing + delta),
+            );
+            document.body.style.letterSpacing = currentLetterSpacing + "px";
+            document.body.style.wordSpacing = currentLetterSpacing * 2 + "px";
+        }
+
+        function adjustLineHeight(delta) {
+            currentLineHeight = Math.max(1, Math.min(3, currentLineHeight + delta));
+            document.body.style.lineHeight = currentLineHeight;
+        }
+
+        // View management
+        function showInputView() {
+            document.getElementById("input-view").classList.add("active");
+            document.getElementById("feed-view").classList.remove("active");
+            document.getElementById("article-view").classList.remove("active");
+        }
+
+        function showFeedView() {
+            document.getElementById("input-view").classList.remove("active");
+            document.getElementById("feed-view").classList.add("active");
+            document.getElementById("article-view").classList.remove("active");
+        }
+
+        function showArticleView() {
+            document.getElementById("input-view").classList.remove("active");
+            document.getElementById("feed-view").classList.remove("active");
+            document.getElementById("article-view").classList.add("active");
+        }
+
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.classList.remove("hidden");
+        }
+
+        function hideError(elementId) {
+            document.getElementById(elementId).classList.add("hidden");
+        }
+
+        // RSS Feed loading
+        async function loadFeed() {
+            const urlInput = document.getElementById("feed-url");
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showError("input-error", "Please enter a feed URL");
+                return;
+            }
+
+            hideError("input-error");
+            document.getElementById("feed-loading").classList.remove("hidden");
+            document.getElementById("article-list").innerHTML = "";
+            showFeedView();
+
+            try {
+                const xmlText = await fetchUrl(url);
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(xmlText, "text/xml");
+
+                const parseError = xml.querySelector("parsererror");
+                if (parseError) {
+                    throw new Error("Invalid RSS feed format");
+                }
+
+                // Parse RSS or Atom feed
+                let articles = [];
+                let feedTitle = "Feed";
+
+                // Try RSS 2.0
+                const channel = xml.querySelector("channel");
+                if (channel) {
+                    feedTitle =
+                        channel.querySelector("title")?.textContent || "RSS Feed";
+                    const items = xml.querySelectorAll("item");
+                    items.forEach((item, index) => {
+                        articles.push({
+                            index: index,
+                            title: item.querySelector("title")?.textContent || "Untitled",
+                            link: item.querySelector("link")?.textContent || "",
+                            description:
+                                item.querySelector("description")?.textContent || "",
+                            content:
+                                item.querySelector("content\\:encoded, encoded")
+                                    ?.textContent || "",
+                            pubDate: item.querySelector("pubDate")?.textContent || "",
+                        });
+                    });
+                }
+
+                // Try Atom
+                if (articles.length === 0) {
+                    feedTitle =
+                        xml.querySelector("feed > title")?.textContent || "Atom Feed";
+                    const entries = xml.querySelectorAll("entry");
+                    entries.forEach((entry, index) => {
+                        const linkEl = entry.querySelector('link[rel="alternate"], link');
+                        articles.push({
+                            index: index,
+                            title: entry.querySelector("title")?.textContent || "Untitled",
+                            link: linkEl?.getAttribute("href") || "",
+                            description: entry.querySelector("summary")?.textContent || "",
+                            content: entry.querySelector("content")?.textContent || "",
+                            pubDate:
+                                entry.querySelector("published, updated")?.textContent || "",
+                        });
+                    });
+                }
+
+                if (articles.length === 0) {
+                    throw new Error("No articles found in feed");
+                }
+
+                currentArticles = articles;
+                document.getElementById("feed-title").textContent = feedTitle;
+                renderArticleList(articles);
+
+                // Update URL with feed parameter
+                const newUrl = new URL(window.location);
+                newUrl.searchParams.set("feed", url);
+                history.replaceState(null, "", newUrl);
+            } catch (error) {
+                showInputView();
+                showError("input-error", "Error loading feed: " + error.message);
+            } finally {
+                document.getElementById("feed-loading").classList.add("hidden");
+            }
+        }
+
+        function renderArticleList(articles) {
+            const list = document.getElementById("article-list");
+            list.innerHTML = "";
+
+            articles.forEach((article, index) => {
+                const li = document.createElement("li");
+                li.className = "article-item";
+
+                const title = document.createElement("a");
+                title.className = "article-title";
+                title.textContent = article.title;
+                title.onclick = () => openArticle(index);
+
+                const meta = document.createElement("div");
+                meta.className = "article-meta";
+                if (article.pubDate) {
+                    const date = new Date(article.pubDate);
+                    meta.textContent = isNaN(date)
+                        ? article.pubDate
+                        : date.toLocaleDateString();
+                }
+
+                const desc = document.createElement("div");
+                desc.className = "article-description";
+                // Strip HTML and truncate
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = article.description;
+                const plainText = tempDiv.textContent || tempDiv.innerText || "";
+                desc.textContent =
+                    plainText.substring(0, 200) + (plainText.length > 200 ? "..." : "");
+
+                li.appendChild(title);
+                if (meta.textContent) li.appendChild(meta);
+                if (desc.textContent) li.appendChild(desc);
+                list.appendChild(li);
+            });
+        }
+
+        function openArticle(index) {
+            currentArticleIndex = index;
+            const article = currentArticles[index];
+            currentArticleUrl = article.link;
+
+            const contentDiv = document.getElementById("article-content");
+
+            // Use content:encoded if available, otherwise description
+            let content = article.content || article.description || "";
+
+            contentDiv.innerHTML = `
+                <h2>${escapeHtml(article.title)}</h2>
+                ${article.pubDate ? `<p class="article-meta">${escapeHtml(article.pubDate)}</p>` : ""}
+                ${article.link ? `<p><a href="${escapeHtml(article.link)}" target="_blank">Original Article</a></p>` : ""}
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #000;">
+                <div class="article-body">${content}</div>
+            `;
+
+            showArticleView();
+        }
+
+        async function fetchFullArticle() {
+            if (!currentArticleUrl) {
+                alert("No article URL available");
+                return;
+            }
+
+            const loadingEl = document.getElementById("article-loading");
+            const contentDiv = document.getElementById("article-content");
+            loadingEl.classList.remove("hidden");
+
+            try {
+                const html = await fetchUrl(currentArticleUrl);
+                const doc = new DOMParser().parseFromString(html, "text/html");
+
+                // Use Mozilla Readability to extract the article content
+                const reader = new Readability(doc);
+                const extractedArticle = reader.parse();
+
+                const article = currentArticles[currentArticleIndex];
+
+                if (extractedArticle) {
+                    contentDiv.innerHTML = `
+                        <h2>${escapeHtml(extractedArticle.title || article.title)}</h2>
+                        ${article.pubDate ? `<p class="article-meta">${escapeHtml(article.pubDate)}</p>` : ""}
+                        <p><a href="${escapeHtml(currentArticleUrl)}" target="_blank">Original Article</a></p>
+                        <hr style="margin: 15px 0; border: none; border-top: 1px solid #000;">
+                        <div class="article-body">${extractedArticle.content}</div>
+                    `;
+                } else {
+                    contentDiv.innerHTML += `<p class="error">Readability could not parse this article.</p>`;
+                }
+            } catch (error) {
+                contentDiv.innerHTML += `<p class="error">Error fetching full article: ${escapeHtml(error.message)}</p>`;
+            } finally {
+                loadingEl.classList.add("hidden");
+            }
+        }
+
+        function downloadArticle() {
+            const contentDiv = document.getElementById("article-content");
+            const text = contentDiv.textContent || contentDiv.innerText;
+            const article = currentArticles[currentArticleIndex];
+            const filename = (article?.title || "article").replace(/[^a-z0-9]/gi, "_") + ".txt";
+
+            const blob = new Blob([text], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        document
+            .getElementById("feed-url")
+            .addEventListener("keypress", function (e) {
+                if (e.key === "Enter") {
+                    loadFeed();
+                }
+            });
+
+        // Populate input from URL parameter if present
+        const params = new URLSearchParams(window.location.search);
+        const feedParam = params.get("feed");
+        if (feedParam) {
+            document.getElementById("feed-url").value = feedParam;
+        }
+    </script>
+</body>
+
+</html>
