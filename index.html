@@ -1328,6 +1328,14 @@
                     return;
                 }
 
+                // Save feed URL to browser URL for persistence on refresh
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, "", "?feed=" + encodeURIComponent(url));
+                } else {
+                    // Fallback for older browsers - use location.hash to avoid page reload
+                    window.location.hash = "feed=" + encodeURIComponent(url);
+                }
+
                 hideError("input-error");
                 removeClass(document.getElementById("feed-loading"), "hidden");
                 document.getElementById("article-list").innerHTML = "";
@@ -1742,6 +1750,21 @@
                 btn.attachEvent("onclick", downloadMobiHandler);
             }
         }
+        // Helper: get hash parameter (fallback for older browsers)
+        function getHashParam(name) {
+            var hash = window.location.hash;
+            if (!hash || hash.length < 2) return null;
+            hash = hash.substring(1); // Remove #
+            var pairs = hash.split("&");
+            for (var i = 0; i < pairs.length; i++) {
+                var pair = pairs[i].split("=");
+                if (decodeURIComponent(pair[0]) === name) {
+                    return pair[1] ? decodeURIComponent(pair[1]) : "";
+                }
+            }
+            return null;
+        }
+
         // Initialize
         function init() {
             try {
@@ -1761,10 +1784,11 @@
                     });
                 }
 
-                // Populate input from URL parameter if present
-                var feedParam = getUrlParam("feed");
+                // Populate input from URL parameter if present (check query string first, then hash)
+                var feedParam = getUrlParam("feed") || getHashParam("feed");
                 if (feedParam) {
                     feedInput.value = feedParam;
+                    loadFeed(); // Auto-load the feed
                 }
             } catch (e) {
                 alert("init error: " + e.message);
