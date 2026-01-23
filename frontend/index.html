@@ -294,7 +294,12 @@
         async function fetchUrl(url) {
             const useProxy = true;
             if (useProxy) {
-                url = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+                const proxyUrls = [
+                    "https://cors-anywhere.com/",
+                    "https://test.cors.workers.dev/?",
+                    "https://api.allorigins.win/raw?url=",
+                ];
+                url = proxyUrls[0] + url; //encodeURIComponent(url);
             }
             const response = await fetch(url);
             if (!response.ok) throw new Error("Fetch failed");
@@ -403,7 +408,7 @@
                                     ?.textContent || "",
                             pubDate: item.querySelector("pubDate")?.textContent || "",
                         });
-                        progress.textContent = (index + 1) + "/" + total;
+                        progress.textContent = index + 1 + "/" + total;
                         await new Promise((resolve) => setTimeout(resolve, 0));
                     }
                 }
@@ -427,7 +432,7 @@
                             pubDate:
                                 entry.querySelector("published, updated")?.textContent || "",
                         });
-                        progress.textContent = (index + 1) + "/" + total;
+                        progress.textContent = index + 1 + "/" + total;
                         await new Promise((resolve) => setTimeout(resolve, 0));
                     }
                 }
