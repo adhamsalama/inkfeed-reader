@@ -1449,6 +1449,7 @@
 
                         currentArticles = articles;
                         setText(document.getElementById("feed-title"), feedTitle);
+                        document.title = feedTitle;
                         renderArticleList(articles);
                     } catch (e) {
                         showInputView();
