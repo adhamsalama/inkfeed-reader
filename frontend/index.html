@@ -753,26 +753,19 @@
 
         function downloadArticle() {
             try {
-                // Note: Blob/createObjectURL not available in ES3
-                // Fallback: open content in new window for manual copy
                 var contentDiv = document.getElementById("article-content");
                 var text = getText(contentDiv);
                 var article = currentArticles[currentArticleIndex];
-                var title = article ? article.title : "article";
+                var filename = (article ? article.title : "article").replace(/[^a-z0-9]/gi, "_") + ".txt";
 
-                var win = window.open("", "_blank");
-                if (win) {
-                    win.document.write(
-                        "<html><head><title>" +
-                        escapeHtml(title) +
-                        "</title></head><body><pre>",
-                    );
-                    win.document.write(escapeHtml(text));
-                    win.document.write("</pre></body></html>");
-                    win.document.close();
-                } else {
-                    alert("Could not open download window. Please allow popups.");
-                }
+                // Try data URI download
+                var a = document.createElement("a");
+                a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
+                a.setAttribute("download", filename);
+                a.style.display = "none";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             } catch (e) {
                 alert("downloadArticle error: " + e.message);
             }
