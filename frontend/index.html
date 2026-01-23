@@ -253,6 +253,7 @@
                 <label for="feed-url"><strong>Enter RSS Feed URL:</strong></label>
                 <input type="text" id="feed-url" placeholder="https://example.com/feed.xml" />
                 <button onclick="loadFeed()">Load Feed</button>
+                <div id="render-progress" class="loading">0/0</div>
             </div>
             <div id="input-error" class="error hidden"></div>
         </div>
@@ -366,6 +367,7 @@
 
             try {
                 const xmlText = await fetchUrl(url);
+                alert("Feed fetched");
                 const parser = new DOMParser();
                 const xml = parser.parseFromString(xmlText, "text/xml");
 
@@ -378,13 +380,18 @@
                 let articles = [];
                 let feedTitle = "Feed";
 
+                const progress = document.getElementById("render-progress");
+
                 // Try RSS 2.0
                 const channel = xml.querySelector("channel");
                 if (channel) {
                     feedTitle =
                         channel.querySelector("title")?.textContent || "RSS Feed";
                     const items = xml.querySelectorAll("item");
-                    items.forEach((item, index) => {
+                    const total = items.length;
+                    progress.textContent = "0/" + total;
+                    for (let index = 0; index < items.length; index++) {
+                        const item = items[index];
                         articles.push({
                             index: index,
                             title: item.querySelector("title")?.textContent || "Untitled",
@@ -396,7 +403,9 @@
                                     ?.textContent || "",
                             pubDate: item.querySelector("pubDate")?.textContent || "",
                         });
-                    });
+                        progress.textContent = (index + 1) + "/" + total;
+                        await new Promise((resolve) => setTimeout(resolve, 0));
+                    }
                 }
 
                 // Try Atom
@@ -404,7 +413,10 @@
                     feedTitle =
                         xml.querySelector("feed > title")?.textContent || "Atom Feed";
                     const entries = xml.querySelectorAll("entry");
-                    entries.forEach((entry, index) => {
+                    const total = entries.length;
+                    progress.textContent = "0/" + total;
+                    for (let index = 0; index < entries.length; index++) {
+                        const entry = entries[index];
                         const linkEl = entry.querySelector('link[rel="alternate"], link');
                         articles.push({
                             index: index,
@@ -415,7 +427,9 @@
                             pubDate:
                                 entry.querySelector("published, updated")?.textContent || "",
                         });
-                    });
+                        progress.textContent = (index + 1) + "/" + total;
+                        await new Promise((resolve) => setTimeout(resolve, 0));
+                    }
                 }
 
                 if (articles.length === 0) {
@@ -424,7 +438,7 @@
 
                 currentArticles = articles;
                 document.getElementById("feed-title").textContent = feedTitle;
-                renderArticleList(articles);
+                await renderArticleList(articles);
 
                 // Update URL with feed parameter
                 const newUrl = new URL(window.location);
@@ -438,11 +452,17 @@
             }
         }
 
-        function renderArticleList(articles) {
+        async function renderArticleList(articles) {
             const list = document.getElementById("article-list");
-            list.innerHTML = "";
+            const progress = document.getElementById("render-progress");
+            const total = articles.length;
 
-            articles.forEach((article, index) => {
+            list.innerHTML = "";
+            progress.textContent = "0/" + total;
+
+            for (let index = 0; index < articles.length; index++) {
+                const article = articles[index];
+
                 const li = document.createElement("li");
                 li.className = "article-item";
 
@@ -473,7 +493,10 @@
                 if (meta.textContent) li.appendChild(meta);
                 if (desc.textContent) li.appendChild(desc);
                 list.appendChild(li);
-            });
+
+                progress.textContent = index + 1 + "/" + total;
+                await new Promise((resolve) => setTimeout(resolve, 0));
+            }
         }
 
         function openArticle(index) {
@@ -539,9 +562,10 @@
             const contentDiv = document.getElementById("article-content");
             const text = contentDiv.textContent || contentDiv.innerText;
             const article = currentArticles[currentArticleIndex];
-            const filename = (article?.title || "article").replace(/[^a-z0-9]/gi, "_") + ".txt";
+            const filename =
+                (article?.title || "article").replace(/[^a-z0-9]/gi, "_") + ".txt";
 
-            const blob = new Blob([text], { type: "text/plain" });
+            const blob = new Blob([text], {type: "text/plain"});
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
