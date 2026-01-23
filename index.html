@@ -1383,11 +1383,13 @@
                                 descEl = getFirstByTag(item, "description");
                                 contentEl = getFirstByTag(item, "encoded");
                                 pubDateEl = getFirstByTag(item, "pubDate");
+                                var commentsEl = getFirstByTag(item, "comments");
 
                                 articles.push({
                                     index: i,
                                     title: titleEl ? getText(titleEl) : "Untitled",
                                     link: linkEl ? getText(linkEl) : "",
+                                    comments: commentsEl ? getText(commentsEl) : "",
                                     description: descEl ? getText(descEl) : "",
                                     content: contentEl ? getText(contentEl) : "",
                                     pubDate: pubDateEl ? getText(pubDateEl) : "",
@@ -1432,6 +1434,7 @@
                                     index: i,
                                     title: titleEl ? getText(titleEl) : "Untitled",
                                     link: linkHref,
+                                    comments: "",
                                     description: descEl ? getText(descEl) : "",
                                     content: contentEl ? getText(contentEl) : "",
                                     pubDate: pubDateEl ? getText(pubDateEl) : "",
@@ -1538,6 +1541,12 @@
                         '<p><a href="' +
                         escapeHtml(article.link) +
                         '" target="_blank">Original Article</a></p>';
+                }
+                if (article.comments) {
+                    html +=
+                        '<p><a href="' +
+                        escapeHtml(article.comments) +
+                        '" target="_blank">Comments</a></p>';
                 }
                 html +=
                     '<hr style="margin: 15px 0; border: none; border-top: 1px solid #000;">';
@@ -1713,23 +1722,19 @@
         // Attach click event to MOBI download button
         var btn = document.getElementById("download-mobi-btn");
         if (btn) {
-            var downloadMobiHandler = function () {
-                if (
-                    typeof currentArticleIndex === "undefined" ||
-                    currentArticleIndex < 0
-                ) {
-                    alert("No article selected");
-                    return;
-                }
-
-                var article = currentArticles[currentArticleIndex];
-                var contentDiv = document.getElementById("article-content");
+            var generateAndDownloadMobi = function (article, articleHtml, commentsHtml) {
                 var htmlContent =
                     "<html><body><h1>" +
                     escapeHtml(article.title) +
                     "</h1>" +
-                    contentDiv.innerHTML +
-                    "</body></html>";
+                    articleHtml;
+
+                if (commentsHtml) {
+                    htmlContent += '<hr/><h2>Comments</h2>' + commentsHtml;
+                }
+
+                htmlContent += "</body></html>";
+
                 var title = article.title || "Article";
                 var filename = title.replace(/[^a-z0-9]/gi, "_") + ".mobi";
 
@@ -1741,6 +1746,48 @@
 
                 if (!result.success) {
                     alert("Error generating MOBI: " + result.error);
+                }
+            };
+
+            var downloadMobiHandler = function () {
+                if (
+                    typeof currentArticleIndex === "undefined" ||
+                    currentArticleIndex < 0
+                ) {
+                    alert("No article selected");
+                    return;
+                }
+
+                var article = currentArticles[currentArticleIndex];
+                var contentDiv = document.getElementById("article-content");
+                var articleHtml = contentDiv.innerHTML;
+
+                // If there's a comments URL, fetch and include comments
+                if (article.comments) {
+                    fetchUrl(article.comments, function (error, htmlText) {
+                        var commentsHtml = "";
+                        if (!error && htmlText) {
+                            try {
+                                var doc;
+                                if (window.DOMParser) {
+                                    doc = new DOMParser().parseFromString(htmlText, "text/html");
+                                } else {
+                                    doc = document.createElement("div");
+                                    doc.innerHTML = htmlText;
+                                }
+                                var reader = new Readability(doc);
+                                var parsed = reader.parse();
+                                if (parsed && parsed.content) {
+                                    commentsHtml = parsed.content;
+                                }
+                            } catch (e) {
+                                // Ignore parsing errors, just skip comments
+                            }
+                        }
+                        generateAndDownloadMobi(article, articleHtml, commentsHtml);
+                    });
+                } else {
+                    generateAndDownloadMobi(article, articleHtml, "");
                 }
             };
 
