@@ -212,6 +212,9 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.min.js"></script>
+    <script type="text/javascript" src="https://stuk.github.io/jszip/dist/jszip.js"></script>
+
+    <script type="text/javascript" src="//stuk.github.io/jszip-utils/dist/jszip-utils.js"></script>
 </head>
 
 <body>
@@ -276,6 +279,7 @@
                 </button>
                 <button onclick="fetchFullArticle()">Get Full Article</button>
                 <button onclick="downloadArticle()">Download</button>
+                <button id="download-epub-btn">Download as EPUB</button>
             </div>
             <div id="article-loading" class="loading hidden">
                 Loading article...
@@ -756,52 +760,20 @@
         function downloadArticle() {
             try {
                 var contentDiv = document.getElementById("article-content");
+                var text = getText(contentDiv);
                 var article = currentArticles[currentArticleIndex];
-
-                if (!contentDiv || !article) {
-                    alert("No article to download");
-                    return;
-                }
-
-                // Build a full HTML document
-                var html =
-                    "<!DOCTYPE html>" +
-                    "<html>" +
-                    "<head>" +
-                    '<meta charset="utf-8">' +
-                    "<title>" +
-                    escapeHtml(article.title || "Article") +
-                    "</title>" +
-                    "<style>" +
-                    "body { font-family: serif; line-height: 1.6; padding: 20px; }" +
-                    ".article-meta { color: #555; font-size: 0.9em; }" +
-                    "a { color: #0645ad; }" +
-                    "</style>" +
-                    "</head>" +
-                    "<body>" +
-                    contentDiv.innerHTML +
-                    "</body>" +
-                    "</html>";
-
                 var filename =
-                    (article.title || "article")
-                        .replace(/[^a-z0-9]/gi, "_")
-                        .toLowerCase() + ".html";
+                    (article ? article.title : "article").replace(/[^a-z0-9]/gi, "_") +
+                    ".txt";
 
-                // Create a Blob for better browser support
-                var blob = new Blob([html], {type: "text/html;charset=utf-8;"});
-                var url = URL.createObjectURL(blob);
-
+                // Try data URI download
                 var a = document.createElement("a");
-                a.href = url;
+                a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
                 a.setAttribute("download", filename);
                 a.style.display = "none";
-
                 document.body.appendChild(a);
                 a.click();
-
                 document.body.removeChild(a);
-                URL.revokeObjectURL(url);
             } catch (e) {
                 alert("downloadArticle error: " + e.message);
             }
@@ -813,7 +785,161 @@
             setText(div, text);
             return div.innerHTML;
         }
+        function generateEpubFromArticle(title, htmlContent, callback) {
+            try {
+                var zip = new JSZip();
 
+                // Required mimetype file
+                zip.file("mimetype", "application/epub+zip");
+
+                // META-INF/container.xml
+                zip.file(
+                    "META-INF/container.xml",
+                    '<?xml version="1.0"?>\n' +
+                    '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">\n' +
+                    "  <rootfiles>\n" +
+                    '    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>\n' +
+                    "  </rootfiles>\n" +
+                    "</container>",
+                );
+
+                // HTML content
+                zip.file("OEBPS/content.xhtml", htmlContent);
+
+                // Basic OPF file
+                zip.file(
+                    "OEBPS/content.opf",
+                    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+                    '<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0">\n' +
+                    '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n' +
+                    "    <dc:title>" +
+                    escapeHtml(title) +
+                    "</dc:title>\n" +
+                    "    <dc:language>en</dc:language>\n" +
+                    '    <dc:identifier id="BookId">id123456</dc:identifier>\n' +
+                    "  </metadata>\n" +
+                    "  <manifest>\n" +
+                    '    <item id="content" href="content.xhtml" media-type="application/xhtml+xml"/>\n' +
+                    "  </manifest>\n" +
+                    "  <spine>\n" +
+                    '    <itemref idref="content"/>\n' +
+                    "  </spine>\n" +
+                    "</package>",
+                );
+
+                // Generate EPUB Blob
+                zip.generateAsync({type: "blob"}).then(
+                    function (epubBlob) {
+                        callback(null, epubBlob);
+                    },
+                    function (err) {
+                        callback(err, null);
+                    },
+                );
+            } catch (e) {
+                callback(e, null);
+            }
+        }
+
+        // Attach click event to button
+        var btn = document.getElementById("download-epub-btn");
+        if (btn) {
+            if (btn.addEventListener) {
+                btn.addEventListener(
+                    "click",
+                    function () {
+                        if (
+                            typeof currentArticleIndex === "undefined" ||
+                            currentArticleIndex < 0
+                        ) {
+                            alert("No article selected");
+                            return;
+                        }
+
+                        var article = currentArticles[currentArticleIndex];
+                        var contentDiv = document.getElementById("article-content");
+                        var htmlContent =
+                            "<h1>" +
+                            escapeHtml(article.title) +
+                            "</h1>" +
+                            contentDiv.innerHTML;
+                        var title = article.title || "Article";
+
+                        generateEpubFromArticle(
+                            title,
+                            htmlContent,
+                            function (err, epubBlob) {
+                                if (err) {
+                                    alert("Error generating EPUB: " + err.message);
+                                    return;
+                                }
+
+                                var url = (window.URL || window.webkitURL).createObjectURL(
+                                    epubBlob,
+                                );
+                                var a = document.createElement("a");
+                                a.href = url;
+                                a.setAttribute(
+                                    "download",
+                                    title.replace(/[^a-z0-9]/gi, "_") + ".epub",
+                                );
+                                a.style.display = "none";
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                (window.URL || window.webkitURL).revokeObjectURL(url);
+                            },
+                        );
+                    },
+                    false,
+                );
+            } else if (btn.attachEvent) {
+                btn.attachEvent("onclick", function () {
+                    if (
+                        typeof currentArticleIndex === "undefined" ||
+                        currentArticleIndex < 0
+                    ) {
+                        alert("No article selected");
+                        return;
+                    }
+
+                    var article = currentArticles[currentArticleIndex];
+                    var contentDiv = document.getElementById("article-content");
+                    var htmlContent =
+                        "<h1>" +
+                        escapeHtml(article.title) +
+                        "</h1>" +
+                        contentDiv.innerHTML;
+                    var title = article.title || "Article";
+
+                    generateEpubFromArticle(
+                        title,
+                        htmlContent,
+                        function (err, epubBlob) {
+                            if (err) {
+                                alert("Error generating EPUB: " + err.message);
+                                return;
+                            }
+
+                            var url = (window.URL || window.webkitURL).createObjectURL(
+                                epubBlob,
+                            );
+                            var a = document.createElement("a");
+                            a.href = url;
+                            a.setAttribute(
+                                "download",
+                                title.replace(/[^a-z0-9]/gi, "_") + ".epub",
+                            );
+                            a.style.display = "none";
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            (window.URL || window.webkitURL).revokeObjectURL(url);
+                        },
+                    );
+                });
+            }
+        }
         // Initialize
         function init() {
             try {
