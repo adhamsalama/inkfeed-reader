@@ -210,6 +210,47 @@
             margin-bottom: 15px;
             flex-wrap: wrap;
         }
+
+        .saved-feeds-section {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+
+        .saved-feeds-section.hidden {
+            display: none;
+        }
+
+        .saved-feeds-list {
+            list-style: none;
+        }
+
+        .saved-feed-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .saved-feed-link {
+            flex: 1;
+            text-decoration: underline;
+            cursor: pointer;
+            color: #000;
+        }
+
+        .saved-feed-link:active {
+            background-color: #ddd;
+        }
+
+        .delete-feed-btn {
+            padding: 4px 8px;
+            font-size: 0.85em;
+            min-width: auto;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.min.js"></script>
     <script type="text/javascript" src="https://stuk.github.io/jszip/dist/jszip.js"></script>
@@ -258,9 +299,14 @@
                 <label for="feed-url"><strong>Enter RSS Feed URL:</strong></label>
                 <input type="text" id="feed-url" placeholder="https://example.com/feed.xml" />
                 <button onclick="loadFeed()">Load Feed</button>
+                <button class="secondary" onclick="saveCurrentFeed()">Save Feed</button>
+                <button class="secondary" onclick="toggleSavedFeeds()">Saved Feeds</button>
                 <div id="render-progress" class="loading">0/0</div>
             </div>
             <div id="input-error" class="error hidden"></div>
+            <div id="saved-feeds-section" class="saved-feeds-section hidden">
+                <ul id="saved-feeds-list" class="saved-feeds-list"></ul>
+            </div>
         </div>
 
         <div id="feed-view">
@@ -280,11 +326,16 @@
                 <button onclick="fetchFullArticle()">Get Full Article</button>
                 <button onclick="downloadArticle()">Download</button>
                 <button id="download-mobi-btn">Download as MOBI</button>
+                <button id="view-comments-btn" style="display:none;">View Comments</button>
+                <button id="view-comments-html-btn" style="display:none;">View Comments HTML</button>
             </div>
             <div id="article-loading" class="loading hidden">
                 Loading article...
             </div>
             <div id="article-content" class="article-content visible"></div>
+            <div id="comments-loading" class="loading hidden">Loading comments...</div>
+            <div id="comments-content" class="article-content"></div>
+            <div id="comments-html-content" class="article-content"></div>
         </div>
     </div>
 
@@ -1163,6 +1214,137 @@
         var currentArticles = [];
         var currentArticleIndex = -1;
         var currentArticleUrl = "";
+        var commentsLoaded = false;
+        var SAVED_FEEDS_KEY = "savedFeeds";
+
+        // Saved feeds management
+        function getSavedFeeds() {
+            try {
+                if (!window.localStorage) return [];
+                var data = localStorage.getItem(SAVED_FEEDS_KEY);
+                if (!data) return [];
+                return JSON.parse(data);
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveCurrentFeed() {
+            try {
+                if (!window.localStorage) {
+                    alert("localStorage not available");
+                    return;
+                }
+                var feedInput = document.getElementById("feed-url");
+                var url = feedInput.value.replace(/^\s+|\s+$/g, "");
+                if (!url) {
+                    alert("Please enter a feed URL first");
+                    return;
+                }
+                var name = prompt("Enter a name for this feed:", url);
+                if (name === null) return; // Cancelled
+                name = name.replace(/^\s+|\s+$/g, "") || url;
+
+                var feeds = getSavedFeeds();
+                // Check if already exists
+                for (var i = 0; i < feeds.length; i++) {
+                    if (feeds[i].url === url) {
+                        feeds[i].title = name;
+                        localStorage.setItem(SAVED_FEEDS_KEY, JSON.stringify(feeds));
+                        renderSavedFeeds();
+                        return;
+                    }
+                }
+                // Add new feed
+                feeds.push({ url: url, title: name });
+                localStorage.setItem(SAVED_FEEDS_KEY, JSON.stringify(feeds));
+                renderSavedFeeds();
+            } catch (e) {
+                alert("Error saving feed: " + e.message);
+            }
+        }
+
+        function deleteFeed(url) {
+            try {
+                if (!window.localStorage) return;
+                var feeds = getSavedFeeds();
+                var newFeeds = [];
+                for (var i = 0; i < feeds.length; i++) {
+                    if (feeds[i].url !== url) {
+                        newFeeds.push(feeds[i]);
+                    }
+                }
+                localStorage.setItem(SAVED_FEEDS_KEY, JSON.stringify(newFeeds));
+                renderSavedFeeds();
+            } catch (e) {
+                // Silently fail
+            }
+        }
+
+        function loadSavedFeed(url) {
+            var feedInput = document.getElementById("feed-url");
+            feedInput.value = url;
+            loadFeed();
+        }
+
+        function toggleSavedFeeds() {
+            var section = document.getElementById("saved-feeds-section");
+            if (section.className.indexOf("hidden") >= 0) {
+                removeClass(section, "hidden");
+            } else {
+                addClass(section, "hidden");
+            }
+        }
+
+        function renderSavedFeeds() {
+            var list = document.getElementById("saved-feeds-list");
+            var feeds = getSavedFeeds();
+
+            list.innerHTML = "";
+
+            if (feeds.length === 0) {
+                var emptyMsg = document.createElement("li");
+                emptyMsg.className = "saved-feed-item";
+                setText(emptyMsg, "No saved feeds");
+                list.appendChild(emptyMsg);
+                return;
+            }
+
+            for (var i = 0; i < feeds.length; i++) {
+                var feed = feeds[i];
+
+                var li = document.createElement("li");
+                li.className = "saved-feed-item";
+
+                var link = document.createElement("a");
+                link.className = "saved-feed-link";
+                setText(link, feed.title || feed.url);
+                link.title = feed.url;
+                // Use closure to capture url
+                (function (url) {
+                    link.onclick = function () {
+                        loadSavedFeed(url);
+                        return false;
+                    };
+                })(feed.url);
+
+                var deleteBtn = document.createElement("button");
+                deleteBtn.className = "secondary delete-feed-btn";
+                setText(deleteBtn, "X");
+                deleteBtn.title = "Delete";
+                // Use closure to capture url
+                (function (url) {
+                    deleteBtn.onclick = function () {
+                        deleteFeed(url);
+                        return false;
+                    };
+                })(feed.url);
+
+                li.appendChild(link);
+                li.appendChild(deleteBtn);
+                list.appendChild(li);
+            }
+        }
 
         // Helper: add class to element
         function addClass(el, className) {
@@ -1297,6 +1479,12 @@
             removeClass(document.getElementById("input-view"), "active");
             addClass(document.getElementById("feed-view"), "active");
             removeClass(document.getElementById("article-view"), "active");
+            if (currentArticleIndex >= 0) {
+                var articleEl = document.getElementById("article-" + currentArticleIndex);
+                if (articleEl) {
+                    articleEl.scrollIntoView();
+                }
+            }
         }
 
         function showArticleView() {
@@ -1477,6 +1665,7 @@
 
                     var li = document.createElement("li");
                     li.className = "article-item";
+                    li.id = "article-" + i;
 
                     var title = document.createElement("a");
                     title.className = "article-title";
@@ -1524,8 +1713,32 @@
         function openArticle(index) {
             try {
                 currentArticleIndex = index;
+                window.location.hash = "article-" + index;
                 var article = currentArticles[index];
                 currentArticleUrl = article.link;
+
+                // Reset comments state
+                commentsLoaded = false;
+                commentsHtmlLoaded = false;
+                var commentsContent = document.getElementById("comments-content");
+                var commentsLoading = document.getElementById("comments-loading");
+                var commentsHtmlContent = document.getElementById("comments-html-content");
+                var viewCommentsBtn = document.getElementById("view-comments-btn");
+                var viewCommentsHtmlBtn = document.getElementById("view-comments-html-btn");
+                commentsContent.innerHTML = "";
+                commentsHtmlContent.innerHTML = "";
+                removeClass(commentsContent, "visible");
+                removeClass(commentsHtmlContent, "visible");
+                addClass(commentsLoading, "hidden");
+
+                // Show/hide View Comments buttons based on whether article has comments
+                if (article.comments) {
+                    viewCommentsBtn.style.display = "";
+                    viewCommentsHtmlBtn.style.display = "";
+                } else {
+                    viewCommentsBtn.style.display = "none";
+                    viewCommentsHtmlBtn.style.display = "none";
+                }
 
                 var contentDiv = document.getElementById("article-content");
 
@@ -1611,6 +1824,12 @@
                                 '<p><a href="' +
                                 escapeHtml(currentArticleUrl) +
                                 '" target="_blank">Original Article</a></p>';
+                            if (article.comments) {
+                                html +=
+                                    '<p><a href="' +
+                                    escapeHtml(article.comments) +
+                                    '" target="_blank">Comments</a></p>';
+                            }
                             html +=
                                 '<hr style="margin: 15px 0; border: none; border-top: 1px solid #000;">';
                             html +=
@@ -1633,6 +1852,108 @@
                 });
             } catch (e) {
                 alert("fetchFullArticle error: " + e.message);
+            }
+        }
+
+        function fetchComments() {
+            try {
+                // Don't fetch again if already loaded
+                if (commentsLoaded) {
+                    return;
+                }
+
+                var article = currentArticles[currentArticleIndex];
+                if (!article || !article.comments) {
+                    return;
+                }
+
+                var commentsContent = document.getElementById("comments-content");
+                var commentsLoading = document.getElementById("comments-loading");
+
+                // Show loading indicator
+                removeClass(commentsLoading, "hidden");
+
+                fetchUrl(article.comments, function (error, htmlText) {
+                    if (error) {
+                        commentsContent.innerHTML =
+                            '<p class="error">Error fetching comments: ' +
+                            escapeHtml(error.message) +
+                            "</p>";
+                        addClass(commentsContent, "visible");
+                        addClass(commentsLoading, "hidden");
+                        return;
+                    }
+
+                    try {
+                        var doc;
+                        if (window.DOMParser) {
+                            doc = new DOMParser().parseFromString(htmlText, "text/html");
+                        } else {
+                            doc = document.createElement("div");
+                            doc.innerHTML = htmlText;
+                        }
+
+                        // Use Mozilla Readability to extract the comments content
+                        var reader = new Readability(doc);
+                        var extractedContent = reader.parse();
+
+                        if (extractedContent && extractedContent.content) {
+                            commentsContent.innerHTML = '<div class="comments-body">' + extractedContent.content + '</div>';
+                            addClass(commentsContent, "visible");
+                            commentsLoaded = true;
+                        } else {
+                            commentsContent.innerHTML =
+                                '<p class="error">Could not parse comments from this page.</p>';
+                            addClass(commentsContent, "visible");
+                        }
+                    } catch (e) {
+                        commentsContent.innerHTML =
+                            '<p class="error">Error parsing comments: ' +
+                            escapeHtml(e.message) +
+                            "</p>";
+                        addClass(commentsContent, "visible");
+                    }
+
+                    addClass(commentsLoading, "hidden");
+                });
+            } catch (e) {
+                alert("fetchComments error: " + e.message);
+            }
+        }
+
+        var commentsHtmlLoaded = false;
+        function fetchCommentsHtml() {
+            try {
+                if (commentsHtmlLoaded) {
+                    return;
+                }
+
+                var article = currentArticles[currentArticleIndex];
+                if (!article || !article.comments) {
+                    return;
+                }
+
+                var commentsHtmlContent = document.getElementById("comments-html-content");
+                var commentsLoading = document.getElementById("comments-loading");
+
+                removeClass(commentsLoading, "hidden");
+
+                fetchUrl(article.comments, function (error, htmlText) {
+                    if (error) {
+                        commentsHtmlContent.innerHTML = "Error fetching comments: " + escapeHtml(error.message);
+                        addClass(commentsHtmlContent, "visible");
+                        addClass(commentsLoading, "hidden");
+                        return;
+                    }
+
+                    // Display raw HTML rendered
+                    commentsHtmlContent.innerHTML = htmlText;
+                    addClass(commentsHtmlContent, "visible");
+                    commentsHtmlLoaded = true;
+                    addClass(commentsLoading, "hidden");
+                });
+            } catch (e) {
+                alert("fetchCommentsHtml error: " + e.message);
             }
         }
 
@@ -1798,6 +2119,27 @@
                 btn.attachEvent("onclick", downloadMobiHandler);
             }
         }
+
+        // Attach click event to View Comments button
+        var viewCommentsBtn = document.getElementById("view-comments-btn");
+        if (viewCommentsBtn) {
+            if (viewCommentsBtn.addEventListener) {
+                viewCommentsBtn.addEventListener("click", fetchComments, false);
+            } else if (viewCommentsBtn.attachEvent) {
+                viewCommentsBtn.attachEvent("onclick", fetchComments);
+            }
+        }
+
+        // Attach click event to View Comments HTML button
+        var viewCommentsHtmlBtn = document.getElementById("view-comments-html-btn");
+        if (viewCommentsHtmlBtn) {
+            if (viewCommentsHtmlBtn.addEventListener) {
+                viewCommentsHtmlBtn.addEventListener("click", fetchCommentsHtml, false);
+            } else if (viewCommentsHtmlBtn.attachEvent) {
+                viewCommentsHtmlBtn.attachEvent("onclick", fetchCommentsHtml);
+            }
+        }
+
         // Helper: get hash parameter (fallback for older browsers)
         function getHashParam(name) {
             var hash = window.location.hash;
@@ -1816,6 +2158,9 @@
         // Initialize
         function init() {
             try {
+                // Render saved feeds from localStorage
+                renderSavedFeeds();
+
                 var feedInput = document.getElementById("feed-url");
                 if (feedInput.addEventListener) {
                     feedInput.addEventListener("keypress", function (e) {
