@@ -299,9 +299,15 @@
                 <label for="feed-url"><strong>Enter RSS Feed URL:</strong></label>
                 <input type="text" id="feed-url" placeholder="https://example.com/feed.xml" />
                 <button onclick="loadFeed()">Load Feed</button>
-                <button class="secondary" onclick="saveCurrentFeed()">Save Feed</button>
-                <button class="secondary" onclick="toggleSavedFeeds()">Saved Feeds</button>
-                <div id="render-progress" class="loading">0/0</div>
+                <button class="secondary" onclick="saveCurrentFeed()">
+                    Save Feed
+                </button>
+                <button class="secondary" onclick="toggleSavedFeeds()">
+                    Saved Feeds
+                </button>
+                <div id="render-progress" style="display: inline" class="loading">
+                    0/0
+                </div>
             </div>
             <div id="input-error" class="error hidden"></div>
             <div id="saved-feeds-section" class="saved-feeds-section hidden">
@@ -314,6 +320,7 @@
                 <button class="secondary" onclick="showInputView()">New Feed</button>
             </div>
             <h2 id="feed-title">Feed Articles</h2>
+            <hr />
             <div id="feed-loading" class="loading hidden">Loading feed...</div>
             <ul id="article-list" class="article-list"></ul>
         </div>
@@ -326,14 +333,20 @@
                 <button onclick="fetchFullArticle()">Get Full Article</button>
                 <button onclick="downloadArticle()">Download</button>
                 <button id="download-mobi-btn">Download as MOBI</button>
-                <button id="view-comments-btn" style="display:none;">View Comments</button>
-                <button id="view-comments-html-btn" style="display:none;">View Comments HTML</button>
+                <button id="view-comments-btn" style="display: none">
+                    View Comments
+                </button>
+                <button id="view-comments-html-btn" style="display: none">
+                    View Comments HTML
+                </button>
             </div>
             <div id="article-loading" class="loading hidden">
                 Loading article...
             </div>
             <div id="article-content" class="article-content visible"></div>
-            <div id="comments-loading" class="loading hidden">Loading comments...</div>
+            <div id="comments-loading" class="loading hidden">
+                Loading comments...
+            </div>
             <div id="comments-content" class="article-content"></div>
             <div id="comments-html-content" class="article-content"></div>
         </div>
@@ -1241,22 +1254,16 @@
                     alert("Please enter a feed URL first");
                     return;
                 }
-                var name = prompt("Enter a name for this feed:", url);
-                if (name === null) return; // Cancelled
-                name = name.replace(/^\s+|\s+$/g, "") || url;
 
                 var feeds = getSavedFeeds();
                 // Check if already exists
                 for (var i = 0; i < feeds.length; i++) {
                     if (feeds[i].url === url) {
-                        feeds[i].title = name;
-                        localStorage.setItem(SAVED_FEEDS_KEY, JSON.stringify(feeds));
-                        renderSavedFeeds();
                         return;
                     }
                 }
                 // Add new feed
-                feeds.push({ url: url, title: name });
+                feeds.push({url: url, title: url});
                 localStorage.setItem(SAVED_FEEDS_KEY, JSON.stringify(feeds));
                 renderSavedFeeds();
             } catch (e) {
@@ -1480,7 +1487,9 @@
             addClass(document.getElementById("feed-view"), "active");
             removeClass(document.getElementById("article-view"), "active");
             if (currentArticleIndex >= 0) {
-                var articleEl = document.getElementById("article-" + currentArticleIndex);
+                var articleEl = document.getElementById(
+                    "article-" + currentArticleIndex,
+                );
                 if (articleEl) {
                     articleEl.scrollIntoView();
                 }
@@ -1518,7 +1527,11 @@
 
                 // Save feed URL to browser URL for persistence on refresh
                 if (window.history && window.history.replaceState) {
-                    window.history.replaceState(null, "", "?feed=" + encodeURIComponent(url));
+                    window.history.replaceState(
+                        null,
+                        "",
+                        "?feed=" + encodeURIComponent(url),
+                    );
                 } else {
                     // Fallback for older browsers - use location.hash to avoid page reload
                     window.location.hash = "feed=" + encodeURIComponent(url);
@@ -1722,9 +1735,13 @@
                 commentsHtmlLoaded = false;
                 var commentsContent = document.getElementById("comments-content");
                 var commentsLoading = document.getElementById("comments-loading");
-                var commentsHtmlContent = document.getElementById("comments-html-content");
+                var commentsHtmlContent = document.getElementById(
+                    "comments-html-content",
+                );
                 var viewCommentsBtn = document.getElementById("view-comments-btn");
-                var viewCommentsHtmlBtn = document.getElementById("view-comments-html-btn");
+                var viewCommentsHtmlBtn = document.getElementById(
+                    "view-comments-html-btn",
+                );
                 commentsContent.innerHTML = "";
                 commentsHtmlContent.innerHTML = "";
                 removeClass(commentsContent, "visible");
@@ -1898,7 +1915,10 @@
                         var extractedContent = reader.parse();
 
                         if (extractedContent && extractedContent.content) {
-                            commentsContent.innerHTML = '<div class="comments-body">' + extractedContent.content + '</div>';
+                            commentsContent.innerHTML =
+                                '<div class="comments-body">' +
+                                extractedContent.content +
+                                "</div>";
                             addClass(commentsContent, "visible");
                             commentsLoaded = true;
                         } else {
@@ -1933,14 +1953,17 @@
                     return;
                 }
 
-                var commentsHtmlContent = document.getElementById("comments-html-content");
+                var commentsHtmlContent = document.getElementById(
+                    "comments-html-content",
+                );
                 var commentsLoading = document.getElementById("comments-loading");
 
                 removeClass(commentsLoading, "hidden");
 
                 fetchUrl(article.comments, function (error, htmlText) {
                     if (error) {
-                        commentsHtmlContent.innerHTML = "Error fetching comments: " + escapeHtml(error.message);
+                        commentsHtmlContent.innerHTML =
+                            "Error fetching comments: " + escapeHtml(error.message);
                         addClass(commentsHtmlContent, "visible");
                         addClass(commentsLoading, "hidden");
                         return;
@@ -2044,7 +2067,11 @@
         // Attach click event to MOBI download button
         var btn = document.getElementById("download-mobi-btn");
         if (btn) {
-            var generateAndDownloadMobi = function (article, articleHtml, commentsHtml) {
+            var generateAndDownloadMobi = function (
+                article,
+                articleHtml,
+                commentsHtml,
+            ) {
                 var htmlContent =
                     "<html><body><h1>" +
                     escapeHtml(article.title) +
@@ -2052,7 +2079,7 @@
                     articleHtml;
 
                 if (commentsHtml) {
-                    htmlContent += '<hr/><h2>Comments</h2>' + commentsHtml;
+                    htmlContent += "<hr/><h2>Comments</h2>" + commentsHtml;
                 }
 
                 htmlContent += "</body></html>";
@@ -2092,7 +2119,10 @@
                             try {
                                 var doc;
                                 if (window.DOMParser) {
-                                    doc = new DOMParser().parseFromString(htmlText, "text/html");
+                                    doc = new DOMParser().parseFromString(
+                                        htmlText,
+                                        "text/html",
+                                    );
                                 } else {
                                     doc = document.createElement("div");
                                     doc.innerHTML = htmlText;
@@ -2131,10 +2161,16 @@
         }
 
         // Attach click event to View Comments HTML button
-        var viewCommentsHtmlBtn = document.getElementById("view-comments-html-btn");
+        var viewCommentsHtmlBtn = document.getElementById(
+            "view-comments-html-btn",
+        );
         if (viewCommentsHtmlBtn) {
             if (viewCommentsHtmlBtn.addEventListener) {
-                viewCommentsHtmlBtn.addEventListener("click", fetchCommentsHtml, false);
+                viewCommentsHtmlBtn.addEventListener(
+                    "click",
+                    fetchCommentsHtml,
+                    false,
+                );
             } else if (viewCommentsHtmlBtn.attachEvent) {
                 viewCommentsHtmlBtn.attachEvent("onclick", fetchCommentsHtml);
             }
