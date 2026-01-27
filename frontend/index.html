@@ -1735,6 +1735,8 @@
                 list.innerHTML = "";
                 setText(progress, "0/" + total);
 
+                var fragment = document.createDocumentFragment();
+
                 for (var i = 0; i < articles.length; i++) {
                     var article = articles[i];
 
@@ -1776,10 +1778,12 @@
                     li.appendChild(title);
                     if (getText(meta)) li.appendChild(meta);
                     if (getText(desc)) li.appendChild(desc);
-                    list.appendChild(li);
+                    fragment.appendChild(li);
 
                     setText(progress, i + 1 + "/" + total);
                 }
+
+                list.appendChild(fragment);
             } catch (e) {
                 alert("renderArticleList error: " + e.message);
             }
