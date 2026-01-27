@@ -1824,6 +1824,9 @@
 
                 var contentDiv = document.getElementById("article-content");
 
+                // Ensure article content is visible
+                addClass(contentDiv, "visible");
+
                 // Use content:encoded if available, otherwise description
                 var content = article.content || article.description || "";
 
