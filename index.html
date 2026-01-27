@@ -1227,7 +1227,6 @@
         var currentArticles = [];
         var currentArticleIndex = -1;
         var currentArticleUrl = "";
-        var commentsLoaded = false;
         var SAVED_FEEDS_KEY = "savedFeeds";
 
         // Saved feeds management
@@ -1731,8 +1730,6 @@
                 currentArticleUrl = article.link;
 
                 // Reset comments state
-                commentsLoaded = false;
-                commentsHtmlLoaded = false;
                 var commentsContent = document.getElementById("comments-content");
                 var commentsLoading = document.getElementById("comments-loading");
                 var commentsHtmlContent = document.getElementById(
@@ -1799,6 +1796,15 @@
 
                 var loadingEl = document.getElementById("article-loading");
                 var contentDiv = document.getElementById("article-content");
+                var commentsContent = document.getElementById("comments-content");
+                var commentsHtmlContent = document.getElementById("comments-html-content");
+
+                // Hide comments views
+                removeClass(commentsContent, "visible");
+                removeClass(commentsHtmlContent, "visible");
+
+                // Show article content
+                addClass(contentDiv, "visible");
                 removeClass(loadingEl, "hidden");
 
                 fetchUrl(currentArticleUrl, function (error, htmlText) {
@@ -1874,11 +1880,6 @@
 
         function fetchComments() {
             try {
-                // Don't fetch again if already loaded
-                if (commentsLoaded) {
-                    return;
-                }
-
                 var article = currentArticles[currentArticleIndex];
                 if (!article || !article.comments) {
                     return;
@@ -1886,6 +1887,12 @@
 
                 var commentsContent = document.getElementById("comments-content");
                 var commentsLoading = document.getElementById("comments-loading");
+                var articleContent = document.getElementById("article-content");
+                var commentsHtmlContent = document.getElementById("comments-html-content");
+
+                // Hide article and other comments view
+                removeClass(articleContent, "visible");
+                removeClass(commentsHtmlContent, "visible");
 
                 // Show loading indicator
                 removeClass(commentsLoading, "hidden");
@@ -1920,7 +1927,6 @@
                                 extractedContent.content +
                                 "</div>";
                             addClass(commentsContent, "visible");
-                            commentsLoaded = true;
                         } else {
                             commentsContent.innerHTML =
                                 '<p class="error">Could not parse comments from this page.</p>';
@@ -1941,13 +1947,8 @@
             }
         }
 
-        var commentsHtmlLoaded = false;
         function fetchCommentsHtml() {
             try {
-                if (commentsHtmlLoaded) {
-                    return;
-                }
-
                 var article = currentArticles[currentArticleIndex];
                 if (!article || !article.comments) {
                     return;
@@ -1957,6 +1958,12 @@
                     "comments-html-content",
                 );
                 var commentsLoading = document.getElementById("comments-loading");
+                var articleContent = document.getElementById("article-content");
+                var commentsContent = document.getElementById("comments-content");
+
+                // Hide article and other comments view
+                removeClass(articleContent, "visible");
+                removeClass(commentsContent, "visible");
 
                 removeClass(commentsLoading, "hidden");
 
@@ -1972,7 +1979,6 @@
                     // Display raw HTML rendered
                     commentsHtmlContent.innerHTML = htmlText;
                     addClass(commentsHtmlContent, "visible");
-                    commentsHtmlLoaded = true;
                     addClass(commentsLoading, "hidden");
                 });
             } catch (e) {
