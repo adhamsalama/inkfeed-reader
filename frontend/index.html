@@ -1290,6 +1290,8 @@
         function loadSavedFeed(url) {
             var feedInput = document.getElementById("feed-url");
             feedInput.value = url;
+            // Hide saved feeds list
+            addClass(document.getElementById("saved-feeds-section"), "hidden");
             loadFeed();
         }
 
