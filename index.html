@@ -251,6 +251,20 @@
             font-size: 0.85em;
             min-width: auto;
         }
+
+        .scroll-buttons {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .scroll-btn {
+            padding: 12px 18px;
+            font-size: 1.2em;
+            min-width: auto;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.min.js"></script>
     <script type="text/javascript" src="https://stuk.github.io/jszip/dist/jszip.js"></script>
@@ -259,6 +273,10 @@
 </head>
 
 <body>
+    <div id="scroll-buttons" class="scroll-buttons hidden">
+        <button id="scroll-up-btn" class="scroll-btn" onclick="scrollPage(-1)">^</button>
+        <button id="scroll-down-btn" class="scroll-btn" onclick="scrollPage(1)">v</button>
+    </div>
     <div class="container">
         <h1>RSS Reader</h1>
 
@@ -2242,6 +2260,26 @@
             return null;
         }
 
+        // Scroll button functions
+        function scrollPage(direction) {
+            var scrollAmount = window.innerHeight || document.documentElement.clientHeight || 400;
+            window.scrollBy(0, direction * scrollAmount * 0.8);
+        }
+
+        function updateScrollButtons() {
+            var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            var scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+            var clientHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+            var scrollButtons = document.getElementById("scroll-buttons");
+
+            // Show buttons if page is scrollable
+            if (scrollHeight > clientHeight + 20) {
+                removeClass(scrollButtons, "hidden");
+            } else {
+                addClass(scrollButtons, "hidden");
+            }
+        }
+
         // Initialize
         function init() {
             try {
@@ -2262,6 +2300,16 @@
                             loadFeed();
                         }
                     });
+                }
+
+                // Set up scroll button visibility
+                updateScrollButtons();
+                if (window.addEventListener) {
+                    window.addEventListener("scroll", updateScrollButtons, false);
+                    window.addEventListener("resize", updateScrollButtons, false);
+                } else if (window.attachEvent) {
+                    window.attachEvent("onscroll", updateScrollButtons);
+                    window.attachEvent("onresize", updateScrollButtons);
                 }
 
                 // Populate input from URL parameter if present (check query string first, then hash)
