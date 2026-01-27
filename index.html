@@ -1287,6 +1287,23 @@
             }
         }
 
+        function moveFeed(index, direction) {
+            try {
+                if (!window.localStorage) return;
+                var feeds = getSavedFeeds();
+                var newIndex = index + direction;
+                if (newIndex < 0 || newIndex >= feeds.length) return;
+                // Swap feeds
+                var temp = feeds[index];
+                feeds[index] = feeds[newIndex];
+                feeds[newIndex] = temp;
+                localStorage.setItem(SAVED_FEEDS_KEY, JSON.stringify(feeds));
+                renderSavedFeeds();
+            } catch (e) {
+                // Silently fail
+            }
+        }
+
         function loadSavedFeed(url) {
             var feedInput = document.getElementById("feed-url");
             feedInput.value = url;
@@ -1336,6 +1353,30 @@
                     };
                 })(feed.url);
 
+                // Up arrow button
+                var upBtn = document.createElement("button");
+                upBtn.className = "secondary delete-feed-btn";
+                setText(upBtn, "^");
+                upBtn.title = "Move up";
+                (function (index) {
+                    upBtn.onclick = function () {
+                        moveFeed(index, -1);
+                        return false;
+                    };
+                })(i);
+
+                // Down arrow button
+                var downBtn = document.createElement("button");
+                downBtn.className = "secondary delete-feed-btn";
+                setText(downBtn, "v");
+                downBtn.title = "Move down";
+                (function (index) {
+                    downBtn.onclick = function () {
+                        moveFeed(index, 1);
+                        return false;
+                    };
+                })(i);
+
                 var deleteBtn = document.createElement("button");
                 deleteBtn.className = "secondary delete-feed-btn";
                 setText(deleteBtn, "X");
@@ -1349,6 +1390,8 @@
                 })(feed.url);
 
                 li.appendChild(link);
+                li.appendChild(upBtn);
+                li.appendChild(downBtn);
                 li.appendChild(deleteBtn);
                 list.appendChild(li);
             }
