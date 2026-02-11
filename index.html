@@ -1689,11 +1689,17 @@
                                 pubDateEl = getFirstByTag(entry, "published");
                                 if (!pubDateEl) pubDateEl = getFirstByTag(entry, "updated");
 
+                                // For Reddit feeds, the link is the comments page
+                                var commentsUrl = "";
+                                if (linkHref && linkHref.indexOf("reddit.com") >= 0) {
+                                    commentsUrl = linkHref + "/.json";
+                                }
+
                                 articles.push({
                                     index: i,
                                     title: titleEl ? getText(titleEl) : "Untitled",
                                     link: linkHref,
-                                    comments: "",
+                                    comments: commentsUrl,
                                     description: descEl ? getText(descEl) : "",
                                     content: contentEl ? getText(contentEl) : "",
                                     pubDate: pubDateEl ? getText(pubDateEl) : "",
@@ -1963,7 +1969,7 @@
                 // Show loading indicator
                 removeClass(commentsLoading, "hidden");
 
-                fetchUrl(article.comments, function (error, htmlText) {
+                fetchUrl(article.comments, function (error, responseText) {
                     if (error) {
                         commentsContent.innerHTML =
                             '<p class="error">Error fetching comments: ' +
@@ -1975,28 +1981,111 @@
                     }
 
                     try {
-                        var doc;
-                        if (window.DOMParser) {
-                            doc = new DOMParser().parseFromString(htmlText, "text/html");
-                        } else {
-                            doc = document.createElement("div");
-                            doc.innerHTML = htmlText;
-                        }
+                        // Check if this is a JSON feed (Reddit)
+                        var isJsonFeed = article.comments.indexOf(".json") >= 0;
 
-                        // Use Mozilla Readability to extract the comments content
-                        var reader = new Readability(doc);
-                        var extractedContent = reader.parse();
+                        if (isJsonFeed) {
+                            // Parse Reddit JSON
+                            var json = JSON.parse(responseText);
+                            var htmlParts = [];
 
-                        if (extractedContent && extractedContent.content) {
-                            commentsContent.innerHTML =
-                                '<div class="comments-body">' +
-                                extractedContent.content +
-                                "</div>";
+                            // Recursive function to render comment and its replies
+                            var replyCount = {count: 0};
+                            function renderComment(commentData, depth, isTopLevel) {
+                                if (!commentData || !commentData.data) return;
+                                var data = commentData.data;
+
+                                // Skip "more" comments
+                                if (commentData.kind === "more") return;
+
+                                // Limit replies to 50 per top-level comment
+                                if (!isTopLevel) {
+                                    if (replyCount.count >= 50) return;
+                                    replyCount.count++;
+                                }
+
+                                var indent = depth * 20;
+                                htmlParts.push('<div style="margin-left: ' + indent + 'px; margin-bottom: 15px; padding: 10px; border-left: 2px solid #ccc;">');
+
+                                if (data.author) {
+                                    htmlParts.push('<p style="font-weight: bold; margin-bottom: 5px;">');
+                                    htmlParts.push(escapeHtml(data.author));
+                                    htmlParts.push('</p>');
+                                }
+
+                                if (data.created_utc) {
+                                    var date = new Date(data.created_utc * 1000);
+                                    htmlParts.push('<p style="font-size: 0.85em; color: #666; margin-bottom: 10px;">');
+                                    htmlParts.push(escapeHtml(date.toLocaleString()));
+                                    htmlParts.push('</p>');
+                                }
+
+                                if (data.body_html) {
+                                    htmlParts.push('<div style="margin-bottom: 10px;">');
+                                    // Decode HTML entities in body_html
+                                    var tempDiv = document.createElement("div");
+                                    tempDiv.innerHTML = data.body_html;
+                                    // Get just the text content (strips HTML tags)
+                                    var textContent = getText(tempDiv);
+                                    // Replace newlines with <br> for display
+                                    textContent = textContent.replace(/\n/g, "<br>");
+                                    htmlParts.push(textContent);
+                                    htmlParts.push('</div>');
+                                }
+
+                                htmlParts.push('</div>');
+
+                                // Render replies recursively
+                                if (data.replies && data.replies.data && data.replies.data.children) {
+                                    var replies = data.replies.data.children;
+                                    for (var i = 0; i < replies.length; i++) {
+                                        renderComment(replies[i], depth + 1, false);
+                                    }
+                                }
+                            }
+
+                            // json[0] is post, json[1] is comments
+                            if (json.length > 1 && json[1].data && json[1].data.children) {
+                                var comments = json[1].data.children;
+                                var maxComments = Math.min(comments.length, 100);
+                                for (var i = 0; i < maxComments; i++) {
+                                    replyCount.count = 0; // Reset reply counter for each top-level comment
+                                    renderComment(comments[i], 0, true);
+                                }
+                            }
+
+                            if (htmlParts.length === 0) {
+                                commentsContent.innerHTML =
+                                    '<p class="error">No comments found.</p>';
+                            } else {
+                                commentsContent.innerHTML =
+                                    '<div class="comments-body">' + htmlParts.join("") + "</div>";
+                            }
                             addClass(commentsContent, "visible");
                         } else {
-                            commentsContent.innerHTML =
-                                '<p class="error">Could not parse comments from this page.</p>';
-                            addClass(commentsContent, "visible");
+                            // Parse as HTML using Readability
+                            var doc;
+                            if (window.DOMParser) {
+                                doc = new DOMParser().parseFromString(responseText, "text/html");
+                            } else {
+                                doc = document.createElement("div");
+                                doc.innerHTML = responseText;
+                            }
+
+                            var reader = new Readability(doc);
+                            var extractedContent = reader.parse();
+
+                            if (extractedContent && extractedContent.content) {
+                                commentsContent.innerHTML =
+                                    '<div class="comments-body">' +
+                                    extractedContent.content +
+                                    "</div>";
+                                addClass(commentsContent, "visible");
+                            } else {
+                                commentsContent.innerHTML =
+                                    '<p class="error">Could not parse comments from this page.</p>';
+                                addClass(commentsContent, "visible");
+                            }
                         }
                     } catch (e) {
                         commentsContent.innerHTML =
