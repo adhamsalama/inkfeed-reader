@@ -1484,7 +1484,8 @@
             try {
                 var useProxy = true;
                 if (useProxy) {
-                    url = "https://cors-anywhere.com/" + url;
+                    // url = "https://cors-anywhere.com/" + url;
+                    url = "https://corsproxy.io/?url=" + url
                 }
                 var xhr;
                 if (window.XMLHttpRequest) {
