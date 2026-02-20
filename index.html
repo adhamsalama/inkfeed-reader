@@ -333,8 +333,13 @@
 
         <div id="feed-view">
             <h2 id="feed-title">Feed Articles</h2>
+            <div class="nav-buttons">
+                <button onclick="downloadAllArticlesText()">Download All (text)</button>
+                <button onclick="downloadAllArticlesMobi()">Download All (MOBI)</button>
+            </div>
             <hr />
             <div id="feed-loading" class="loading hidden">Loading feed...</div>
+            <div id="download-all-progress" class="loading hidden">Downloading articles...</div>
             <ul id="article-list" class="article-list"></ul>
         </div>
 
@@ -2401,6 +2406,234 @@
                 document.body.removeChild(a);
             } catch (e) {
                 alert("downloadArticle error: " + e.message);
+            }
+        }
+
+        // Fetch full article with retry logic
+        function fetchFullArticleWithRetry(url, maxRetries, callback) {
+            var attempts = 0;
+
+            function tryFetch() {
+                attempts++;
+                fetchUrl(url, function(error, htmlText) {
+                    if (error) {
+                        if (attempts < maxRetries) {
+                            setTimeout(tryFetch, 1000);
+                        } else {
+                            callback(error, null);
+                        }
+                        return;
+                    }
+
+                    try {
+                        var doc;
+                        if (window.DOMParser) {
+                            doc = new DOMParser().parseFromString(htmlText, "text/html");
+                        } else {
+                            doc = document.createElement("div");
+                            doc.innerHTML = htmlText;
+                        }
+
+                        var reader = new Readability(doc);
+                        var extractedArticle = reader.parse();
+
+                        if (extractedArticle) {
+                            callback(null, extractedArticle);
+                        } else {
+                            if (attempts < maxRetries) {
+                                setTimeout(tryFetch, 1000);
+                            } else {
+                                callback(new Error("Readability could not parse article"), null);
+                            }
+                        }
+                    } catch (e) {
+                        if (attempts < maxRetries) {
+                            setTimeout(tryFetch, 1000);
+                        } else {
+                            callback(e, null);
+                        }
+                    }
+                });
+            }
+
+            tryFetch();
+        }
+
+        // Download all articles as text
+        function downloadAllArticlesText() {
+            try {
+                if (!currentArticles || currentArticles.length === 0) {
+                    alert("No articles to download");
+                    return;
+                }
+
+                var progressEl = document.getElementById("download-all-progress");
+                removeClass(progressEl, "hidden");
+                setText(progressEl, "Downloading articles: 0/" + currentArticles.length);
+
+                var allArticlesText = [];
+                var feedTitle = getText(document.getElementById("feed-title"));
+                var processedCount = 0;
+
+                allArticlesText.push("========================================");
+                allArticlesText.push(feedTitle);
+                allArticlesText.push("Downloaded: " + new Date().toLocaleString());
+                allArticlesText.push("Total articles: " + currentArticles.length);
+                allArticlesText.push("========================================\n\n");
+
+                function processNextArticle(index) {
+                    if (index >= currentArticles.length) {
+                        addClass(progressEl, "hidden");
+
+                        var finalText = allArticlesText.join("\n");
+                        var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_all_articles.txt";
+
+                        var a = document.createElement("a");
+                        a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(finalText);
+                        a.setAttribute("download", filename);
+                        a.style.display = "none";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+
+                        alert("Downloaded " + processedCount + " articles successfully!");
+                        return;
+                    }
+
+                    var article = currentArticles[index];
+                    setText(progressEl, "Downloading articles: " + (index + 1) + "/" + currentArticles.length + " - " + article.title);
+
+                    if (!article.link) {
+                        allArticlesText.push("\n\n========================================");
+                        allArticlesText.push("Article " + (index + 1) + ": " + article.title);
+                        allArticlesText.push("========================================");
+                        if (article.pubDate) {
+                            allArticlesText.push("Published: " + article.pubDate);
+                        }
+                        allArticlesText.push("\n");
+
+                        var tempDiv = document.createElement("div");
+                        tempDiv.innerHTML = article.content || article.description || "";
+                        allArticlesText.push(getText(tempDiv));
+
+                        processedCount++;
+                        processNextArticle(index + 1);
+                        return;
+                    }
+
+                    fetchFullArticleWithRetry(article.link, 3, function(error, extractedArticle) {
+                        allArticlesText.push("\n\n========================================");
+                        allArticlesText.push("Article " + (index + 1) + ": " + article.title);
+                        allArticlesText.push("========================================");
+                        if (article.pubDate) {
+                            allArticlesText.push("Published: " + article.pubDate);
+                        }
+                        allArticlesText.push("Link: " + article.link);
+                        allArticlesText.push("\n");
+
+                        if (error) {
+                            allArticlesText.push("[Failed to fetch full article after 3 attempts]");
+                            allArticlesText.push("\n");
+                            var tempDiv = document.createElement("div");
+                            tempDiv.innerHTML = article.content || article.description || "";
+                            allArticlesText.push(getText(tempDiv));
+                        } else {
+                            var contentDiv = document.createElement("div");
+                            contentDiv.innerHTML = extractedArticle.content;
+                            allArticlesText.push(getText(contentDiv));
+                            processedCount++;
+                        }
+
+                        processNextArticle(index + 1);
+                    });
+                }
+
+                processNextArticle(0);
+            } catch (e) {
+                alert("downloadAllArticlesText error: " + e.message);
+                addClass(document.getElementById("download-all-progress"), "hidden");
+            }
+        }
+
+        // Download all articles as MOBI
+        function downloadAllArticlesMobi() {
+            try {
+                if (!currentArticles || currentArticles.length === 0) {
+                    alert("No articles to download");
+                    return;
+                }
+
+                var progressEl = document.getElementById("download-all-progress");
+                removeClass(progressEl, "hidden");
+                setText(progressEl, "Downloading articles: 0/" + currentArticles.length);
+
+                var allArticlesHtml = [];
+                var feedTitle = getText(document.getElementById("feed-title"));
+                var processedCount = 0;
+
+                allArticlesHtml.push("<html><body>");
+                allArticlesHtml.push("<h1>" + escapeHtml(feedTitle) + "</h1>");
+                allArticlesHtml.push("<p>Downloaded: " + escapeHtml(new Date().toLocaleString()) + "</p>");
+                allArticlesHtml.push("<p>Total articles: " + currentArticles.length + "</p>");
+                allArticlesHtml.push("<hr/>");
+
+                function processNextArticle(index) {
+                    if (index >= currentArticles.length) {
+                        addClass(progressEl, "hidden");
+
+                        allArticlesHtml.push("</body></html>");
+                        var htmlContent = allArticlesHtml.join("\n");
+
+                        var book = new MobiBook(feedTitle, "RSS Reader");
+                        book.setHtmlContent(htmlContent);
+                        var writer = new MobiWriter();
+                        var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_all_articles.mobi";
+                        writer.write(book, filename);
+
+                        alert("Downloaded " + processedCount + " articles successfully as MOBI!");
+                        return;
+                    }
+
+                    var article = currentArticles[index];
+                    setText(progressEl, "Downloading articles: " + (index + 1) + "/" + currentArticles.length + " - " + article.title);
+
+                    if (!article.link) {
+                        allArticlesHtml.push("<h2>" + escapeHtml(article.title) + "</h2>");
+                        if (article.pubDate) {
+                            allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>");
+                        }
+                        allArticlesHtml.push(article.content || article.description || "");
+                        allArticlesHtml.push("<hr/>");
+
+                        processedCount++;
+                        processNextArticle(index + 1);
+                        return;
+                    }
+
+                    fetchFullArticleWithRetry(article.link, 3, function(error, extractedArticle) {
+                        allArticlesHtml.push("<h2>" + escapeHtml(article.title) + "</h2>");
+                        if (article.pubDate) {
+                            allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>");
+                        }
+                        allArticlesHtml.push("<p><a href=\"" + escapeHtml(article.link) + "\">Original Article</a></p>");
+
+                        if (error) {
+                            allArticlesHtml.push("<p><strong>[Failed to fetch full article after 3 attempts]</strong></p>");
+                            allArticlesHtml.push(article.content || article.description || "");
+                        } else {
+                            allArticlesHtml.push(extractedArticle.content);
+                            processedCount++;
+                        }
+
+                        allArticlesHtml.push("<hr/>");
+                        processNextArticle(index + 1);
+                    });
+                }
+
+                processNextArticle(0);
+            } catch (e) {
+                alert("downloadAllArticlesMobi error: " + e.message);
+                addClass(document.getElementById("download-all-progress"), "hidden");
             }
         }
 
