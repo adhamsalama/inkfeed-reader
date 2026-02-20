@@ -222,6 +222,26 @@
             display: none;
         }
 
+        .article-selection-buttons {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .article-selection-buttons button {
+            padding: 5px 12px;
+            font-size: 0.9em;
+        }
+
+        .article-item.selected {
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+        }
+
+        .article-item.skipped {
+            opacity: 0.5;
+        }
+
         .saved-feeds-list {
             list-style: none;
         }
@@ -333,8 +353,18 @@
 
         <div id="feed-view">
             <h2 id="feed-title">Feed Articles</h2>
+            <div class="nav-buttons" id="normal-nav-buttons" style="display: flex;">
+                <button onclick="startArticleSelection('text')">Download All (text)</button>
+                <button onclick="startArticleSelection('mobi')">Download All (MOBI)</button>
+            </div>
+            <div class="nav-buttons" id="selection-nav-buttons" style="display: none;">
+                <button onclick="downloadSelectedArticles()" class="primary">Download Selected</button>
+                <button onclick="cancelArticleSelection()" class="secondary">Cancel</button>
+                <span style="margin-left: 15px; font-weight: bold;">Selected: <span id="selection-count">0</span> articles</span>
+            </div>
             <hr />
             <div id="feed-loading" class="loading hidden">Loading feed...</div>
+            <div id="download-all-progress" class="loading hidden">Downloading articles...</div>
             <ul id="article-list" class="article-list"></ul>
         </div>
 
@@ -2401,6 +2431,546 @@
                 document.body.removeChild(a);
             } catch (e) {
                 alert("downloadArticle error: " + e.message);
+            }
+        }
+
+        // Fetch full article with retry logic
+        function fetchFullArticleWithRetry(url, maxRetries, callback) {
+            var attempts = 0;
+
+            function tryFetch() {
+                attempts++;
+                fetchUrl(url, function(error, htmlText) {
+                    if (error) {
+                        if (attempts < maxRetries) {
+                            setTimeout(tryFetch, 1000);
+                        } else {
+                            callback(error, null);
+                        }
+                        return;
+                    }
+
+                    try {
+                        var doc;
+                        if (window.DOMParser) {
+                            doc = new DOMParser().parseFromString(htmlText, "text/html");
+                        } else {
+                            doc = document.createElement("div");
+                            doc.innerHTML = htmlText;
+                        }
+
+                        var reader = new Readability(doc);
+                        var extractedArticle = reader.parse();
+
+                        if (extractedArticle) {
+                            callback(null, extractedArticle);
+                        } else {
+                            if (attempts < maxRetries) {
+                                setTimeout(tryFetch, 1000);
+                            } else {
+                                callback(new Error("Readability could not parse article"), null);
+                            }
+                        }
+                    } catch (e) {
+                        if (attempts < maxRetries) {
+                            setTimeout(tryFetch, 1000);
+                        } else {
+                            callback(e, null);
+                        }
+                    }
+                });
+            }
+
+            tryFetch();
+        }
+
+        // Article selection state
+        var articleSelectionState = {
+            downloadType: null,  // 'text' or 'mobi'
+            selectedIndices: new Set(),
+            inSelectionMode: false
+        };
+
+        // Start article selection process
+        function startArticleSelection(downloadType) {
+            try {
+                if (!currentArticles || currentArticles.length === 0) {
+                    alert("No articles to download");
+                    return;
+                }
+
+                // Initialize selection state
+                articleSelectionState.downloadType = downloadType;
+                articleSelectionState.selectedIndices = new Set();
+                articleSelectionState.inSelectionMode = true;
+
+                // Show selection buttons, hide normal buttons
+                document.getElementById("normal-nav-buttons").style.display = "none";
+                document.getElementById("selection-nav-buttons").style.display = "flex";
+
+                // Add selection buttons to each article
+                var articleList = document.getElementById("article-list");
+                var items = articleList.getElementsByTagName("li");
+
+                for (var i = 0; i < items.length; i++) {
+                    addSelectionButtonsToArticle(items[i], i);
+                }
+
+                updateSelectionCounter();
+            } catch (e) {
+                alert("Error starting article selection: " + e.message);
+            }
+        }
+
+        // Add selection buttons to an article item
+        function addSelectionButtonsToArticle(articleItem, index) {
+            // Check if buttons already exist
+            var existing = articleItem.querySelector(".article-selection-buttons");
+            if (existing) return;
+
+            var buttonsDiv = document.createElement("div");
+            buttonsDiv.className = "article-selection-buttons";
+
+            var chooseBtn = document.createElement("button");
+            chooseBtn.textContent = "Choose";
+            chooseBtn.className = "primary";
+            chooseBtn.onclick = function(e) {
+                e.stopPropagation();
+                toggleArticleSelection(index, articleItem, true);
+            };
+
+            buttonsDiv.appendChild(chooseBtn);
+            articleItem.appendChild(buttonsDiv);
+        }
+
+        // Toggle article selection
+        function toggleArticleSelection(index, articleItem, select) {
+            if (select) {
+                articleSelectionState.selectedIndices.add(index);
+                addClass(articleItem, "selected");
+                removeClass(articleItem, "skipped");
+            } else {
+                articleSelectionState.selectedIndices.delete(index);
+                removeClass(articleItem, "selected");
+                addClass(articleItem, "skipped");
+            }
+            updateSelectionCounter();
+        }
+
+        // Update selection counter
+        function updateSelectionCounter() {
+            setText(document.getElementById("selection-count"), articleSelectionState.selectedIndices.size);
+        }
+
+        // Cancel article selection
+        function cancelArticleSelection() {
+            // Remove selection buttons from all articles
+            var articleList = document.getElementById("article-list");
+            var items = articleList.getElementsByTagName("li");
+
+            for (var i = 0; i < items.length; i++) {
+                var buttons = items[i].querySelector(".article-selection-buttons");
+                if (buttons) {
+                    buttons.remove();
+                }
+                removeClass(items[i], "selected");
+                removeClass(items[i], "skipped");
+            }
+
+            // Reset state
+            articleSelectionState = {
+                downloadType: null,
+                selectedIndices: new Set(),
+                inSelectionMode: false
+            };
+
+            // Show normal buttons, hide selection buttons
+            document.getElementById("normal-nav-buttons").style.display = "flex";
+            document.getElementById("selection-nav-buttons").style.display = "none";
+        }
+
+        // Download selected articles
+        function downloadSelectedArticles() {
+            if (articleSelectionState.selectedIndices.size === 0) {
+                alert("No articles selected");
+                return;
+            }
+
+            // Get selected articles
+            var selectedArticles = [];
+            articleSelectionState.selectedIndices.forEach(function(index) {
+                selectedArticles.push(currentArticles[index]);
+            });
+
+            // Clean up selection UI
+            var downloadType = articleSelectionState.downloadType;
+            cancelArticleSelection();
+
+            // Start download based on type
+            if (downloadType === "text") {
+                downloadSelectedArticlesText(selectedArticles);
+            } else if (downloadType === "mobi") {
+                downloadSelectedArticlesMobi(selectedArticles);
+            }
+        }
+
+        // Download selected articles as text
+        function downloadSelectedArticlesText(selectedArticles) {
+            try {
+                var progressEl = document.getElementById("download-all-progress");
+                removeClass(progressEl, "hidden");
+                setText(progressEl, "Downloading articles: 0/" + selectedArticles.length);
+
+                var allArticlesText = [];
+                var feedTitle = getText(document.getElementById("feed-title"));
+                var processedCount = 0;
+
+                allArticlesText.push("========================================");
+                allArticlesText.push(feedTitle);
+                allArticlesText.push("Downloaded: " + new Date().toLocaleString());
+                allArticlesText.push("Total articles: " + selectedArticles.length);
+                allArticlesText.push("========================================\n\n");
+
+                function processNextArticle(index) {
+                    if (index >= selectedArticles.length) {
+                        addClass(progressEl, "hidden");
+
+                        var finalText = allArticlesText.join("\n");
+
+                        // Generate filename with timestamp
+                        var now = new Date();
+                        var timestamp = now.getFullYear() + "-" +
+                                      String(now.getMonth() + 1).padStart(2, '0') + "-" +
+                                      String(now.getDate()).padStart(2, '0') + "-" +
+                                      String(now.getHours()).padStart(2, '0') + "-" +
+                                      String(now.getMinutes()).padStart(2, '0');
+                        var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_" + timestamp + ".txt";
+
+                        var a = document.createElement("a");
+                        a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(finalText);
+                        a.setAttribute("download", filename);
+                        a.style.display = "none";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+
+                        return;
+                    }
+
+                    var article = selectedArticles[index];
+                    setText(progressEl, "Downloading articles: " + (index + 1) + "/" + selectedArticles.length + " - " + article.title);
+
+                    if (!article.link) {
+                        allArticlesText.push("\n\n========================================");
+                        allArticlesText.push("Article " + (index + 1) + ": " + article.title);
+                        allArticlesText.push("========================================");
+                        if (article.pubDate) {
+                            allArticlesText.push("Published: " + article.pubDate);
+                        }
+                        allArticlesText.push("\n");
+
+                        var tempDiv = document.createElement("div");
+                        tempDiv.innerHTML = article.content || article.description || "";
+                        allArticlesText.push(getText(tempDiv));
+
+                        processedCount++;
+                        processNextArticle(index + 1);
+                        return;
+                    }
+
+                    fetchFullArticleWithRetry(article.link, 3, function(error, extractedArticle) {
+                        allArticlesText.push("\n\n========================================");
+                        allArticlesText.push("Article " + (index + 1) + ": " + article.title);
+                        allArticlesText.push("========================================");
+                        if (article.pubDate) {
+                            allArticlesText.push("Published: " + article.pubDate);
+                        }
+                        allArticlesText.push("Link: " + article.link);
+                        allArticlesText.push("\n");
+
+                        if (error) {
+                            allArticlesText.push("[Failed to fetch full article after 3 attempts]");
+                            allArticlesText.push("\n");
+                            var tempDiv = document.createElement("div");
+                            tempDiv.innerHTML = article.content || article.description || "";
+                            allArticlesText.push(getText(tempDiv));
+                        } else {
+                            var contentDiv = document.createElement("div");
+                            contentDiv.innerHTML = extractedArticle.content;
+                            allArticlesText.push(getText(contentDiv));
+                            processedCount++;
+                        }
+
+                        processNextArticle(index + 1);
+                    });
+                }
+
+                processNextArticle(0);
+            } catch (e) {
+                alert("downloadSelectedArticlesText error: " + e.message);
+                addClass(document.getElementById("download-all-progress"), "hidden");
+            }
+        }
+
+        // Download selected articles as MOBI
+        function downloadSelectedArticlesMobi(selectedArticles) {
+            try {
+                var progressEl = document.getElementById("download-all-progress");
+                removeClass(progressEl, "hidden");
+                setText(progressEl, "Downloading articles: 0/" + selectedArticles.length);
+
+                var allArticlesHtml = [];
+                var feedTitle = getText(document.getElementById("feed-title"));
+                var processedCount = 0;
+
+                allArticlesHtml.push("<html><body>");
+                allArticlesHtml.push("<h1>" + escapeHtml(feedTitle) + "</h1>");
+                allArticlesHtml.push("<p>Downloaded: " + escapeHtml(new Date().toLocaleString()) + "</p>");
+                allArticlesHtml.push("<p>Total articles: " + selectedArticles.length + "</p>");
+                allArticlesHtml.push("<hr/>");
+
+                function processNextArticle(index) {
+                    if (index >= selectedArticles.length) {
+                        addClass(progressEl, "hidden");
+
+                        allArticlesHtml.push("</body></html>");
+                        var htmlContent = allArticlesHtml.join("\n");
+
+                        // Generate filename with timestamp
+                        var now = new Date();
+                        var timestamp = now.getFullYear() + "-" +
+                                      String(now.getMonth() + 1).padStart(2, '0') + "-" +
+                                      String(now.getDate()).padStart(2, '0') + "-" +
+                                      String(now.getHours()).padStart(2, '0') + "-" +
+                                      String(now.getMinutes()).padStart(2, '0');
+                        var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_" + timestamp + ".mobi";
+
+                        var book = new MobiBook(feedTitle, feedTitle);
+                        book.setHtmlContent(htmlContent);
+                        var writer = new MobiWriter();
+                        writer.write(book, filename);
+
+                        return;
+                    }
+
+                    var article = selectedArticles[index];
+                    setText(progressEl, "Downloading articles: " + (index + 1) + "/" + selectedArticles.length + " - " + article.title);
+
+                    if (!article.link) {
+                        allArticlesHtml.push("<h2>" + escapeHtml(article.title) + "</h2>");
+                        if (article.pubDate) {
+                            allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>");
+                        }
+                        allArticlesHtml.push(article.content || article.description || "");
+                        allArticlesHtml.push("<hr/>");
+
+                        processedCount++;
+                        processNextArticle(index + 1);
+                        return;
+                    }
+
+                    fetchFullArticleWithRetry(article.link, 3, function(error, extractedArticle) {
+                        allArticlesHtml.push("<h2>" + escapeHtml(article.title) + "</h2>");
+                        if (article.pubDate) {
+                            allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>");
+                        }
+                        allArticlesHtml.push("<p><a href=\"" + escapeHtml(article.link) + "\">Original Article</a></p>");
+
+                        if (error) {
+                            allArticlesHtml.push("<p><strong>[Failed to fetch full article after 3 attempts]</strong></p>");
+                            allArticlesHtml.push(article.content || article.description || "");
+                        } else {
+                            allArticlesHtml.push(extractedArticle.content);
+                            processedCount++;
+                        }
+
+                        allArticlesHtml.push("<hr/>");
+                        processNextArticle(index + 1);
+                    });
+                }
+
+                processNextArticle(0);
+            } catch (e) {
+                alert("downloadSelectedArticlesMobi error: " + e.message);
+                addClass(document.getElementById("download-all-progress"), "hidden");
+            }
+        }
+
+        // Download all articles as text
+        function downloadAllArticlesText() {
+            try {
+                if (!currentArticles || currentArticles.length === 0) {
+                    alert("No articles to download");
+                    return;
+                }
+
+                var progressEl = document.getElementById("download-all-progress");
+                removeClass(progressEl, "hidden");
+                setText(progressEl, "Downloading articles: 0/" + currentArticles.length);
+
+                var allArticlesText = [];
+                var feedTitle = getText(document.getElementById("feed-title"));
+                var processedCount = 0;
+
+                allArticlesText.push("========================================");
+                allArticlesText.push(feedTitle);
+                allArticlesText.push("Downloaded: " + new Date().toLocaleString());
+                allArticlesText.push("Total articles: " + currentArticles.length);
+                allArticlesText.push("========================================\n\n");
+
+                function processNextArticle(index) {
+                    if (index >= currentArticles.length) {
+                        addClass(progressEl, "hidden");
+
+                        var finalText = allArticlesText.join("\n");
+                        var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_all_articles.txt";
+
+                        var a = document.createElement("a");
+                        a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(finalText);
+                        a.setAttribute("download", filename);
+                        a.style.display = "none";
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+
+                        alert("Downloaded " + processedCount + " articles successfully!");
+                        return;
+                    }
+
+                    var article = currentArticles[index];
+                    setText(progressEl, "Downloading articles: " + (index + 1) + "/" + currentArticles.length + " - " + article.title);
+
+                    if (!article.link) {
+                        allArticlesText.push("\n\n========================================");
+                        allArticlesText.push("Article " + (index + 1) + ": " + article.title);
+                        allArticlesText.push("========================================");
+                        if (article.pubDate) {
+                            allArticlesText.push("Published: " + article.pubDate);
+                        }
+                        allArticlesText.push("\n");
+
+                        var tempDiv = document.createElement("div");
+                        tempDiv.innerHTML = article.content || article.description || "";
+                        allArticlesText.push(getText(tempDiv));
+
+                        processedCount++;
+                        processNextArticle(index + 1);
+                        return;
+                    }
+
+                    fetchFullArticleWithRetry(article.link, 3, function(error, extractedArticle) {
+                        allArticlesText.push("\n\n========================================");
+                        allArticlesText.push("Article " + (index + 1) + ": " + article.title);
+                        allArticlesText.push("========================================");
+                        if (article.pubDate) {
+                            allArticlesText.push("Published: " + article.pubDate);
+                        }
+                        allArticlesText.push("Link: " + article.link);
+                        allArticlesText.push("\n");
+
+                        if (error) {
+                            allArticlesText.push("[Failed to fetch full article after 3 attempts]");
+                            allArticlesText.push("\n");
+                            var tempDiv = document.createElement("div");
+                            tempDiv.innerHTML = article.content || article.description || "";
+                            allArticlesText.push(getText(tempDiv));
+                        } else {
+                            var contentDiv = document.createElement("div");
+                            contentDiv.innerHTML = extractedArticle.content;
+                            allArticlesText.push(getText(contentDiv));
+                            processedCount++;
+                        }
+
+                        processNextArticle(index + 1);
+                    });
+                }
+
+                processNextArticle(0);
+            } catch (e) {
+                alert("downloadAllArticlesText error: " + e.message);
+                addClass(document.getElementById("download-all-progress"), "hidden");
+            }
+        }
+
+        // Download all articles as MOBI
+        function downloadAllArticlesMobi() {
+            try {
+                if (!currentArticles || currentArticles.length === 0) {
+                    alert("No articles to download");
+                    return;
+                }
+
+                var progressEl = document.getElementById("download-all-progress");
+                removeClass(progressEl, "hidden");
+                setText(progressEl, "Downloading articles: 0/" + currentArticles.length);
+
+                var allArticlesHtml = [];
+                var feedTitle = getText(document.getElementById("feed-title"));
+                var processedCount = 0;
+
+                allArticlesHtml.push("<html><body>");
+                allArticlesHtml.push("<h1>" + escapeHtml(feedTitle) + "</h1>");
+                allArticlesHtml.push("<p>Downloaded: " + escapeHtml(new Date().toLocaleString()) + "</p>");
+                allArticlesHtml.push("<p>Total articles: " + currentArticles.length + "</p>");
+                allArticlesHtml.push("<hr/>");
+
+                function processNextArticle(index) {
+                    if (index >= currentArticles.length) {
+                        addClass(progressEl, "hidden");
+
+                        allArticlesHtml.push("</body></html>");
+                        var htmlContent = allArticlesHtml.join("\n");
+
+                        var book = new MobiBook(feedTitle, "RSS Reader");
+                        book.setHtmlContent(htmlContent);
+                        var writer = new MobiWriter();
+                        var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_all_articles.mobi";
+                        writer.write(book, filename);
+
+                        alert("Downloaded " + processedCount + " articles successfully as MOBI!");
+                        return;
+                    }
+
+                    var article = currentArticles[index];
+                    setText(progressEl, "Downloading articles: " + (index + 1) + "/" + currentArticles.length + " - " + article.title);
+
+                    if (!article.link) {
+                        allArticlesHtml.push("<h2>" + escapeHtml(article.title) + "</h2>");
+                        if (article.pubDate) {
+                            allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>");
+                        }
+                        allArticlesHtml.push(article.content || article.description || "");
+                        allArticlesHtml.push("<hr/>");
+
+                        processedCount++;
+                        processNextArticle(index + 1);
+                        return;
+                    }
+
+                    fetchFullArticleWithRetry(article.link, 3, function(error, extractedArticle) {
+                        allArticlesHtml.push("<h2>" + escapeHtml(article.title) + "</h2>");
+                        if (article.pubDate) {
+                            allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>");
+                        }
+                        allArticlesHtml.push("<p><a href=\"" + escapeHtml(article.link) + "\">Original Article</a></p>");
+
+                        if (error) {
+                            allArticlesHtml.push("<p><strong>[Failed to fetch full article after 3 attempts]</strong></p>");
+                            allArticlesHtml.push(article.content || article.description || "");
+                        } else {
+                            allArticlesHtml.push(extractedArticle.content);
+                            processedCount++;
+                        }
+
+                        allArticlesHtml.push("<hr/>");
+                        processNextArticle(index + 1);
+                    });
+                }
+
+                processNextArticle(0);
+            } catch (e) {
+                alert("downloadAllArticlesMobi error: " + e.message);
+                addClass(document.getElementById("download-all-progress"), "hidden");
             }
         }
 
