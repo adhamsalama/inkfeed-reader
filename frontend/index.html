@@ -2738,7 +2738,7 @@
                         allArticlesHtml.push("</body></html>");
                         var htmlContent = allArticlesHtml.join("\n");
 
-                        var book = new MobiBook(feedTitle, "RSS Reader");
+                        var book = new MobiBook(feedTitle, feedTitle);
                         book.setHtmlContent(htmlContent);
                         var writer = new MobiWriter();
                         var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_selected_articles.mobi";
@@ -2916,7 +2916,7 @@
                         allArticlesHtml.push("</body></html>");
                         var htmlContent = allArticlesHtml.join("\n");
 
-                        var book = new MobiBook(feedTitle, "RSS Reader");
+                        var book = new MobiBook(feedTitle, feedTitle);
                         book.setHtmlContent(htmlContent);
                         var writer = new MobiWriter();
                         var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_all_articles.mobi";
@@ -3089,8 +3089,9 @@
 
                 var title = article.title || "Article";
                 var filename = title.replace(/[^a-z0-9]/gi, "_") + ".mobi";
+                var feedTitle = getText(document.getElementById("feed-title")) || "RSS Reader";
 
-                var book = new MobiBook(title, "RSS Reader");
+                var book = new MobiBook(title, feedTitle);
                 book.setHtmlContent(htmlContent);
 
                 var writer = new MobiWriter();
