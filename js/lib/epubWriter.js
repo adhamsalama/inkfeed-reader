@@ -78,22 +78,6 @@
     return '<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>';
   }
 
-  function downloadBlob(blob, filename) {
-    if (typeof URL !== "undefined" && URL.createObjectURL) {
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } else {
-      alert("EPUB download not supported in this browser");
-    }
-  }
-
   // ============================================================
   // Public Methods
   // ============================================================
@@ -117,7 +101,9 @@
 
       zip.generateAsync({type: "blob", mimeType: "application/epub+zip"}).then(
         function (blob) {
-          downloadBlob(blob, filename);
+          if (!downloadBlob(blob, filename)) {
+            alert("EPUB download not supported in this browser");
+          }
         },
         function (err) {
           alert("Error generating EPUB: " + err.message);
