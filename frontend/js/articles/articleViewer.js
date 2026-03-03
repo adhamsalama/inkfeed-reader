@@ -62,6 +62,16 @@ var ArticleViewer = {
                             if (json.length > 0 && json[0].data && json[0].data.children && json[0].data.children.length > 0) {
                                 var postData = json[0].data.children[0].data;
                                 var postContent = "";
+                                var actualUrl = finalUrl;
+
+                                // For link posts, use the actual linked URL instead of Reddit URL
+                                // is_self indicates if it's a self-post (text only) or a link post
+                                if (!postData.is_self && postData.url) {
+                                    actualUrl = postData.url;
+                                    // Update the article link for "Get Full Article" to work correctly
+                                    AppState.currentArticleUrl = actualUrl;
+                                    article.link = actualUrl;
+                                }
 
                                 // Get selftext_html (for text posts) or just selftext
                                 if (postData.selftext_html) {
@@ -85,7 +95,7 @@ var ArticleViewer = {
                                     postContent = escapeHtml(postData.selftext).replace(/\n/g, '<br>');
                                 }
 
-                                displayArticleContent(contentDiv, article, finalUrl, postContent || article.description || "");
+                                displayArticleContent(contentDiv, article, actualUrl, postContent || article.description || "");
                             } else {
                                 // Fall back to RSS content if JSON structure is unexpected
                                 displayArticleContent(contentDiv, article, finalUrl, article.content || article.description || "");
