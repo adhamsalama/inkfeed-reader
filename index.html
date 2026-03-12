@@ -47,6 +47,14 @@
                         +
                     </button>
                 </div>
+                <div class="control-group">
+                    <button class="secondary" onclick="toggleProxyInput()" aria-label="Configure proxy URL">Proxy</button>
+                </div>
+            </div>
+            <div id="proxy-input-row" class="proxy-input-row hidden">
+                <input type="text" id="proxy-url-input" placeholder="https://proxy.example.com/?" />
+                <button onclick="saveProxyUrl()">Save</button>
+                <button class="secondary" onclick="toggleProxyInput()">Close</button>
             </div>
         </div>
 

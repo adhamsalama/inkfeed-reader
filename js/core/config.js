@@ -25,3 +25,10 @@ var AppConfig = {
     MAX_TOP_LEVEL_COMMENTS: 100,
     MAX_REPLIES_PER_COMMENT: 50,
 };
+
+(function() {
+    var saved = localStorage.getItem("corsProxyUrl");
+    if (saved) {
+        AppConfig.CORS_PROXY_URL = saved;
+    }
+})();

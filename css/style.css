@@ -264,6 +264,26 @@ input[type="text"] {
   min-width: auto;
 }
 
+.proxy-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.proxy-input-row input[type="text"] {
+  flex: 1;
+  margin-bottom: 0;
+  font-size: 0.85em;
+  padding: 5px 8px;
+}
+
+.proxy-input-row button {
+  font-size: 0.85em;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
 .scroll-buttons {
   position: fixed;
   bottom: 10px;

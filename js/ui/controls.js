@@ -26,3 +26,25 @@ function adjustLineHeight(delta) {
     );
     document.body.style.lineHeight = AppState.currentLineHeight;
 }
+
+function toggleProxyInput() {
+    var row = document.getElementById("proxy-input-row");
+    var input = document.getElementById("proxy-url-input");
+    if (row.classList.contains("hidden")) {
+        input.value = AppConfig.CORS_PROXY_URL;
+        row.classList.remove("hidden");
+        input.focus();
+    } else {
+        row.classList.add("hidden");
+    }
+}
+
+function saveProxyUrl() {
+    var input = document.getElementById("proxy-url-input");
+    var url = input.value.trim();
+    if (url) {
+        AppConfig.CORS_PROXY_URL = url;
+        localStorage.setItem("corsProxyUrl", url);
+    }
+    document.getElementById("proxy-input-row").classList.add("hidden");
+}
