@@ -2,6 +2,9 @@
 var AppConfig = {
     SAVED_FEEDS_KEY: "savedFeeds",
 
+    // CORS proxy
+    CORS_PROXY_URL: "https://proxy.corsfix.com/?",
+
     // Font size constraints
     MIN_FONT_SIZE: 12,
     MAX_FONT_SIZE: 32,
@@ -20,5 +23,5 @@ var AppConfig = {
 
     // Comments configuration
     MAX_TOP_LEVEL_COMMENTS: 100,
-    MAX_REPLIES_PER_COMMENT: 50
+    MAX_REPLIES_PER_COMMENT: 50,
 };
