@@ -9,6 +9,20 @@
     // Initialize application
     function init() {
         try {
+            // Restore persisted display settings
+            var savedFontSize = parseFloat(localStorage.getItem("fontSize"));
+            if (savedFontSize) {
+                AppState.currentFontSize = savedFontSize;
+            }
+            var savedLetterSpacing = parseFloat(localStorage.getItem("letterSpacing"));
+            if (!isNaN(savedLetterSpacing) && localStorage.getItem("letterSpacing") !== null) {
+                AppState.currentLetterSpacing = savedLetterSpacing;
+            }
+            var savedLineHeight = parseFloat(localStorage.getItem("lineHeight"));
+            if (savedLineHeight) {
+                AppState.currentLineHeight = savedLineHeight;
+            }
+
             // Render saved feeds from localStorage
             FeedRenderer.renderSavedFeeds();
 
