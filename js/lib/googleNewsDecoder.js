@@ -16,7 +16,7 @@
  */
 function decodeGoogleNewsUrl(sourceUrl, callback) {
   // CORS proxy to bypass cross-origin restrictions
-  var CORS_PROXY = "https://corsproxy.io/?";
+  var CORS_PROXY = AppConfig.CORS_PROXY_URL;
 
   // Helper function to parse URL
   function parseUrl(url) {

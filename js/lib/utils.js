@@ -97,7 +97,7 @@ function fetchUrl(url, callback) {
     var useProxy = true;
     if (useProxy) {
       // url = "https://cors-anywhere.com/" + url;
-      url = "https://corsproxy.io/?url=" + url
+      url = AppConfig.CORS_PROXY_URL + "url=" + url
     }
     var xhr;
     if (window.XMLHttpRequest) {
