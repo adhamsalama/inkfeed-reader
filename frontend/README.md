@@ -60,6 +60,8 @@ The Kindle browser only supports downloading these file types:
 
 No installation required. Simply open `index.html` in a browser or host the file on any web server.
 
+Note: after using free cors proxies for a while I get an auth error now, so I wrote my own [CORS proxy](https://github.com/adhamsalama/cors-proxy) that I deploy on my phone using Termux.
+
 # Acknowledgments
 
 Many thanks to [MobiWriter](https://github.com/cafaxo/MobiWriter) for implementing an HTML to MOBI conversion program in C++, which Claude Code was able to port to pure JavaScript. I tried to make several AI models implement an HTML to MOBI conversion, but they failed, until I pointed Claude Code to the MobiWriter implementation and asked it to port it to JavaScript, so this wasn't doable without your useful repo.
