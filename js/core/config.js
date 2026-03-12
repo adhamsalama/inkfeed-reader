@@ -3,7 +3,7 @@ var AppConfig = {
     SAVED_FEEDS_KEY: "savedFeeds",
 
     // CORS proxy
-    CORS_PROXY_URL: "https://cors-anywhere.com/",
+    CORS_PROXY_URL: "https://throbbing-morning-e187.adhamsalama.workers.dev?url=",
 
     // Font size constraints
     MIN_FONT_SIZE: 12,
