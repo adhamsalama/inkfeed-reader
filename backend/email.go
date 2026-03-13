@@ -34,12 +34,18 @@ type EmailSender interface {
 	Send(msg EmailMessage) error
 }
 
-// newEmailSender returns the configured EmailSender.
+// newEmailSender returns the configured EmailSender based on EMAIL_PROVIDER env var.
+// Supported values: "brevo" (default), "mailersend".
 func newEmailSender() EmailSender {
-	return &BrevoSender{
-		APIKey:    os.Getenv("EMAIL_API_KEY"),
-		FromEmail: os.Getenv("EMAIL_FROM"),
-		FromName:  os.Getenv("EMAIL_FROM_NAME"),
+	apiKey := os.Getenv("EMAIL_API_KEY")
+	fromEmail := os.Getenv("EMAIL_FROM")
+	fromName := os.Getenv("EMAIL_FROM_NAME")
+
+	switch os.Getenv("EMAIL_PROVIDER") {
+	case "mailersend":
+		return &MailerSendSender{APIKey: apiKey, FromEmail: fromEmail, FromName: fromName}
+	default:
+		return &BrevoSender{APIKey: apiKey, FromEmail: fromEmail, FromName: fromName}
 	}
 }
 
@@ -90,7 +96,8 @@ func (b *BrevoSender) Send(msg EmailMessage) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("api-key", b.APIKey)
+	// req.Header.Set("api-key", b.APIKey)
+	req.Header.Set("Authorization", "Bearer "+b.APIKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
@@ -104,6 +111,71 @@ func (b *BrevoSender) Send(msg EmailMessage) error {
 		var errBody map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&errBody)
 		return fmt.Errorf("brevo API error %d: %v", resp.StatusCode, errBody)
+	}
+	return nil
+}
+
+// MailerSendSender sends emails via the MailerSend transactional API.
+type MailerSendSender struct {
+	APIKey    string
+	FromEmail string
+	FromName  string
+}
+
+func (m *MailerSendSender) Send(msg EmailMessage) error {
+	type contact struct {
+		Email string `json:"email"`
+		Name  string `json:"name,omitempty"`
+	}
+	type attachment struct {
+		Filename string `json:"filename"`
+		Content  string `json:"content"` // base64-encoded
+	}
+	type payload struct {
+		From        contact      `json:"from"`
+		To          []contact    `json:"to"`
+		Subject     string       `json:"subject"`
+		HTML        string       `json:"html"`
+		Attachments []attachment `json:"attachments,omitempty"`
+	}
+
+	p := payload{
+		From:    contact{Email: m.FromEmail, Name: m.FromName},
+		To:      []contact{{Email: msg.To}},
+		Subject: msg.Subject,
+		HTML:    msg.HTMLContent,
+	}
+	for _, a := range msg.Attachments {
+		p.Attachments = append(p.Attachments, attachment{
+			Filename: a.Filename,
+			Content:  base64.StdEncoding.EncodeToString(a.Content),
+		})
+	}
+
+	body, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Errorf("marshal mailersend request: %w", err)
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	req, err := http.NewRequest("POST", "https://api.mailersend.com/v1/email", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+m.APIKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("mailersend request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		var errBody map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&errBody)
+		return fmt.Errorf("mailersend API error %d: %v", resp.StatusCode, errBody)
 	}
 	return nil
 }
@@ -174,7 +246,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		msg.HTMLContent = "."
 		msg.Attachments = []EmailAttachment{{
-			Filename: sanitizeFilename(title) + ".zip",
+			Filename: sanitizeFilename(title) + ".epub",
 			Content:  data,
 			MimeType: "application/epub+zip",
 		}}

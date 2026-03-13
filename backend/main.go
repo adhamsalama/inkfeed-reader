@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -28,6 +30,8 @@ func jsonError(w http.ResponseWriter, message string, code int) {
 }
 
 func main() {
+	godotenv.Load()
+
 	port := flag.String("port", "8080", "port to listen on")
 	flag.Parse()
 
