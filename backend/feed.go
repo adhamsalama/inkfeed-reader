@@ -1,0 +1,149 @@
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/mmcdole/gofeed"
+	gofeedrss "github.com/mmcdole/gofeed/rss"
+)
+
+type Article struct {
+	Index       int    `json:"index"`
+	Title       string `json:"title"`
+	Link        string `json:"link"`
+	Comments    string `json:"comments"`
+	Description string `json:"description"`
+	Content     string `json:"content"`
+	PubDate     string `json:"pubDate"`
+}
+
+type FeedResponse struct {
+	Title    string    `json:"title"`
+	Articles []Article `json:"articles"`
+}
+
+func feedHandler(w http.ResponseWriter, r *http.Request) {
+	url := r.URL.Query().Get("url")
+	if url == "" {
+		jsonError(w, "url parameter required", http.StatusBadRequest)
+		return
+	}
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		jsonError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; RSSReader/1.0)")
+
+	httpResp, err := client.Do(req)
+	if err != nil {
+		jsonError(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer httpResp.Body.Close()
+
+	body, err := io.ReadAll(httpResp.Body)
+	if err != nil {
+		jsonError(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+
+	resp := parseFeed(body)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// parseFeed tries the RSS parser first (to preserve the <comments> field),
+// then falls back to gofeed's unified parser for Atom and other formats.
+func parseFeed(body []byte) FeedResponse {
+	rssParser := &gofeedrss.Parser{}
+	if rssFeed, err := rssParser.Parse(bytes.NewReader(body)); err == nil {
+		return fromRSS(rssFeed)
+	}
+
+	fp := gofeed.NewParser()
+	if feed, err := fp.Parse(bytes.NewReader(body)); err == nil {
+		return fromGofeed(feed)
+	}
+
+	return FeedResponse{}
+}
+
+func fromRSS(feed *gofeedrss.Feed) FeedResponse {
+	resp := FeedResponse{Title: feed.Title}
+	for i, item := range feed.Items {
+		comments := item.Comments
+		if comments == "" && strings.Contains(item.Link, "reddit.com") {
+			comments = item.Link + "/.json"
+		}
+
+		pubDate := ""
+		if item.PubDateParsed != nil {
+			pubDate = item.PubDateParsed.Format(time.RFC1123)
+		} else if item.PubDate != "" {
+			pubDate = item.PubDate
+		}
+
+		// content:encoded lives in the content namespace extension
+		content := ""
+		if contentExt, ok := item.Extensions["content"]; ok {
+			if encoded, ok := contentExt["encoded"]; ok && len(encoded) > 0 {
+				content = encoded[0].Value
+			}
+		}
+
+		resp.Articles = append(resp.Articles, Article{
+			Index:       i,
+			Title:       item.Title,
+			Link:        item.Link,
+			Comments:    comments,
+			Description: item.Description,
+			Content:     content,
+			PubDate:     pubDate,
+		})
+	}
+	return resp
+}
+
+func fromGofeed(feed *gofeed.Feed) FeedResponse {
+	resp := FeedResponse{Title: feed.Title}
+	for i, item := range feed.Items {
+		comments := ""
+		if strings.Contains(item.Link, "reddit.com") {
+			comments = item.Link + "/.json"
+		}
+		// For non-Reddit feeds that put comments in extensions
+		if comments == "" {
+			if extMap, ok := item.Extensions[""]; ok {
+				if vals, ok := extMap["comments"]; ok && len(vals) > 0 {
+					comments = vals[0].Value
+				}
+			}
+		}
+
+		pubDate := ""
+		if item.PublishedParsed != nil {
+			pubDate = item.PublishedParsed.Format(time.RFC1123)
+		} else if item.Published != "" {
+			pubDate = item.Published
+		}
+
+		resp.Articles = append(resp.Articles, Article{
+			Index:       i,
+			Title:       item.Title,
+			Link:        item.Link,
+			Comments:    comments,
+			Description: item.Description,
+			Content:     item.Content,
+			PubDate:     pubDate,
+		})
+	}
+	return resp
+}
