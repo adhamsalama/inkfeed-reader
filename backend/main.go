@@ -49,6 +49,7 @@ func main() {
 	mux.Handle("/epub", protected(epubHandler))
 	mux.Handle("/reddit-post", protected(redditPostHandler))
 	mux.Handle("/decode-google-news", protected(decodeGoogleNewsHandler))
+	mux.Handle("/email", protected(emailHandler))
 
 	addr := ":" + *port
 	log.Printf("Server listening on %s", addr)
