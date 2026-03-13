@@ -183,10 +183,11 @@ func (m *MailerSendSender) Send(msg EmailMessage) error {
 // EmailRequest is the request body for POST /email.
 // Format is "epub" or "mobi" (defaults to "epub").
 type EmailRequest struct {
-	URL    string `json:"url"`
-	To     string `json:"to"`
-	Format string `json:"format"`
-	Author string `json:"author"`
+	URL         string `json:"url"`
+	To          string `json:"to"`
+	Format      string `json:"format"`
+	Author      string `json:"author"`
+	CommentsURL string `json:"commentsUrl"`
 }
 
 func emailHandler(w http.ResponseWriter, r *http.Request) {
@@ -219,7 +220,11 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 		title = "Article"
 	}
 
-	articleHTML := "<html><body><h1>" + html.EscapeString(title) + "</h1>" + article.Content + "</body></html>"
+	links := `<p><a href="` + html.EscapeString(req.URL) + `">Original Article</a></p>`
+	if req.CommentsURL != "" {
+		links += `<p><a href="` + html.EscapeString(req.CommentsURL) + `">Comments</a></p>`
+	}
+	articleHTML := "<html><body><h1>" + html.EscapeString(title) + "</h1>" + links + article.Content + "</body></html>"
 
 	var msg EmailMessage
 	msg.To = req.To
@@ -239,7 +244,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 			MimeType: "application/x-mobipocket-ebook",
 		}}
 	default: // "epub"
-		xhtmlBody := "<h1>" + html.EscapeString(title) + "</h1>" + article.Content
+		xhtmlBody := "<h1>" + html.EscapeString(title) + "</h1>" + links + article.Content
 		data, err := generateEpub(title, req.Author, xhtmlBody)
 		if err != nil {
 			jsonError(w, err.Error(), http.StatusInternalServerError)
