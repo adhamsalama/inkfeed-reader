@@ -37,7 +37,7 @@ type EmailSender interface {
 // newEmailSender returns the configured EmailSender.
 func newEmailSender() EmailSender {
 	return &BrevoSender{
-		APIKey:    os.Getenv("BREVO_API_KEY"),
+		APIKey:    os.Getenv("EMAIL_API_KEY"),
 		FromEmail: os.Getenv("EMAIL_FROM"),
 		FromName:  os.Getenv("EMAIL_FROM_NAME"),
 	}
@@ -109,9 +109,11 @@ func (b *BrevoSender) Send(msg EmailMessage) error {
 }
 
 // EmailRequest is the request body for POST /email.
+// Format is "epub" or "mobi" (defaults to "epub").
 type EmailRequest struct {
-	URL string `json:"url"`
-	To  string `json:"to"`
+	URL    string `json:"url"`
+	To     string `json:"to"`
+	Format string `json:"format"`
 }
 
 func emailHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,6 +131,9 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "url and to fields required", http.StatusBadRequest)
 		return
 	}
+	if req.Format == "" {
+		req.Format = "epub"
+	}
 
 	article, err := fetchReadable(req.URL)
 	if err != nil {
@@ -141,39 +146,38 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 		title = "Article"
 	}
 
-	xhtmlBody := "<h1>" + html.EscapeString(title) + "</h1>" + article.Content
-	epubData, err := generateEpub(title, "", xhtmlBody)
-	if err != nil {
-		jsonError(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	articleHTML := "<html><body><h1>" + html.EscapeString(title) + "</h1>" + article.Content + "</body></html>"
 
-	// Use MOBI as a fallback body so clients without EPUB support still get something
-	mobiHTML := "<html><body><h1>" + html.EscapeString(title) + "</h1>" + article.Content + "</body></html>"
-	_ = mobiHTML
+	var msg EmailMessage
+	msg.To = req.To
+	msg.Subject = title
 
-	msg := EmailMessage{
-		To:          req.To,
-		Subject:     title,
-		HTMLContent: "<p>Your article is attached as an EPUB file.</p><p><strong>" + html.EscapeString(title) + "</strong></p>",
-		Attachments: []EmailAttachment{{
-			Filename: sanitizeFilename(title) + ".epub",
-			Content:  epubData,
-			MimeType: "application/epub+zip",
-		}},
-	}
-
-	// Also attach MOBI for Kindle email delivery
-	mobiData, err := mobi.Write(mobi.Book{
-		Title:   title,
-		Content: "<html><body><h1>" + html.EscapeString(title) + "</h1>" + article.Content + "</body></html>",
-	})
-	if err == nil {
-		msg.Attachments = append(msg.Attachments, EmailAttachment{
+	switch req.Format {
+	case "mobi":
+		data, err := mobi.Write(mobi.Book{Title: title, Content: articleHTML})
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		msg.HTMLContent = "."
+		msg.Attachments = []EmailAttachment{{
 			Filename: sanitizeFilename(title) + ".mobi",
-			Content:  mobiData,
+			Content:  data,
 			MimeType: "application/x-mobipocket-ebook",
-		})
+		}}
+	default: // "epub"
+		xhtmlBody := "<h1>" + html.EscapeString(title) + "</h1>" + article.Content
+		data, err := generateEpub(title, "", xhtmlBody)
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		msg.HTMLContent = "."
+		msg.Attachments = []EmailAttachment{{
+			Filename: sanitizeFilename(title) + ".zip",
+			Content:  data,
+			MimeType: "application/epub+zip",
+		}}
 	}
 
 	sender := newEmailSender()
