@@ -186,6 +186,7 @@ type EmailRequest struct {
 	URL    string `json:"url"`
 	To     string `json:"to"`
 	Format string `json:"format"`
+	Author string `json:"author"`
 }
 
 func emailHandler(w http.ResponseWriter, r *http.Request) {
@@ -226,7 +227,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch req.Format {
 	case "mobi":
-		data, err := mobi.Write(mobi.Book{Title: title, Content: articleHTML})
+		data, err := mobi.Write(mobi.Book{Title: title, Author: req.Author, Content: articleHTML})
 		if err != nil {
 			jsonError(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -239,7 +240,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 		}}
 	default: // "epub"
 		xhtmlBody := "<h1>" + html.EscapeString(title) + "</h1>" + article.Content
-		data, err := generateEpub(title, "", xhtmlBody)
+		data, err := generateEpub(title, req.Author, xhtmlBody)
 		if err != nil {
 			jsonError(w, err.Error(), http.StatusInternalServerError)
 			return
