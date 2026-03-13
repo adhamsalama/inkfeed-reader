@@ -152,9 +152,10 @@ function openEmailInput(format) {
         alert("Article has no link");
         return;
     }
+    var feedTitle = getText(document.getElementById("feed-title")) || "";
     var statusEl = document.getElementById("email-send-status");
     statusEl.textContent = "Sending...";
-    BackendClient.sendEmail(article.link, to, format, function(error) {
+    BackendClient.sendEmail(article.link, to, format, feedTitle, function(error) {
         if (error) {
             statusEl.textContent = "Error: " + error.message;
         } else {
