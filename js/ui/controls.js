@@ -155,7 +155,7 @@ function openEmailInput(format) {
     var feedTitle = getText(document.getElementById("feed-title")) || "";
     var statusEl = document.getElementById("email-send-status");
     statusEl.textContent = "Sending...";
-    BackendClient.sendEmail(article.link, to, format, feedTitle, function(error) {
+    BackendClient.sendEmail(article.link, to, format, feedTitle, article.comments || "", function(error) {
         if (error) {
             statusEl.textContent = "Error: " + error.message;
         } else {

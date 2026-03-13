@@ -38,7 +38,7 @@ var BackendClient = {
         BackendClient._get("/comments?url=" + encodeURIComponent(commentsUrl), callback);
     },
 
-    sendEmail: function(articleUrl, to, format, author, callback) {
+    sendEmail: function(articleUrl, to, format, author, commentsUrl, callback) {
         var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4) {
@@ -56,7 +56,7 @@ var BackendClient = {
         };
         xhr.open("POST", AppConfig.BACKEND_URL + "/email", true);
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify({ url: articleUrl, to: to, format: format, author: author }));
+        xhr.send(JSON.stringify({ url: articleUrl, to: to, format: format, author: author, commentsUrl: commentsUrl || "" }));
     },
 
     fetchRedditPost: function(redditJsonUrl, callback) {
