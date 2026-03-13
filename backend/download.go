@@ -18,10 +18,10 @@ type MobiRequest struct {
 	Author string   `json:"author"`
 }
 
-var unsafeCharsRe = regexp.MustCompile(`[^a-zA-Z0-9]+`)
+var unsafeCharsRe = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
 
 func sanitizeFilename(s string) string {
-	return unsafeCharsRe.ReplaceAllString(s, "_")
+	return strings.TrimSpace(unsafeCharsRe.ReplaceAllString(s, ""))
 }
 
 func mobiHandler(w http.ResponseWriter, r *http.Request) {
