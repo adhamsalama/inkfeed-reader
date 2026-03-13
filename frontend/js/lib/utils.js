@@ -21,8 +21,6 @@ function downloadBlob(blob, filename) {
   return false;
 }
 
-
-
 // Helper: add class to element
 function addClass(el, className) {
   if (!el) return;

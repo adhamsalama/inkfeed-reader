@@ -128,6 +128,8 @@ var ArticleSelectionManager = {
             TextDownloader.downloadSelectedArticles(selectedArticles);
         } else if (downloadType === "mobi") {
             MobiDownloader.downloadSelectedArticles(selectedArticles);
+        } else if (downloadType === "epub") {
+            EpubDownloader.downloadSelectedArticles(selectedArticles);
         }
     }
 };

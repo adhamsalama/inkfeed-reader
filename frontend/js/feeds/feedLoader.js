@@ -30,6 +30,22 @@ function loadFeed() {
         document.getElementById("article-list").innerHTML = "";
         ViewManager.showFeedView();
 
+        if (AppConfig.USE_BACKEND) {
+            BackendClient.fetchFeed(url, function(error, data) {
+                addClass(document.getElementById("feed-loading"), "hidden");
+                if (error) {
+                    ViewManager.showInputView();
+                    ViewManager.showError("input-error", "Error loading feed: " + error.message);
+                    return;
+                }
+                AppState.currentArticles = data.articles;
+                setText(document.getElementById("feed-title"), data.title);
+                document.title = data.title;
+                FeedRenderer.renderArticleList(data.articles);
+            });
+            return;
+        }
+
         fetchUrl(url, function (error, xmlText) {
             if (error) {
                 ViewManager.showInputView();

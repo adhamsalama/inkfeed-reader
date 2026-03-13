@@ -5,6 +5,10 @@ var AppConfig = {
     // CORS proxy
     CORS_PROXY_URL: "https://throbbing-morning-e187.adhamsalama.workers.dev?url=",
 
+    // Backend
+    USE_BACKEND: false,
+    BACKEND_URL: "",
+
     // Font size constraints
     MIN_FONT_SIZE: 12,
     MAX_FONT_SIZE: 32,
@@ -30,5 +34,10 @@ var AppConfig = {
     var saved = localStorage.getItem("corsProxyUrl");
     if (saved) {
         AppConfig.CORS_PROXY_URL = saved;
+    }
+    var backendUrl = localStorage.getItem("backendUrl");
+    if (backendUrl) {
+        AppConfig.BACKEND_URL = backendUrl;
+        AppConfig.USE_BACKEND = localStorage.getItem("backendEnabled") !== "false";
     }
 })();

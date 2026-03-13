@@ -20,6 +20,19 @@ var CommentsViewer = {
             // Show loading indicator
             removeClass(commentsLoading, "hidden");
 
+            if (AppConfig.USE_BACKEND) {
+                BackendClient.fetchComments(article.comments, function(error, data) {
+                    addClass(commentsLoading, "hidden");
+                    if (error) {
+                        commentsContent.innerHTML = '<p class="error">Error fetching comments: ' + escapeHtml(error.message) + "</p>";
+                    } else {
+                        commentsContent.innerHTML = '<div class="comments-body">' + data.html + "</div>";
+                    }
+                    addClass(commentsContent, "visible");
+                });
+                return;
+            }
+
             fetchUrl(article.comments, function (error, responseText) {
                 if (error) {
                     commentsContent.innerHTML =
@@ -172,6 +185,19 @@ var CommentsViewer = {
             removeClass(commentsContent, "visible");
 
             removeClass(commentsLoading, "hidden");
+
+            if (AppConfig.USE_BACKEND) {
+                BackendClient.fetchComments(article.comments, function(error, data) {
+                    addClass(commentsLoading, "hidden");
+                    if (error) {
+                        commentsHtmlContent.innerHTML = "Error fetching comments: " + escapeHtml(error.message);
+                    } else {
+                        commentsHtmlContent.innerHTML = data.html;
+                    }
+                    addClass(commentsHtmlContent, "visible");
+                });
+                return;
+            }
 
             fetchUrl(article.comments, function (error, htmlText) {
                 if (error) {

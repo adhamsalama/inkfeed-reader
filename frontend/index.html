@@ -48,13 +48,8 @@
                     </button>
                 </div>
                 <div class="control-group">
-                    <button class="secondary" onclick="toggleProxyInput()" aria-label="Configure proxy URL">Proxy</button>
+                    <button class="secondary" onclick="openSettings()" aria-label="Settings">Settings</button>
                 </div>
-            </div>
-            <div id="proxy-input-row" class="proxy-input-row hidden">
-                <input type="text" id="proxy-url-input" placeholder="https://proxy.example.com/?" />
-                <button onclick="saveProxyUrl()">Save</button>
-                <button class="secondary" onclick="toggleProxyInput()">Close</button>
             </div>
         </div>
 
@@ -105,7 +100,10 @@
                 <button onclick="fetchFullArticle()">Get Full Article</button>
                 <button onclick="downloadArticle()">Download (text)</button>
                 <button id="download-mobi-btn">Download (MOBI)</button>
+                <button id="email-mobi-btn" style="display: none" onclick="openEmailInput('mobi')">Email (MOBI)</button>
                 <button id="download-epub-btn">Download (EPUB)</button>
+                <button id="email-epub-btn" style="display: none" onclick="openEmailInput('epub')">Email (EPUB)</button>
+                <span id="email-send-status"></span>
                 <button id="view-comments-btn" style="display: none">
                     View Comments
                 </button>
@@ -125,8 +123,43 @@
         </div>
     </div>
 
+    <div id="settings-modal" class="settings-modal hidden">
+        <div class="settings-panel">
+            <div class="settings-header">
+                <strong>Settings</strong>
+                <button class="secondary" onclick="closeSettings()">Close</button>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title">Proxy URL</div>
+                <div class="proxy-input-row">
+                    <input type="text" id="proxy-url-input" placeholder="https://proxy.example.com/?" />
+                    <button onclick="saveProxyUrl()">Save</button>
+                </div>
+            </div>
+            <div class="settings-section" id="settings-backend-section">
+                <div class="settings-section-title">Backend URL</div>
+                <div class="proxy-input-row">
+                    <input type="text" id="backend-url-input" placeholder="http://localhost:8080" />
+                    <button onclick="saveBackendUrl()">Save</button>
+                    <button class="secondary" onclick="clearBackendUrl()">Clear</button>
+                </div>
+                <div style="margin-top: 8px;">
+                    <button id="use-backend-btn" class="secondary" onclick="toggleUseBackend()">Backend: OFF</button>
+                </div>
+            </div>
+            <div class="settings-section" id="settings-email-section">
+                <div class="settings-section-title">Email Address</div>
+                <div class="proxy-input-row">
+                    <input type="text" id="email-to-input" placeholder="recipient@example.com" />
+                    <button onclick="saveEmailAddress()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Existing lib -->
     <script src="./js/lib/utils.js"></script>
+    <script src="./js/backend/backendClient.js"></script>
     <script src="./js/lib/googleNewsDecoder.js"></script>
     <script src="./js/lib/mobiWriter.js"></script>
     <script src="./js/lib/epubWriter.js"></script>

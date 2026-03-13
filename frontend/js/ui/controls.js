@@ -39,16 +39,45 @@ function adjustLineHeight(delta) {
     localStorage.setItem("lineHeight", AppState.currentLineHeight);
 }
 
-function toggleProxyInput() {
-    var row = document.getElementById("proxy-input-row");
-    var input = document.getElementById("proxy-url-input");
-    if (row.classList.contains("hidden")) {
-        input.value = AppConfig.CORS_PROXY_URL;
-        row.classList.remove("hidden");
-        input.focus();
+function updateBackendToggleBtn() {
+    var btn = document.getElementById("use-backend-btn");
+    if (!btn) { return; }
+    if (AppConfig.USE_BACKEND) {
+        btn.textContent = "Backend: ON";
+        btn.className = "";
     } else {
-        row.classList.add("hidden");
+        btn.textContent = "Backend: OFF";
+        btn.className = "secondary";
     }
+}
+
+function toggleUseBackend() {
+    if (!AppConfig.BACKEND_URL) {
+        openSettings("backend");
+        return;
+    }
+    AppConfig.USE_BACKEND = !AppConfig.USE_BACKEND;
+    localStorage.setItem("backendEnabled", AppConfig.USE_BACKEND ? "true" : "false");
+    updateBackendToggleBtn();
+    setEmailButtonVisible(AppConfig.USE_BACKEND);
+}
+
+function openSettings(section) {
+    document.getElementById("proxy-url-input").value = AppConfig.CORS_PROXY_URL;
+    document.getElementById("backend-url-input").value = AppConfig.BACKEND_URL;
+    document.getElementById("email-to-input").value = localStorage.getItem("lastEmailTo") || "";
+    document.getElementById("settings-modal").classList.remove("hidden");
+    if (section) {
+        var sectionEl = document.getElementById("settings-" + section + "-section");
+        if (sectionEl) {
+            var firstInput = sectionEl.getElementsByTagName("input")[0];
+            if (firstInput) { firstInput.focus(); }
+        }
+    }
+}
+
+function closeSettings() {
+    document.getElementById("settings-modal").classList.add("hidden");
 }
 
 function saveProxyUrl() {
@@ -58,5 +87,89 @@ function saveProxyUrl() {
         AppConfig.CORS_PROXY_URL = url;
         localStorage.setItem("corsProxyUrl", url);
     }
-    document.getElementById("proxy-input-row").classList.add("hidden");
+    closeSettings();
 }
+
+function saveBackendUrl() {
+    var input = document.getElementById("backend-url-input");
+    var url = input.value.replace(/^\s+|\s+$/g, "").replace(/\/+$/, "");
+    if (url) {
+        AppConfig.BACKEND_URL = url;
+        AppConfig.USE_BACKEND = true;
+        localStorage.setItem("backendUrl", url);
+        localStorage.setItem("backendEnabled", "true");
+    }
+    closeSettings();
+    updateBackendToggleBtn();
+    setEmailButtonVisible(AppConfig.USE_BACKEND);
+}
+
+function clearBackendUrl() {
+    AppConfig.BACKEND_URL = "";
+    AppConfig.USE_BACKEND = false;
+    localStorage.removeItem("backendUrl");
+    localStorage.removeItem("backendEnabled");
+    document.getElementById("backend-url-input").value = "";
+    closeSettings();
+    updateBackendToggleBtn();
+    setEmailButtonVisible(false);
+}
+
+function saveEmailAddress() {
+    var input = document.getElementById("email-to-input");
+    var email = input.value.replace(/^\s+|\s+$/g, "");
+    if (email) {
+        localStorage.setItem("lastEmailTo", email);
+    }
+    closeSettings();
+}
+
+function setEmailButtonVisible(visible) {
+    var ids = ["email-mobi-btn", "email-epub-btn"];
+    for (var i = 0; i < ids.length; i++) {
+        var btn = document.getElementById(ids[i]);
+        if (btn) {
+            btn.style.display = visible ? "" : "none";
+        }
+    }
+}
+
+var _pendingEmailFormat = "epub";
+
+function openEmailInput(format) {
+    _pendingEmailFormat = format || "epub";
+    var to = localStorage.getItem("lastEmailTo") || "";
+    if (!to) {
+        openSettings("email");
+        return;
+    }
+    if (AppState.currentArticleIndex < 0) {
+        alert("No article selected");
+        return;
+    }
+    var article = AppState.currentArticles[AppState.currentArticleIndex];
+    if (!article.link) {
+        alert("Article has no link");
+        return;
+    }
+    var statusEl = document.getElementById("email-send-status");
+    statusEl.textContent = "Sending...";
+    BackendClient.sendEmail(article.link, to, format, function(error) {
+        if (error) {
+            statusEl.textContent = "Error: " + error.message;
+        } else {
+            statusEl.textContent = "Sent!";
+            setTimeout(function() { statusEl.textContent = ""; }, 3000);
+        }
+    });
+}
+
+function closeEmailInput() {
+    closeSettings();
+}
+
+// Initialize on load.
+(function() {
+    updateBackendToggleBtn();
+    setEmailButtonVisible(AppConfig.USE_BACKEND);
+})();

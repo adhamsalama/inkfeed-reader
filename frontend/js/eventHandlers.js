@@ -20,31 +20,36 @@
 
                 // If there's a comments URL, fetch and include comments
                 if (article.comments) {
-                    fetchUrl(article.comments, function (error, htmlText) {
-                        var commentsHtml = "";
-                        if (!error && htmlText) {
-                            try {
-                                var doc;
-                                if (window.DOMParser) {
-                                    doc = new DOMParser().parseFromString(
-                                        htmlText,
-                                        "text/html"
-                                    );
-                                } else {
-                                    doc = document.createElement("div");
-                                    doc.innerHTML = htmlText;
+                    if (AppConfig.USE_BACKEND) {
+                        // Backend re-fetches the article from its URL directly
+                        MobiDownloader.generateAndDownloadMobi(article, articleHtml, "");
+                    } else {
+                        fetchUrl(article.comments, function (error, htmlText) {
+                            var commentsHtml = "";
+                            if (!error && htmlText) {
+                                try {
+                                    var doc;
+                                    if (window.DOMParser) {
+                                        doc = new DOMParser().parseFromString(
+                                            htmlText,
+                                            "text/html"
+                                        );
+                                    } else {
+                                        doc = document.createElement("div");
+                                        doc.innerHTML = htmlText;
+                                    }
+                                    var reader = new Readability(doc);
+                                    var parsed = reader.parse();
+                                    if (parsed && parsed.content) {
+                                        commentsHtml = parsed.content;
+                                    }
+                                } catch (e) {
+                                    // Ignore parsing errors, just skip comments
                                 }
-                                var reader = new Readability(doc);
-                                var parsed = reader.parse();
-                                if (parsed && parsed.content) {
-                                    commentsHtml = parsed.content;
-                                }
-                            } catch (e) {
-                                // Ignore parsing errors, just skip comments
                             }
-                        }
-                        MobiDownloader.generateAndDownloadMobi(article, articleHtml, commentsHtml);
-                    });
+                            MobiDownloader.generateAndDownloadMobi(article, articleHtml, commentsHtml);
+                        });
+                    }
                 } else {
                     MobiDownloader.generateAndDownloadMobi(article, articleHtml, "");
                 }
@@ -72,6 +77,14 @@
                 var article = AppState.currentArticles[AppState.currentArticleIndex];
                 var contentDiv = document.getElementById("article-content");
                 var articleHtml = contentDiv.innerHTML;
+
+                if (AppConfig.USE_BACKEND) {
+                    var title = article.title || "Article";
+                    var feedTitle = getText(document.getElementById("feed-title")) || "RSS Reader";
+                    var filename = title.replace(/[^a-z0-9]/gi, "_") + ".epub";
+                    BackendClient.downloadEpub(article.link, title, feedTitle, filename);
+                    return;
+                }
 
                 // If there's a comments URL, fetch and include comments
                 if (article.comments) {

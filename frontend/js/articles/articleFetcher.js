@@ -3,6 +3,17 @@
 var ArticleFetcher = {
     // Fetch full article with retry logic
     fetchFullArticleWithRetry: function(url, maxRetries, callback) {
+        if (AppConfig.USE_BACKEND) {
+            BackendClient.fetchArticle(url, function(error, data) {
+                if (error) {
+                    callback(error, null);
+                } else {
+                    callback(null, { title: data.title, content: data.content });
+                }
+            });
+            return;
+        }
+
         var attempts = 0;
 
         function tryFetch() {
@@ -72,6 +83,29 @@ function fetchFullArticle() {
         // Show article content
         addClass(contentDiv, "visible");
         removeClass(loadingEl, "hidden");
+
+        if (AppConfig.USE_BACKEND) {
+            BackendClient.fetchArticle(AppState.currentArticleUrl, function(error, data) {
+                addClass(loadingEl, "hidden");
+                if (error) {
+                    contentDiv.innerHTML += '<p class="error">Error fetching full article: ' + escapeHtml(error.message) + "</p>";
+                    return;
+                }
+                var article = AppState.currentArticles[AppState.currentArticleIndex];
+                var html = "<h2>" + escapeHtml(data.title || article.title) + "</h2>";
+                if (article.pubDate) {
+                    html += '<p class="article-meta">' + escapeHtml(article.pubDate) + "</p>";
+                }
+                html += '<p><a href="' + escapeHtml(AppState.currentArticleUrl) + '" target="_blank">Original Article</a></p>';
+                if (article.comments) {
+                    html += '<p><a href="' + escapeHtml(article.comments) + '" target="_blank">Comments</a></p>';
+                }
+                html += '<hr style="margin: 15px 0; border: none; border-top: 1px solid #000;">';
+                html += '<div class="article-body">' + data.content + "</div>";
+                contentDiv.innerHTML = html;
+            });
+            return;
+        }
 
         fetchUrl(AppState.currentArticleUrl, function (error, htmlText) {
             if (error) {

@@ -96,14 +96,18 @@ var TextDownloader = {
 // Global function for HTML onclick handler (single article download)
 function downloadArticle() {
     try {
-        var contentDiv = document.getElementById("article-content");
-        var text = getText(contentDiv);
         var article = AppState.currentArticles[AppState.currentArticleIndex];
         var filename =
             (article ? article.title : "article").replace(/[^a-z0-9]/gi, "_") +
             ".txt";
 
-        // Try data URI download
+        if (AppConfig.USE_BACKEND && article && article.link) {
+            BackendClient.downloadText(article.link, filename);
+            return;
+        }
+
+        var contentDiv = document.getElementById("article-content");
+        var text = getText(contentDiv);
         var a = document.createElement("a");
         a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
         a.setAttribute("download", filename);

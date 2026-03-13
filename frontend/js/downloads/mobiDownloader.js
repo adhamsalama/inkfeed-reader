@@ -19,6 +19,11 @@ var MobiDownloader = {
         var filename = title.replace(/[^a-z0-9]/gi, "_") + ".mobi";
         var feedTitle = getText(document.getElementById("feed-title")) || "RSS Reader";
 
+        if (AppConfig.USE_BACKEND) {
+            BackendClient.downloadMobi(article.link, title, feedTitle, filename);
+            return;
+        }
+
         var book = new MobiBook(title, feedTitle);
         book.setHtmlContent(htmlContent);
 
@@ -33,12 +38,25 @@ var MobiDownloader = {
     // Download selected articles as MOBI (unified, replaces duplicate "All" version)
     downloadSelectedArticles: function(selectedArticles) {
         try {
+            var feedTitle = getText(document.getElementById("feed-title"));
+            var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_selected_articles.mobi";
+
+            if (AppConfig.USE_BACKEND) {
+                var urls = [];
+                for (var i = 0; i < selectedArticles.length; i++) {
+                    if (selectedArticles[i].link) {
+                        urls.push(selectedArticles[i].link);
+                    }
+                }
+                BackendClient.downloadMobiBulk(urls, feedTitle, feedTitle, filename);
+                return;
+            }
+
             var progressEl = document.getElementById("download-all-progress");
             removeClass(progressEl, "hidden");
             setText(progressEl, "Downloading articles: 0/" + selectedArticles.length);
 
             var allArticlesHtml = [];
-            var feedTitle = getText(document.getElementById("feed-title"));
             var processedCount = 0;
 
             allArticlesHtml.push("<html><body>");
@@ -57,7 +75,6 @@ var MobiDownloader = {
                     var book = new MobiBook(feedTitle, feedTitle);
                     book.setHtmlContent(htmlContent);
                     var writer = new MobiWriter();
-                    var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_selected_articles.mobi";
                     writer.write(book, filename);
 
                     alert("Downloaded " + processedCount + " articles successfully as MOBI!");
