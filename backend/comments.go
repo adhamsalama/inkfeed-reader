@@ -160,7 +160,7 @@ func renderRedditComment(sb *strings.Builder, thing redditThing, depth int, isTo
 		// body_html is HTML-entity-encoded HTML; decode then strip tags for plain text
 		decoded := html.UnescapeString(d.BodyHTML)
 		text := stripHTMLTags(decoded)
-		text = strings.ReplaceAll(text, "\n", "<br>")
+		text = strings.ReplaceAll(text, "\n", "<br/>")
 		fmt.Fprintf(sb, `<div style="margin-bottom:10px;">%s</div>`, text)
 	}
 

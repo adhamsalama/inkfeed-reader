@@ -125,7 +125,20 @@ func buildEpubMultiArticleBody(urls []string, feedTitle string) string {
 	return sb.String()
 }
 
-var imgSrcRe = regexp.MustCompile(`(?i)<img\s[^>]*\bsrc="(https?://[^"]+)"[^>]*>`)
+var (
+	imgSrcRe  = regexp.MustCompile(`(?i)<img\s[^>]*\bsrc="(https?://[^"]+)"[^>]*>`)
+	brRe      = regexp.MustCompile(`(?i)<br(\s[^>]*)?>`)
+	hrRe      = regexp.MustCompile(`(?i)<hr(\s[^>]*)?>`)
+	imgVoidRe = regexp.MustCompile(`(?i)<img(\s[^>]*[^/])>`)
+)
+
+// sanitizeXHTML fixes void HTML elements to be self-closing, as required by XHTML.
+func sanitizeXHTML(s string) string {
+	s = brRe.ReplaceAllString(s, "<br/>")
+	s = hrRe.ReplaceAllString(s, "<hr/>")
+	s = imgVoidRe.ReplaceAllString(s, "<img$1/>")
+	return s
+}
 
 type embeddedImage struct {
 	path      string // relative to OEBPS/, e.g. "images/img0.jpeg"
@@ -203,6 +216,7 @@ func generateEpub(title, author, bodyHTML string) ([]byte, error) {
 	modTime := time.Now().UTC().Format("2006-01-02T15:04:05Z")
 
 	bodyHTML, images := downloadAndEmbedImages(bodyHTML)
+	bodyHTML = sanitizeXHTML(bodyHTML)
 
 	xhtml := `<?xml version="1.0" encoding="UTF-8"?>` +
 		`<!DOCTYPE html>` +

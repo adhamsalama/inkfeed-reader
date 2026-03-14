@@ -54,6 +54,7 @@ func main() {
 	mux.Handle("/reddit-post", protected(redditPostHandler))
 	mux.Handle("/decode-google-news", protected(decodeGoogleNewsHandler))
 	mux.Handle("/email", protected(emailHandler))
+	mux.Handle("/email-file", protected(emailFileHandler))
 
 	addr := ":" + *port
 	log.Printf("Server listening on %s", addr)

@@ -183,11 +183,12 @@ func (m *MailerSendSender) Send(msg EmailMessage) error {
 // EmailRequest is the request body for POST /email.
 // Format is "epub" or "mobi" (defaults to "epub").
 type EmailRequest struct {
-	URL         string `json:"url"`
-	To          string `json:"to"`
-	Format      string `json:"format"`
-	Author      string `json:"author"`
-	CommentsURL string `json:"commentsUrl"`
+	URL         string   `json:"url"`
+	URLs        []string `json:"urls"`
+	To          string   `json:"to"`
+	Format      string   `json:"format"`
+	Author      string   `json:"author"`
+	CommentsURL string   `json:"commentsUrl"`
 }
 
 func emailHandler(w http.ResponseWriter, r *http.Request) {
@@ -201,12 +202,59 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-	if req.URL == "" || req.To == "" {
-		jsonError(w, "url and to fields required", http.StatusBadRequest)
+	if (req.URL == "" && len(req.URLs) == 0) || req.To == "" {
+		jsonError(w, "url or urls and to fields required", http.StatusBadRequest)
 		return
 	}
 	if req.Format == "" {
 		req.Format = "epub"
+	}
+
+	// Bulk email
+	if len(req.URLs) > 0 {
+		title := req.Author
+		if title == "" {
+			title = "Articles"
+		}
+		var msg EmailMessage
+		msg.To = req.To
+		msg.Subject = title
+		switch req.Format {
+		case "mobi":
+			htmlContent := fetchAndCombine(req.URLs, title)
+			data, err := mobi.Write(mobi.Book{Title: title, Author: req.Author, Content: htmlContent})
+			if err != nil {
+				jsonError(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			msg.HTMLContent = "."
+			msg.Attachments = []EmailAttachment{{
+				Filename: sanitizeFilename(title) + ".mobi",
+				Content:  data,
+				MimeType: "application/x-mobipocket-ebook",
+			}}
+		default: // epub
+			xhtmlBody := buildEpubMultiArticleBody(req.URLs, title)
+			data, err := generateEpub(title, req.Author, xhtmlBody)
+			if err != nil {
+				jsonError(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			msg.HTMLContent = "."
+			msg.Attachments = []EmailAttachment{{
+				Filename: sanitizeFilename(title) + ".epub",
+				Content:  data,
+				MimeType: "application/epub+zip",
+			}}
+		}
+		sender := newEmailSender()
+		if err := sender.Send(msg); err != nil {
+			jsonError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]bool{"success": true})
+		return
 	}
 
 	article, err := fetchReadable(req.URL)
@@ -265,6 +313,68 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 			Content:  data,
 			MimeType: "application/epub+zip",
 		}}
+	}
+
+	sender := newEmailSender()
+	if err := sender.Send(msg); err != nil {
+		jsonError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+}
+
+// EmailFileRequest is the request body for POST /email-file.
+// Used when the client has already generated the file and just wants it emailed.
+type EmailFileRequest struct {
+	Content  string `json:"content"`  // base64-encoded file data
+	Filename string `json:"filename"`
+	To       string `json:"to"`
+	Subject  string `json:"subject"`
+	MimeType string `json:"mimeType"`
+}
+
+func emailFileHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		jsonError(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req EmailFileRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if req.Content == "" || req.To == "" || req.Filename == "" {
+		jsonError(w, "content, filename, and to fields required", http.StatusBadRequest)
+		return
+	}
+
+	data, err := base64.StdEncoding.DecodeString(req.Content)
+	if err != nil {
+		jsonError(w, "invalid base64 content", http.StatusBadRequest)
+		return
+	}
+
+	subject := req.Subject
+	if subject == "" {
+		subject = req.Filename
+	}
+	mimeType := req.MimeType
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
+	}
+
+	msg := EmailMessage{
+		To:          req.To,
+		Subject:     subject,
+		HTMLContent: ".",
+		Attachments: []EmailAttachment{{
+			Filename: req.Filename,
+			Content:  data,
+			MimeType: mimeType,
+		}},
 	}
 
 	sender := newEmailSender()
