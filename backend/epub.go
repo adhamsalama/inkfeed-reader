@@ -15,10 +15,11 @@ import (
 )
 
 type EpubRequest struct {
-	URL    string   `json:"url"`
-	URLs   []string `json:"urls"`
-	Title  string   `json:"title"`
-	Author string   `json:"author"`
+	URL         string   `json:"url"`
+	URLs        []string `json:"urls"`
+	Title       string   `json:"title"`
+	Author      string   `json:"author"`
+	CommentsURL string   `json:"commentsUrl"`
 }
 
 func epubHandler(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +46,11 @@ func epubHandler(w http.ResponseWriter, r *http.Request) {
 		if req.Title == "" {
 			req.Title = article.Title
 		}
-		xhtmlBody = "<h1>" + html.EscapeString(req.Title) + "</h1>" + article.Content
+		commentsHTML := fetchCommentsHTML(req.CommentsURL)
+		xhtmlBody = "<h1>" + html.EscapeString(req.Title) + "</h1>" + articleMetaHTML(article) + article.Content
+		if commentsHTML != "" {
+			xhtmlBody += "<hr/><h2>Comments</h2>" + commentsHTML
+		}
 
 	case len(req.URLs) > 0:
 		xhtmlBody = buildEpubMultiArticleBody(req.URLs, req.Title)
@@ -72,6 +77,7 @@ func buildEpubMultiArticleBody(urls []string, feedTitle string) string {
 	type result struct {
 		index   int
 		title   string
+		meta    string
 		content string
 		err     error
 	}
@@ -90,7 +96,7 @@ func buildEpubMultiArticleBody(urls []string, feedTitle string) string {
 			if err != nil {
 				resultCh <- result{index: idx, err: err}
 			} else {
-				resultCh <- result{index: idx, title: article.Title, content: article.Content}
+				resultCh <- result{index: idx, title: article.Title, meta: articleMetaHTML(article), content: article.Content}
 			}
 		}(i, u)
 	}
@@ -111,6 +117,7 @@ func buildEpubMultiArticleBody(urls []string, feedTitle string) string {
 			sb.WriteString("<h2>[Failed to fetch article]</h2><hr/>")
 		} else {
 			sb.WriteString("<h2>" + html.EscapeString(r.title) + "</h2>")
+			sb.WriteString(r.meta)
 			sb.WriteString(r.content)
 			sb.WriteString("<hr/>")
 		}

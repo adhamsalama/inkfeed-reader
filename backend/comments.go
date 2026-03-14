@@ -44,6 +44,26 @@ const (
 	maxRepliesPerComment = 50
 )
 
+// fetchCommentsHTML fetches and returns rendered comment HTML for the given URL.
+// Returns empty string on error so callers can treat it as optional.
+func fetchCommentsHTML(rawURL string) string {
+	if rawURL == "" {
+		return ""
+	}
+	if strings.Contains(rawURL, ".json") {
+		html, err := fetchRedditComments(rawURL)
+		if err != nil {
+			return ""
+		}
+		return html
+	}
+	article, err := fetchReadable(rawURL)
+	if err != nil {
+		return ""
+	}
+	return article.Content
+}
+
 func commentsHandler(w http.ResponseWriter, r *http.Request) {
 	rawURL := r.URL.Query().Get("url")
 	if rawURL == "" {

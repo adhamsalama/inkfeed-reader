@@ -2,8 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"html"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	readability "github.com/go-shiori/go-readability"
@@ -53,6 +56,42 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 		Content: article.Content,
 		Byline:  article.Byline,
 	})
+}
+
+// articleMetaHTML returns an HTML snippet with article metadata.
+func articleMetaHTML(article readability.Article) string {
+	var sb strings.Builder
+
+	// "author @ sitename" line
+	byline := strings.TrimSpace(article.Byline)
+	siteName := strings.TrimSpace(article.SiteName)
+	if byline != "" && siteName != "" {
+		sb.WriteString(`<p><em>` + html.EscapeString(byline) + ` @ ` + html.EscapeString(siteName) + `</em></p>`)
+	} else if byline != "" {
+		sb.WriteString(`<p><em>` + html.EscapeString(byline) + `</em></p>`)
+	} else if siteName != "" {
+		sb.WriteString(`<p><em>` + html.EscapeString(siteName) + `</em></p>`)
+	}
+
+	// reading time (avg 200 wpm)
+	wordCount := len(strings.Fields(article.TextContent))
+	if wordCount > 0 {
+		minutes := wordCount / 200
+		if minutes < 1 {
+			minutes = 1
+		}
+		sb.WriteString(`<p><em>` + fmt.Sprintf("%d min read", minutes) + `</em></p>`)
+	}
+
+	// published date
+	if article.PublishedTime != nil {
+		sb.WriteString(`<p><em>Published:` + article.PublishedTime.Format("2 January 2006") + `</em></p>`)
+	}
+
+	if sb.Len() > 0 {
+		sb.WriteString("<hr/>")
+	}
+	return sb.String()
 }
 
 // fetchReadable fetches a URL and runs Mozilla Readability on the response.

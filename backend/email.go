@@ -224,7 +224,13 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 	if req.CommentsURL != "" {
 		links += `<p><a href="` + html.EscapeString(req.CommentsURL) + `">Comments</a></p>`
 	}
-	articleHTML := "<html><body><h1>" + html.EscapeString(title) + "</h1>" + links + article.Content + "</body></html>"
+	commentsHTML := fetchCommentsHTML(req.CommentsURL)
+	meta := articleMetaHTML(article)
+	articleHTML := "<html><body><h1>" + html.EscapeString(title) + "</h1>" + links + meta + article.Content
+	if commentsHTML != "" {
+		articleHTML += "<hr/><h2>Comments</h2>" + commentsHTML
+	}
+	articleHTML += "</body></html>"
 
 	var msg EmailMessage
 	msg.To = req.To
@@ -244,7 +250,10 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 			MimeType: "application/x-mobipocket-ebook",
 		}}
 	default: // "epub"
-		xhtmlBody := "<h1>" + html.EscapeString(title) + "</h1>" + links + article.Content
+		xhtmlBody := "<h1>" + html.EscapeString(title) + "</h1>" + links + meta + article.Content
+		if commentsHTML != "" {
+			xhtmlBody += "<hr/><h2>Comments</h2>" + commentsHTML
+		}
 		data, err := generateEpub(title, req.Author, xhtmlBody)
 		if err != nil {
 			jsonError(w, err.Error(), http.StatusInternalServerError)

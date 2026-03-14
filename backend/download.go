@@ -12,10 +12,11 @@ import (
 )
 
 type MobiRequest struct {
-	URL    string   `json:"url"`  // single article
-	URLs   []string `json:"urls"` // multiple articles
-	Title  string   `json:"title"`
-	Author string   `json:"author"`
+	URL         string   `json:"url"`         // single article
+	URLs        []string `json:"urls"`        // multiple articles
+	Title       string   `json:"title"`
+	Author      string   `json:"author"`
+	CommentsURL string   `json:"commentsUrl"` // optional comments page URL
 }
 
 var unsafeCharsRe = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
@@ -48,7 +49,12 @@ func mobiHandler(w http.ResponseWriter, r *http.Request) {
 		if req.Title == "" {
 			req.Title = article.Title
 		}
-		htmlContent = "<html><body><h1>" + html.EscapeString(req.Title) + "</h1>" + article.Content + "</body></html>"
+		commentsHTML := fetchCommentsHTML(req.CommentsURL)
+		htmlContent = "<html><body><h1>" + html.EscapeString(req.Title) + "</h1>" + articleMetaHTML(article) + article.Content
+		if commentsHTML != "" {
+			htmlContent += "<hr/><h2>Comments</h2>" + commentsHTML
+		}
+		htmlContent += "</body></html>"
 
 	case len(req.URLs) > 0:
 		htmlContent = fetchAndCombine(req.URLs, req.Title)
@@ -80,6 +86,7 @@ func fetchAndCombine(urls []string, feedTitle string) string {
 	type result struct {
 		index   int
 		title   string
+		meta    string
 		content string
 		err     error
 	}
@@ -99,7 +106,7 @@ func fetchAndCombine(urls []string, feedTitle string) string {
 				results[idx] = result{index: idx, err: err}
 				return
 			}
-			results[idx] = result{index: idx, title: article.Title, content: article.Content}
+			results[idx] = result{index: idx, title: article.Title, meta: articleMetaHTML(article), content: article.Content}
 		}(i, u)
 	}
 	wg.Wait()
@@ -112,6 +119,7 @@ func fetchAndCombine(urls []string, feedTitle string) string {
 			sb.WriteString("<h2>[Failed to fetch article]</h2><hr/>")
 		} else {
 			sb.WriteString("<h2>" + html.EscapeString(r.title) + "</h2>")
+			sb.WriteString(r.meta)
 			sb.WriteString(r.content)
 			sb.WriteString("<hr/>")
 		}
