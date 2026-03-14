@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -115,9 +117,82 @@ func buildEpubMultiArticleBody(urls []string, feedTitle string) string {
 	return sb.String()
 }
 
+var imgSrcRe = regexp.MustCompile(`(?i)<img\s[^>]*\bsrc="(https?://[^"]+)"[^>]*>`)
+
+type embeddedImage struct {
+	path      string // relative to OEBPS/, e.g. "images/img0.jpeg"
+	mediaType string
+	data      []byte
+}
+
+func downloadAndEmbedImages(bodyHTML string) (string, []embeddedImage) {
+	urlToIdx := map[string]int{}
+	var images []embeddedImage
+
+	result := imgSrcRe.ReplaceAllStringFunc(bodyHTML, func(match string) string {
+		sub := imgSrcRe.FindStringSubmatch(match)
+		if len(sub) < 2 {
+			return match
+		}
+		srcURL := sub[1]
+
+		if idx, ok := urlToIdx[srcURL]; ok {
+			return strings.Replace(match, srcURL, images[idx].path, 1)
+		}
+
+		resp, err := http.Get(srcURL)
+		if err != nil {
+			return match
+		}
+		defer resp.Body.Close()
+
+		data, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return match
+		}
+
+		ct := resp.Header.Get("Content-Type")
+		if ct == "" {
+			ct = http.DetectContentType(data)
+		}
+		if i := strings.Index(ct, ";"); i >= 0 {
+			ct = strings.TrimSpace(ct[:i])
+		}
+
+		ext := imgMediaTypeExt(ct)
+		imgPath := fmt.Sprintf("images/img%d%s", len(images), ext)
+
+		urlToIdx[srcURL] = len(images)
+		images = append(images, embeddedImage{path: imgPath, mediaType: ct, data: data})
+
+		return strings.Replace(match, srcURL, imgPath, 1)
+	})
+
+	return result, images
+}
+
+func imgMediaTypeExt(ct string) string {
+	switch ct {
+	case "image/jpeg":
+		return ".jpeg"
+	case "image/png":
+		return ".png"
+	case "image/gif":
+		return ".gif"
+	case "image/webp":
+		return ".webp"
+	case "image/svg+xml":
+		return ".svg"
+	default:
+		return ".img"
+	}
+}
+
 func generateEpub(title, author, bodyHTML string) ([]byte, error) {
 	uid := fmt.Sprintf("%x", time.Now().UnixNano())
 	modTime := time.Now().UTC().Format("2006-01-02T15:04:05Z")
+
+	bodyHTML, images := downloadAndEmbedImages(bodyHTML)
 
 	xhtml := `<?xml version="1.0" encoding="UTF-8"?>` +
 		`<!DOCTYPE html>` +
@@ -126,6 +201,12 @@ func generateEpub(title, author, bodyHTML string) ([]byte, error) {
 		`</title></head><body>` +
 		bodyHTML +
 		`</body></html>`
+
+	var manifestItems strings.Builder
+	manifestItems.WriteString(`<item id="content" href="content.xhtml" media-type="application/xhtml+xml"/>`)
+	for i, img := range images {
+		manifestItems.WriteString(fmt.Sprintf(`<item id="img%d" href="%s" media-type="%s"/>`, i, img.path, img.mediaType))
+	}
 
 	opf := `<?xml version="1.0" encoding="UTF-8"?>` +
 		`<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0">` +
@@ -136,7 +217,7 @@ func generateEpub(title, author, bodyHTML string) ([]byte, error) {
 		`<dc:identifier id="BookId">urn:uuid:` + uid + `</dc:identifier>` +
 		`<meta property="dcterms:modified">` + modTime + `</meta>` +
 		`</metadata>` +
-		`<manifest><item id="content" href="content.xhtml" media-type="application/xhtml+xml"/></manifest>` +
+		`<manifest>` + manifestItems.String() + `</manifest>` +
 		`<spine><itemref idref="content"/></spine>` +
 		`</package>`
 
@@ -175,6 +256,16 @@ func generateEpub(title, author, bodyHTML string) ([]byte, error) {
 	}
 	if err := addFile("OEBPS/content.xhtml", xhtml); err != nil {
 		return nil, err
+	}
+
+	for _, img := range images {
+		f, err := zw.Create("OEBPS/" + img.path)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := f.Write(img.data); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := zw.Close(); err != nil {
