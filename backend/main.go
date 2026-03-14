@@ -41,7 +41,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	protected := func(h http.HandlerFunc) http.Handler {
-		return corsMiddleware(authMiddleware(http.HandlerFunc(h)))
+		return corsMiddleware(authMiddleware(rateLimitMiddleware(http.HandlerFunc(h))))
 	}
 
 	mux.Handle("/login", corsMiddleware(http.HandlerFunc(loginHandler)))
