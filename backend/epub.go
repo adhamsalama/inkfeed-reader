@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -137,17 +138,19 @@ func downloadAndEmbedImages(bodyHTML string) (string, []embeddedImage) {
 		srcURL := sub[1]
 
 		if idx, ok := urlToIdx[srcURL]; ok {
-			return strings.Replace(match, srcURL, images[idx].path, 1)
+			return strings.Replace(match, `src="`+srcURL+`"`, `src="`+images[idx].path+`"`, 1)
 		}
 
 		resp, err := http.Get(srcURL)
 		if err != nil {
+			log.Printf("epub: failed to download image %s: %v", srcURL, err)
 			return match
 		}
 		defer resp.Body.Close()
 
 		data, err := io.ReadAll(resp.Body)
 		if err != nil {
+			log.Printf("epub: failed to read image %s: %v", srcURL, err)
 			return match
 		}
 
@@ -165,7 +168,7 @@ func downloadAndEmbedImages(bodyHTML string) (string, []embeddedImage) {
 		urlToIdx[srcURL] = len(images)
 		images = append(images, embeddedImage{path: imgPath, mediaType: ct, data: data})
 
-		return strings.Replace(match, srcURL, imgPath, 1)
+		return strings.Replace(match, `src="`+srcURL+`"`, `src="`+imgPath+`"`, 1)
 	})
 
 	return result, images
