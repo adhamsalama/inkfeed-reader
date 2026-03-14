@@ -35,6 +35,88 @@ var MobiDownloader = {
         }
     },
 
+    emailSelectedArticles: function(selectedArticles, to, callback) {
+        try {
+            var feedTitle = getText(document.getElementById("feed-title")) || "Articles";
+            var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_articles.mobi";
+            var progressEl = document.getElementById("download-all-progress");
+            removeClass(progressEl, "hidden");
+            setText(progressEl, "Preparing articles for email: 0/" + selectedArticles.length);
+
+            if (AppConfig.USE_BACKEND) {
+                var urls = [];
+                for (var i = 0; i < selectedArticles.length; i++) {
+                    if (selectedArticles[i].link) { urls.push(selectedArticles[i].link); }
+                }
+                addClass(progressEl, "hidden");
+                BackendClient.emailBulk(urls, to, "mobi", feedTitle, callback);
+                return;
+            }
+
+            var allArticlesHtml = [];
+            var processedCount = 0;
+
+            allArticlesHtml.push("<html><body>");
+            allArticlesHtml.push("<h1>" + escapeHtml(feedTitle) + "</h1>");
+            allArticlesHtml.push("<hr/>");
+
+            function processNextArticle(index) {
+                if (index >= selectedArticles.length) {
+                    addClass(progressEl, "hidden");
+                    var htmlContent = allArticlesHtml.join("\n") + "</body></html>";
+                    var book = new MobiBook(feedTitle, feedTitle);
+                    book.setHtmlContent(htmlContent);
+                    var writer = new MobiWriter();
+                    var result = writer.write(book, filename, true);
+                    if (!result.success) {
+                        callback(new Error(result.error || "MOBI generation failed"));
+                        return;
+                    }
+                    var binaryString = "";
+                    for (var i = 0; i < result.data.length; i++) {
+                        binaryString += String.fromCharCode(result.data[i]);
+                    }
+                    var base64 = btoa(binaryString);
+                    BackendClient.emailFile(base64, filename, to, feedTitle, "application/x-mobipocket-ebook", callback);
+                    return;
+                }
+
+                var article = selectedArticles[index];
+                setText(progressEl, "Preparing articles for email: " + (index + 1) + "/" + selectedArticles.length + " - " + article.title);
+
+                if (!article.link) {
+                    allArticlesHtml.push("<h2>" + escapeHtml(article.title) + "</h2>");
+                    if (article.pubDate) { allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>"); }
+                    allArticlesHtml.push(article.content || article.description || "");
+                    allArticlesHtml.push("<hr/>");
+                    processedCount++;
+                    processNextArticle(index + 1);
+                    return;
+                }
+
+                ArticleFetcher.fetchFullArticleWithRetry(article.link, AppConfig.MAX_FETCH_RETRIES, function(error, extractedArticle) {
+                    allArticlesHtml.push("<h2>" + escapeHtml(article.title) + "</h2>");
+                    if (article.pubDate) { allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>"); }
+                    allArticlesHtml.push("<p><a href=\"" + escapeHtml(article.link) + "\">Original Article</a></p>");
+                    if (error) {
+                        allArticlesHtml.push("<p><strong>[Failed to fetch full article]</strong></p>");
+                        allArticlesHtml.push(article.content || article.description || "");
+                    } else {
+                        allArticlesHtml.push(extractedArticle.content);
+                        processedCount++;
+                    }
+                    allArticlesHtml.push("<hr/>");
+                    processNextArticle(index + 1);
+                });
+            }
+
+            processNextArticle(0);
+        } catch (e) {
+            addClass(document.getElementById("download-all-progress"), "hidden");
+            callback(new Error("Email MOBI error: " + e.message));
+        }
+    },
+
     // Download selected articles as MOBI (unified, replaces duplicate "All" version)
     downloadSelectedArticles: function(selectedArticles) {
         try {

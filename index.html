@@ -79,9 +79,13 @@
             <div class="nav-buttons" id="normal-nav-buttons" style="display: flex;">
                 <button onclick="startArticleSelection('text')">Download All (text)</button>
                 <button onclick="startArticleSelection('mobi')">Download All (MOBI)</button>
+                <button onclick="startArticleSelection('epub')">Download All (EPUB)</button>
+                <button id="email-all-mobi-btn" style="display: none" onclick="startArticleSelection('email-mobi')">Email All (MOBI)</button>
+                <button id="email-all-epub-btn" style="display: none" onclick="startArticleSelection('email-epub')">Email All (EPUB)</button>
+                <span id="email-all-status"></span>
             </div>
             <div class="nav-buttons" id="selection-nav-buttons" style="display: none;">
-                <button onclick="downloadSelectedArticles()" class="primary">Download Selected</button>
+                <button id="selection-action-btn" onclick="downloadSelectedArticles()" class="primary">Download Selected</button>
                 <button onclick="cancelArticleSelection()" class="secondary">Cancel</button>
                 <span style="margin-left: 15px; font-weight: bold;">Selected: <span id="selection-count">0</span>
                     articles</span>

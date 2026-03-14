@@ -9,6 +9,14 @@ var ArticleSelectionManager = {
                 return;
             }
 
+            if (downloadType === "email-mobi" || downloadType === "email-epub") {
+                var to = localStorage.getItem("lastEmailTo") || "";
+                if (!to) {
+                    openSettings("email");
+                    return;
+                }
+            }
+
             // Initialize selection state
             ArticleSelectionState.downloadType = downloadType;
             ArticleSelectionState.selectedIndices = new Set();
@@ -17,6 +25,13 @@ var ArticleSelectionManager = {
             // Show selection buttons, hide normal buttons
             document.getElementById("normal-nav-buttons").style.display = "none";
             document.getElementById("selection-nav-buttons").style.display = "flex";
+
+            var actionBtn = document.getElementById("selection-action-btn");
+            if (downloadType === "email-mobi" || downloadType === "email-epub") {
+                if (actionBtn) { actionBtn.textContent = "Email Selected"; }
+            } else {
+                if (actionBtn) { actionBtn.textContent = "Download Selected"; }
+            }
 
             // Add selection buttons to each article
             var articleList = document.getElementById("article-list");
@@ -130,6 +145,26 @@ var ArticleSelectionManager = {
             MobiDownloader.downloadSelectedArticles(selectedArticles);
         } else if (downloadType === "epub") {
             EpubDownloader.downloadSelectedArticles(selectedArticles);
+        } else if (downloadType === "email-mobi") {
+            var emailTo = localStorage.getItem("lastEmailTo") || "";
+            var statusEl = document.getElementById("email-all-status");
+            if (statusEl) { statusEl.textContent = "Sending..."; }
+            MobiDownloader.emailSelectedArticles(selectedArticles, emailTo, function(error) {
+                if (statusEl) {
+                    statusEl.textContent = error ? "Error: " + error.message : "Sent!";
+                    if (!error) { setTimeout(function() { statusEl.textContent = ""; }, 3000); }
+                }
+            });
+        } else if (downloadType === "email-epub") {
+            var emailToEpub = localStorage.getItem("lastEmailTo") || "";
+            var statusElEpub = document.getElementById("email-all-status");
+            if (statusElEpub) { statusElEpub.textContent = "Sending..."; }
+            EpubDownloader.emailSelectedArticles(selectedArticles, emailToEpub, function(error) {
+                if (statusElEpub) {
+                    statusElEpub.textContent = error ? "Error: " + error.message : "Sent!";
+                    if (!error) { setTimeout(function() { statusElEpub.textContent = ""; }, 3000); }
+                }
+            });
         }
     }
 };
