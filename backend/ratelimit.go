@@ -36,9 +36,12 @@ func init() {
 
 func rateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			ip = r.RemoteAddr
+		ip := r.Header.Get("True-Client-IP")
+		if ip == "" {
+			ip, _, _ = net.SplitHostPort(r.RemoteAddr)
+			if ip == "" {
+				ip = r.RemoteAddr
+			}
 		}
 
 		rateLimitMu.Lock()
