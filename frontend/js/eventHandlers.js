@@ -82,7 +82,7 @@
                     var title = article.title || "Article";
                     var feedTitle = getText(document.getElementById("feed-title")) || "RSS Reader";
                     var filename = title.replace(/[^a-z0-9]/gi, "_") + ".epub";
-                    BackendClient.downloadEpub(article.link, title, feedTitle, filename);
+                    BackendClient.downloadEpub(article.link, title, feedTitle, article.comments || "", filename);
                     return;
                 }
 

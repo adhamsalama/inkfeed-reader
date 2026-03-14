@@ -85,8 +85,8 @@ var BackendClient = {
     },
 
     // Download a single article as MOBI. The backend fetches and extracts the article.
-    downloadMobi: function(articleUrl, title, author, filename) {
-        BackendClient._downloadMobiPost({ url: articleUrl, title: title, author: author }, filename);
+    downloadMobi: function(articleUrl, title, author, commentsUrl, filename) {
+        BackendClient._downloadMobiPost({ url: articleUrl, title: title, author: author, commentsUrl: commentsUrl || "" }, filename);
     },
 
     // Download multiple articles as a single MOBI. The backend fetches all URLs.
@@ -95,8 +95,8 @@ var BackendClient = {
     },
 
     // Download a single article as EPUB. The backend fetches and extracts the article.
-    downloadEpub: function(articleUrl, title, author, filename) {
-        BackendClient._downloadEpubPost({ url: articleUrl, title: title, author: author }, filename);
+    downloadEpub: function(articleUrl, title, author, commentsUrl, filename) {
+        BackendClient._downloadEpubPost({ url: articleUrl, title: title, author: author, commentsUrl: commentsUrl || "" }, filename);
     },
 
     // Download multiple articles as a single EPUB. The backend fetches all URLs.

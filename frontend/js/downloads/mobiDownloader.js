@@ -20,7 +20,7 @@ var MobiDownloader = {
         var feedTitle = getText(document.getElementById("feed-title")) || "RSS Reader";
 
         if (AppConfig.USE_BACKEND) {
-            BackendClient.downloadMobi(article.link, title, feedTitle, filename);
+            BackendClient.downloadMobi(article.link, title, feedTitle, article.comments || "", filename);
             return;
         }
 
