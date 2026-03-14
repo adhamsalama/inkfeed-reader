@@ -111,12 +111,24 @@ func buildEpubMultiArticleBody(urls []string, feedTitle string) string {
 	<-done
 
 	var sb strings.Builder
-	sb.WriteString("<h1>" + html.EscapeString(feedTitle) + "</h1><hr/>")
-	for _, r := range results {
+	sb.WriteString("<h1>" + html.EscapeString(feedTitle) + "</h1>")
+
+	// Table of contents
+	sb.WriteString("<h2>Contents</h2><ol>")
+	for i, r := range results {
 		if r.err != nil {
-			sb.WriteString("<h2>[Failed to fetch article]</h2><hr/>")
+			sb.WriteString(fmt.Sprintf(`<li><a href="#article-%d">[Failed to fetch article]</a></li>`, i))
 		} else {
-			sb.WriteString("<h2>" + html.EscapeString(r.title) + "</h2>")
+			sb.WriteString(fmt.Sprintf(`<li><a href="#article-%d">%s</a></li>`, i, html.EscapeString(r.title)))
+		}
+	}
+	sb.WriteString("</ol><hr/>")
+
+	for i, r := range results {
+		if r.err != nil {
+			sb.WriteString(fmt.Sprintf(`<h2 id="article-%d">[Failed to fetch article]</h2><hr/>`, i))
+		} else {
+			sb.WriteString(fmt.Sprintf(`<h2 id="article-%d">%s</h2>`, i, html.EscapeString(r.title)))
 			sb.WriteString(r.meta)
 			sb.WriteString(r.content)
 			sb.WriteString("<hr/>")
