@@ -658,7 +658,7 @@
     this.textRecords_ = [];
   }
 
-  MobiWriter.prototype.write = function(mobiBook, filename) {
+  MobiWriter.prototype.write = function(mobiBook, filename, skipDownload) {
     this.textRecords_ = [];
 
     // Convert HTML content to UTF-8 bytes and chunk into 4096-byte records
@@ -754,7 +754,9 @@
     }
 
     // Trigger download in browser
-    this._downloadFile(allData, filename);
+    if (!skipDownload) {
+      this._downloadFile(allData, filename);
+    }
 
     return { success: true, data: allData };
   };

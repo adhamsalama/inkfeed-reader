@@ -125,7 +125,7 @@ function saveEmailAddress() {
 }
 
 function setEmailButtonVisible(visible) {
-    var ids = ["email-mobi-btn", "email-epub-btn"];
+    var ids = ["email-mobi-btn", "email-epub-btn", "email-all-mobi-btn", "email-all-epub-btn"];
     for (var i = 0; i < ids.length; i++) {
         var btn = document.getElementById(ids[i]);
         if (btn) {

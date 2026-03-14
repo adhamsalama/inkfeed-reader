@@ -114,6 +114,30 @@
     }
   };
 
+  EpubWriter.prototype.generateAndGetBlob = function(article, articleHtml, commentsHtml, callback) {
+    var title = article.title || "Article";
+    var filename = title.replace(/[^a-z0-9]/gi, "_") + ".epub";
+
+    var xhtmlContent = buildXhtmlContent(title, articleHtml, commentsHtml);
+    var opfContent = buildOpfContent(title);
+    var containerXml = getContainerXml();
+
+    try {
+      var zip = new JSZip();
+      zip.file("mimetype", "application/epub+zip", {compression: "STORE"});
+      zip.file("META-INF/container.xml", containerXml);
+      zip.file("OEBPS/content.opf", opfContent);
+      zip.file("OEBPS/content.xhtml", xhtmlContent);
+
+      zip.generateAsync({type: "blob", mimeType: "application/epub+zip"}).then(
+        function(blob) { callback(null, blob, filename); },
+        function(err) { callback(err, null, null); }
+      );
+    } catch (e) {
+      callback(e, null, null);
+    }
+  };
+
   // ============================================================
   // Export to global scope
   // ============================================================

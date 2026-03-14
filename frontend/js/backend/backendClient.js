@@ -59,6 +59,48 @@ var BackendClient = {
         xhr.send(JSON.stringify({ url: articleUrl, to: to, format: format, author: author, commentsUrl: commentsUrl || "" }));
     },
 
+    emailBulk: function(articleUrls, to, format, author, callback) {
+        var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    callback(null);
+                } else {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        callback(new Error(data.error || "Send failed"));
+                    } catch (e) {
+                        callback(new Error("Backend error: " + xhr.status));
+                    }
+                }
+            }
+        };
+        xhr.open("POST", AppConfig.BACKEND_URL + "/email", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify({ urls: articleUrls, to: to, format: format, author: author }));
+    },
+
+    emailFile: function(base64Content, filename, to, subject, mimeType, callback) {
+        var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    callback(null);
+                } else {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        callback(new Error(data.error || "Send failed"));
+                    } catch (e) {
+                        callback(new Error("Backend error: " + xhr.status));
+                    }
+                }
+            }
+        };
+        xhr.open("POST", AppConfig.BACKEND_URL + "/email-file", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify({ content: base64Content, filename: filename, to: to, subject: subject, mimeType: mimeType }));
+    },
+
     fetchRedditPost: function(redditJsonUrl, callback) {
         BackendClient._get("/reddit-post?url=" + encodeURIComponent(redditJsonUrl), callback);
     },

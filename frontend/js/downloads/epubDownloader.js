@@ -6,6 +6,84 @@ var EpubDownloader = {
         writer.generate(article, articleHtml, commentsHtml);
     },
 
+    emailSelectedArticles: function(selectedArticles, to, callback) {
+        try {
+            var feedTitle = getText(document.getElementById("feed-title")) || "Articles";
+            var filename = feedTitle.replace(/[^a-z0-9]/gi, "_") + "_articles.epub";
+            var progressEl = document.getElementById("download-all-progress");
+            removeClass(progressEl, "hidden");
+            setText(progressEl, "Preparing articles for email: 0/" + selectedArticles.length);
+
+            if (AppConfig.USE_BACKEND) {
+                var urls = [];
+                for (var i = 0; i < selectedArticles.length; i++) {
+                    if (selectedArticles[i].link) { urls.push(selectedArticles[i].link); }
+                }
+                addClass(progressEl, "hidden");
+                BackendClient.emailBulk(urls, to, "epub", feedTitle, callback);
+                return;
+            }
+
+            var allArticlesHtml = [];
+            var processedCount = 0;
+
+            allArticlesHtml.push("<h1>" + escapeHtml(feedTitle) + "</h1>");
+            allArticlesHtml.push("<hr/>");
+
+            function processNextArticle(index) {
+                if (index >= selectedArticles.length) {
+                    addClass(progressEl, "hidden");
+                    var fakeArticle = { title: feedTitle };
+                    var writer = new EpubWriter();
+                    writer.generateAndGetBlob(fakeArticle, allArticlesHtml.join("\n"), "", function(err, blob, blobFilename) {
+                        if (err) { callback(new Error("EPUB generation failed: " + err.message)); return; }
+                        var reader = new FileReader();
+                        reader.onload = function(e) {
+                            var base64 = e.target.result.split(",")[1];
+                            BackendClient.emailFile(base64, filename, to, feedTitle, "application/epub+zip", callback);
+                        };
+                        reader.onerror = function() { callback(new Error("Failed to read EPUB blob")); };
+                        reader.readAsDataURL(blob);
+                    });
+                    return;
+                }
+
+                var article = selectedArticles[index];
+                setText(progressEl, "Preparing articles for email: " + (index + 1) + "/" + selectedArticles.length + " - " + article.title);
+
+                if (!article.link) {
+                    allArticlesHtml.push("<h2>" + escapeHtml(article.title) + "</h2>");
+                    if (article.pubDate) { allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>"); }
+                    allArticlesHtml.push(article.content || article.description || "");
+                    allArticlesHtml.push("<hr/>");
+                    processedCount++;
+                    processNextArticle(index + 1);
+                    return;
+                }
+
+                ArticleFetcher.fetchFullArticleWithRetry(article.link, AppConfig.MAX_FETCH_RETRIES, function(error, extractedArticle) {
+                    allArticlesHtml.push("<h2>" + escapeHtml(article.title) + "</h2>");
+                    if (article.pubDate) { allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>"); }
+                    allArticlesHtml.push("<p><a href=\"" + escapeHtml(article.link) + "\">Original Article</a></p>");
+                    if (error) {
+                        allArticlesHtml.push("<p><strong>[Failed to fetch full article]</strong></p>");
+                        allArticlesHtml.push(article.content || article.description || "");
+                    } else {
+                        allArticlesHtml.push(extractedArticle.content);
+                        processedCount++;
+                    }
+                    allArticlesHtml.push("<hr/>");
+                    processNextArticle(index + 1);
+                });
+            }
+
+            processNextArticle(0);
+        } catch (e) {
+            addClass(document.getElementById("download-all-progress"), "hidden");
+            callback(new Error("Email EPUB error: " + e.message));
+        }
+    },
+
     downloadSelectedArticles: function(selectedArticles) {
         try {
             var feedTitle = getText(document.getElementById("feed-title"));
