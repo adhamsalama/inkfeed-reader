@@ -6,10 +6,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/jpeg"
+	_ "image/png"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -158,6 +165,45 @@ type embeddedImage struct {
 	data      []byte
 }
 
+// imageQuality returns the JPEG compression quality (1–100) from the
+// IMAGE_QUALITY env var, defaulting to 50.
+func imageQuality() int {
+	if v := os.Getenv("IMAGE_QUALITY"); v != "" {
+		if q, err := strconv.Atoi(v); err == nil && q >= 1 && q <= 100 {
+			return q
+		}
+	}
+	return 50
+}
+
+// compressImage re-encodes a JPEG or PNG at the given quality (1–100).
+// PNG images are flattened onto a white background and converted to JPEG.
+// Other formats are returned unchanged.
+func compressImage(data []byte, mediaType string, quality int) ([]byte, string) {
+	switch mediaType {
+	case "image/jpeg", "image/png":
+	default:
+		return data, mediaType
+	}
+
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return data, mediaType
+	}
+
+	// Flatten transparency onto white for PNG→JPEG conversion.
+	b := img.Bounds()
+	flat := image.NewRGBA(b)
+	draw.Draw(flat, b, &image.Uniform{color.White}, b.Min, draw.Src)
+	draw.Draw(flat, b, img, b.Min, draw.Over)
+
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, flat, &jpeg.Options{Quality: quality}); err != nil {
+		return data, mediaType
+	}
+	return buf.Bytes(), "image/jpeg"
+}
+
 func downloadAndEmbedImages(bodyHTML string) (string, []embeddedImage) {
 	urlToIdx := map[string]int{}
 	var images []embeddedImage
@@ -194,6 +240,7 @@ func downloadAndEmbedImages(bodyHTML string) (string, []embeddedImage) {
 			ct = strings.TrimSpace(ct[:i])
 		}
 
+		data, ct = compressImage(data, ct, imageQuality())
 		ext := imgMediaTypeExt(ct)
 		imgPath := fmt.Sprintf("images/img%d%s", len(images), ext)
 
