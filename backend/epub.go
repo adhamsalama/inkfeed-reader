@@ -190,6 +190,9 @@ func compressImage(data []byte, mediaType string, quality int) ([]byte, string) 
 	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: quality}); err != nil {
 		return data, mediaType
 	}
+	if buf.Len() >= len(data) {
+		return data, mediaType
+	}
 	return buf.Bytes(), mediaType
 }
 
