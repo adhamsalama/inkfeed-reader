@@ -283,7 +283,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		var msg EmailMessage
 		msg.To = req.To
-		msg.Subject = title
+		msg.Subject = "Your exported articles are ready"
 		switch req.Format {
 		case "mobi":
 			htmlContent := fetchAndCombine(req.URLs, title)
@@ -292,7 +292,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 				jsonError(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			msg.HTMLContent = "."
+			msg.HTMLContent = "<p>" + html.EscapeString(title) + "</p>"
 			msg.Attachments = []EmailAttachment{{
 				Filename: sanitizeFilename(title) + ".mobi",
 				Content:  data,
@@ -305,7 +305,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 				jsonError(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			msg.HTMLContent = "."
+			msg.HTMLContent = "<p>" + html.EscapeString(title) + "</p>"
 			msg.Attachments = []EmailAttachment{{
 				Filename: sanitizeFilename(title) + ".epub",
 				Content:  data,
@@ -347,7 +347,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 
 	var msg EmailMessage
 	msg.To = req.To
-	msg.Subject = title
+	msg.Subject = "Your exported article is ready"
 
 	switch req.Format {
 	case "mobi":
@@ -356,7 +356,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 			jsonError(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		msg.HTMLContent = "."
+		msg.HTMLContent = "<p>" + html.EscapeString(title) + "</p>"
 		msg.Attachments = []EmailAttachment{{
 			Filename: sanitizeFilename(title) + ".mobi",
 			Content:  data,
@@ -372,7 +372,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 			jsonError(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		msg.HTMLContent = "."
+		msg.HTMLContent = "<p>" + html.EscapeString(title) + "</p>"
 		msg.Attachments = []EmailAttachment{{
 			Filename: sanitizeFilename(title) + ".epub",
 			Content:  data,
