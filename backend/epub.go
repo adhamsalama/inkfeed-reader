@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"html"
 	"image"
-	"image/color"
-	"image/draw"
 	"image/jpeg"
 	_ "image/png"
 	"io"
@@ -176,13 +174,10 @@ func imageQuality() int {
 	return 50
 }
 
-// compressImage re-encodes a JPEG or PNG at the given quality (1–100).
-// PNG images are flattened onto a white background and converted to JPEG.
+// compressImage re-encodes a JPEG at the given quality (1–100).
 // Other formats are returned unchanged.
 func compressImage(data []byte, mediaType string, quality int) ([]byte, string) {
-	switch mediaType {
-	case "image/jpeg", "image/png":
-	default:
+	if mediaType != "image/jpeg" {
 		return data, mediaType
 	}
 
@@ -191,17 +186,11 @@ func compressImage(data []byte, mediaType string, quality int) ([]byte, string) 
 		return data, mediaType
 	}
 
-	// Flatten transparency onto white for PNG→JPEG conversion.
-	b := img.Bounds()
-	flat := image.NewRGBA(b)
-	draw.Draw(flat, b, &image.Uniform{color.White}, b.Min, draw.Src)
-	draw.Draw(flat, b, img, b.Min, draw.Over)
-
 	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, flat, &jpeg.Options{Quality: quality}); err != nil {
+	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: quality}); err != nil {
 		return data, mediaType
 	}
-	return buf.Bytes(), "image/jpeg"
+	return buf.Bytes(), mediaType
 }
 
 func downloadAndEmbedImages(bodyHTML string) (string, []embeddedImage) {
@@ -240,7 +229,9 @@ func downloadAndEmbedImages(bodyHTML string) (string, []embeddedImage) {
 			ct = strings.TrimSpace(ct[:i])
 		}
 
-		data, ct = compressImage(data, ct, imageQuality())
+		if os.Getenv("IMAGE_COMPRESSION") != "false" {
+			data, ct = compressImage(data, ct, imageQuality())
+		}
 		ext := imgMediaTypeExt(ct)
 		imgPath := fmt.Sprintf("images/img%d%s", len(images), ext)
 
