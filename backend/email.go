@@ -35,15 +35,16 @@ type EmailSender interface {
 }
 
 // newEmailSender returns the configured EmailSender based on EMAIL_PROVIDER env var.
-// Supported values: "brevo" (default), "mailersend".
+// Supported values: "brevo" (default), "mailersend", "resend".
 func newEmailSender() EmailSender {
 	apiKey := os.Getenv("EMAIL_API_KEY")
 	fromEmail := os.Getenv("EMAIL_FROM")
 	fromName := os.Getenv("EMAIL_FROM_NAME")
-
 	switch os.Getenv("EMAIL_PROVIDER") {
 	case "mailersend":
 		return &MailerSendSender{APIKey: apiKey, FromEmail: fromEmail, FromName: fromName}
+	case "resend":
+		return &ResendSender{APIKey: apiKey, FromEmail: fromEmail, FromName: fromName}
 	default:
 		return &BrevoSender{APIKey: apiKey, FromEmail: fromEmail, FromName: fromName}
 	}
@@ -176,6 +177,70 @@ func (m *MailerSendSender) Send(msg EmailMessage) error {
 		var errBody map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&errBody)
 		return fmt.Errorf("mailersend API error %d: %v", resp.StatusCode, errBody)
+	}
+	return nil
+}
+
+// ResendSender sends emails via the Resend transactional API.
+type ResendSender struct {
+	APIKey    string
+	FromEmail string
+	FromName  string
+}
+
+func (r *ResendSender) Send(msg EmailMessage) error {
+	from := r.FromEmail
+	if r.FromName != "" {
+		from = r.FromName + " <" + r.FromEmail + ">"
+	}
+	type attachment struct {
+		Filename string `json:"filename"`
+		Content  string `json:"content"` // base64-encoded
+	}
+	type payload struct {
+		From        string       `json:"from"`
+		To          []string     `json:"to"`
+		Subject     string       `json:"subject"`
+		HTML        string       `json:"html"`
+		Attachments []attachment `json:"attachments,omitempty"`
+	}
+
+	p := payload{
+		From:    from,
+		To:      []string{msg.To},
+		Subject: msg.Subject,
+		HTML:    msg.HTMLContent,
+	}
+	for _, a := range msg.Attachments {
+		p.Attachments = append(p.Attachments, attachment{
+			Filename: a.Filename,
+			Content:  base64.StdEncoding.EncodeToString(a.Content),
+		})
+	}
+
+	body, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Errorf("marshal resend request: %w", err)
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	req, err := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+r.APIKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("resend request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		var errBody map[string]interface{}
+		json.NewDecoder(resp.Body).Decode(&errBody)
+		return fmt.Errorf("resend API error %d: %v", resp.StatusCode, errBody)
 	}
 	return nil
 }
@@ -328,7 +393,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 // EmailFileRequest is the request body for POST /email-file.
 // Used when the client has already generated the file and just wants it emailed.
 type EmailFileRequest struct {
-	Content  string `json:"content"`  // base64-encoded file data
+	Content  string `json:"content"` // base64-encoded file data
 	Filename string `json:"filename"`
 	To       string `json:"to"`
 	Subject  string `json:"subject"`
