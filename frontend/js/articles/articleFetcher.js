@@ -63,10 +63,17 @@ var ArticleFetcher = {
     }
 };
 
-function buildArticleMetaHtml(byline, siteName, wordCount, publishedTime) {
+function buildArticleMetaHtml(byline, siteName, wordCount, publishedTime, url) {
     var html = "";
     var byline = byline ? byline.replace(/^\s+|\s+$/g, "") : "";
     var siteName = siteName ? siteName.replace(/^\s+|\s+$/g, "") : "";
+    if (!siteName && url) {
+        try {
+            var a = document.createElement("a");
+            a.href = url;
+            siteName = a.hostname;
+        } catch (e) {}
+    }
 
     if (byline && siteName) {
         html += '<p class="article-meta"><em>' + escapeHtml(byline) + " @ " + escapeHtml(siteName) + "</em></p>";
@@ -124,11 +131,11 @@ function fetchFullArticle() {
                 if (article.pubDate) {
                     html += '<p class="article-meta">' + escapeHtml(article.pubDate) + "</p>";
                 }
-                html += '<p><a href="' + escapeHtml(AppState.currentArticleUrl) + '" target="_blank">Original Article</a></p>';
+                html += '<p><a href="' + escapeHtml(AppState.currentArticleUrl) + '" target="_blank">' + escapeHtml(AppState.currentArticleUrl) + '</a></p>';
                 if (article.comments) {
                     html += '<p><a href="' + escapeHtml(article.comments) + '" target="_blank">Comments</a></p>';
                 }
-                html += buildArticleMetaHtml(data.byline, data.siteName, data.wordCount, data.publishedTime);
+                html += buildArticleMetaHtml(data.byline, data.siteName, data.wordCount, data.publishedTime, AppState.currentArticleUrl);
                 html += '<div class="article-body">' + data.content + "</div>";
                 contentDiv.innerHTML = html;
             });
@@ -184,14 +191,16 @@ function fetchFullArticle() {
                     html +=
                         '<p><a href="' +
                         escapeHtml(AppState.currentArticleUrl) +
-                        '" target="_blank">Original Article</a></p>';
+                        '" target="_blank">' +
+                        escapeHtml(AppState.currentArticleUrl) +
+                        '</a></p>';
                     if (article.comments) {
                         html +=
                             '<p><a href="' +
                             escapeHtml(article.comments) +
                             '" target="_blank">Comments</a></p>';
                     }
-                    html += buildArticleMetaHtml(extractedArticle.byline, extractedArticle.siteName, wordCount, publishedTime);
+                    html += buildArticleMetaHtml(extractedArticle.byline, extractedArticle.siteName, wordCount, publishedTime, AppState.currentArticleUrl);
                     html +=
                         '<div class="article-body">' +
                         extractedArticle.content +

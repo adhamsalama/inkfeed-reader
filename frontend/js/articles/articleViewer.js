@@ -138,7 +138,9 @@ var ArticleViewer = {
                     html +=
                         '<p><a href="' +
                         escapeHtml(finalUrl) +
-                        '" target="_blank">Original Article</a></p>';
+                        '" target="_blank">' +
+                        escapeHtml(finalUrl) +
+                        '</a></p>';
                 }
                 if (article.comments) {
                     html +=
