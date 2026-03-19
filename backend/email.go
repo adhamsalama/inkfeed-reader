@@ -364,11 +364,12 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 			MimeType: "application/x-mobipocket-ebook",
 		}}
 	default: // "epub"
+		embedImages := req.EmbedImages == nil || *req.EmbedImages
 		xhtmlBody := "<h1>" + html.EscapeString(title) + "</h1>" + links + meta + article.Content
 		if commentsHTML != "" {
 			xhtmlBody += "<hr/><h2>Comments</h2>" + commentsHTML
 		}
-		data, err := generateEpub(title, req.Author, xhtmlBody, req.EmbedImages == nil || *req.EmbedImages)
+		data, err := generateEpub(title, req.Author, xhtmlBody, embedImages)
 		if err != nil {
 			jsonError(w, err.Error(), http.StatusInternalServerError)
 			return

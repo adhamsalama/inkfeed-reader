@@ -9,6 +9,7 @@ import (
 	"image"
 	"image/jpeg"
 	_ "image/png"
+	_ "golang.org/x/image/webp"
 	"io"
 	"log"
 	"net/http"
@@ -176,26 +177,37 @@ func imageQuality() int {
 	return 50
 }
 
-// compressImage re-encodes a JPEG at the given quality (1–100).
+// compressImage re-encodes a JPEG at the given quality (1–100), and converts
+// WebP to JPEG for compatibility with Amazon's conversion service.
 // Other formats are returned unchanged.
 func compressImage(data []byte, mediaType string, quality int) ([]byte, string) {
-	if mediaType != "image/jpeg" {
+	switch mediaType {
+	case "image/jpeg":
+		img, _, err := image.Decode(bytes.NewReader(data))
+		if err != nil {
+			return data, mediaType
+		}
+		var buf bytes.Buffer
+		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: quality}); err != nil {
+			return data, mediaType
+		}
+		if buf.Len() >= len(data) {
+			return data, mediaType
+		}
+		return buf.Bytes(), mediaType
+	case "image/webp":
+		img, _, err := image.Decode(bytes.NewReader(data))
+		if err != nil {
+			return data, mediaType
+		}
+		var buf bytes.Buffer
+		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: quality}); err != nil {
+			return data, mediaType
+		}
+		return buf.Bytes(), "image/jpeg"
+	default:
 		return data, mediaType
 	}
-
-	img, _, err := image.Decode(bytes.NewReader(data))
-	if err != nil {
-		return data, mediaType
-	}
-
-	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: quality}); err != nil {
-		return data, mediaType
-	}
-	if buf.Len() >= len(data) {
-		return data, mediaType
-	}
-	return buf.Bytes(), mediaType
 }
 
 func downloadAndEmbedImages(bodyHTML string) (string, []embeddedImage) {
