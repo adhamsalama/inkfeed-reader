@@ -63,6 +63,32 @@ var ArticleFetcher = {
     }
 };
 
+function buildArticleMetaHtml(byline, siteName, wordCount, publishedTime) {
+    var html = "";
+    var byline = byline ? byline.replace(/^\s+|\s+$/g, "") : "";
+    var siteName = siteName ? siteName.replace(/^\s+|\s+$/g, "") : "";
+
+    if (byline && siteName) {
+        html += '<p class="article-meta"><em>' + escapeHtml(byline) + " @ " + escapeHtml(siteName) + "</em></p>";
+    } else if (byline) {
+        html += '<p class="article-meta"><em>' + escapeHtml(byline) + "</em></p>";
+    } else if (siteName) {
+        html += '<p class="article-meta"><em>' + escapeHtml(siteName) + "</em></p>";
+    }
+
+    if (wordCount > 0) {
+        var minutes = Math.max(1, Math.floor(wordCount / 200));
+        html += '<p class="article-meta"><em>' + minutes + " min read</em></p>";
+    }
+
+    if (publishedTime) {
+        html += '<p class="article-meta"><em>Published: ' + escapeHtml(publishedTime) + "</em></p>";
+    }
+
+    html += '<hr style="margin: 15px 0; border: none; border-top: 1px solid #000;">';
+    return html;
+}
+
 // Global function for HTML onclick handler
 function fetchFullArticle() {
     try {
@@ -100,7 +126,7 @@ function fetchFullArticle() {
                 if (article.comments) {
                     html += '<p><a href="' + escapeHtml(article.comments) + '" target="_blank">Comments</a></p>';
                 }
-                html += '<hr style="margin: 15px 0; border: none; border-top: 1px solid #000;">';
+                html += buildArticleMetaHtml(data.byline, data.siteName, data.wordCount, data.publishedTime);
                 html += '<div class="article-body">' + data.content + "</div>";
                 contentDiv.innerHTML = html;
             });
@@ -133,6 +159,16 @@ function fetchFullArticle() {
                 var article = AppState.currentArticles[AppState.currentArticleIndex];
 
                 if (extractedArticle) {
+                    var wordCount = extractedArticle.textContent
+                        ? extractedArticle.textContent.split(/\s+/).length
+                        : 0;
+                    var publishedTime = "";
+                    if (extractedArticle.publishedTime) {
+                        var d = new Date(extractedArticle.publishedTime);
+                        if (!isNaN(d.getTime())) {
+                            publishedTime = d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+                        }
+                    }
                     var html =
                         "<h2>" +
                         escapeHtml(extractedArticle.title || article.title) +
@@ -153,8 +189,7 @@ function fetchFullArticle() {
                             escapeHtml(article.comments) +
                             '" target="_blank">Comments</a></p>';
                     }
-                    html +=
-                        '<hr style="margin: 15px 0; border: none; border-top: 1px solid #000;">';
+                    html += buildArticleMetaHtml(extractedArticle.byline, extractedArticle.siteName, wordCount, publishedTime);
                     html +=
                         '<div class="article-body">' +
                         extractedArticle.content +
