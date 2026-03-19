@@ -56,7 +56,7 @@ var BackendClient = {
         };
         xhr.open("POST", AppConfig.BACKEND_URL + "/email", true);
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify({ url: articleUrl, to: to, format: format, author: author, commentsUrl: commentsUrl || "" }));
+        xhr.send(JSON.stringify({ url: articleUrl, to: to, format: format, author: author, commentsUrl: commentsUrl || "", embedImages: AppConfig.EPUB_EMBED_IMAGES }));
     },
 
     emailBulk: function(articleUrls, to, format, author, callback) {
@@ -77,7 +77,7 @@ var BackendClient = {
         };
         xhr.open("POST", AppConfig.BACKEND_URL + "/email", true);
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify({ urls: articleUrls, to: to, format: format, author: author }));
+        xhr.send(JSON.stringify({ urls: articleUrls, to: to, format: format, author: author, embedImages: AppConfig.EPUB_EMBED_IMAGES }));
     },
 
     emailFile: function(base64Content, filename, to, subject, mimeType, callback) {
@@ -138,12 +138,12 @@ var BackendClient = {
 
     // Download a single article as EPUB. The backend fetches and extracts the article.
     downloadEpub: function(articleUrl, title, author, commentsUrl, filename) {
-        BackendClient._downloadEpubPost({ url: articleUrl, title: title, author: author, commentsUrl: commentsUrl || "" }, filename);
+        BackendClient._downloadEpubPost({ url: articleUrl, title: title, author: author, commentsUrl: commentsUrl || "", embedImages: AppConfig.EPUB_EMBED_IMAGES }, filename);
     },
 
     // Download multiple articles as a single EPUB. The backend fetches all URLs.
     downloadEpubBulk: function(articleUrls, title, author, filename) {
-        BackendClient._downloadEpubPost({ urls: articleUrls, title: title, author: author }, filename);
+        BackendClient._downloadEpubPost({ urls: articleUrls, title: title, author: author, embedImages: AppConfig.EPUB_EMBED_IMAGES }, filename);
     },
 
     _downloadEpubPost: function(body, filename) {

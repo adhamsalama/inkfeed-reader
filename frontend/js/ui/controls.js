@@ -62,10 +62,16 @@ function toggleUseBackend() {
     setEmailButtonVisible(AppConfig.USE_BACKEND);
 }
 
+function toggleEpubEmbedImages() {
+    AppConfig.EPUB_EMBED_IMAGES = document.getElementById("epub-embed-images-checkbox").checked;
+    localStorage.setItem("epubEmbedImages", AppConfig.EPUB_EMBED_IMAGES ? "true" : "false");
+}
+
 function openSettings(section) {
     document.getElementById("proxy-url-input").value = AppConfig.CORS_PROXY_URL;
     document.getElementById("backend-url-input").value = AppConfig.BACKEND_URL;
     document.getElementById("email-to-input").value = localStorage.getItem("lastEmailTo") || "";
+    document.getElementById("epub-embed-images-checkbox").checked = AppConfig.EPUB_EMBED_IMAGES;
     document.getElementById("settings-modal").classList.remove("hidden");
     if (section) {
         var sectionEl = document.getElementById("settings-" + section + "-section");
