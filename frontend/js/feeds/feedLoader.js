@@ -175,8 +175,12 @@ function loadFeed() {
 function loadCategoryFeeds(categoryFeeds, categoryName) {
     var total = categoryFeeds.length;
     var completed = 0;
-    var allArticles = [];
+    var results = [];  // indexed by feed position to preserve order
     var progress = document.getElementById("render-progress");
+
+    for (var n = 0; n < total; n++) {
+        results.push(null);
+    }
 
     ViewManager.hideError("input-error");
     removeClass(document.getElementById("feed-loading"), "hidden");
@@ -186,24 +190,26 @@ function loadCategoryFeeds(categoryFeeds, categoryName) {
     document.title = categoryName;
     setText(progress, "0/" + total);
 
-    function onFeedDone(articles) {
+    function onFeedDone(index, articles) {
         completed++;
-        if (articles) {
-            for (var i = 0; i < articles.length; i++) {
-                allArticles.push(articles[i]);
-            }
-        }
+        results[index] = articles || [];
         setText(progress, completed + "/" + total);
 
         if (completed === total) {
             addClass(document.getElementById("feed-loading"), "hidden");
+            var allArticles = [];
+            for (var i = 0; i < results.length; i++) {
+                for (var j = 0; j < results[i].length; j++) {
+                    allArticles.push(results[i][j]);
+                }
+            }
             if (allArticles.length === 0) {
                 ViewManager.showInputView();
                 ViewManager.showError("input-error", "No articles found in category feeds");
                 return;
             }
-            for (var j = 0; j < allArticles.length; j++) {
-                allArticles[j].index = j;
+            for (var k = 0; k < allArticles.length; k++) {
+                allArticles[k].index = k;
             }
             AppState.currentArticles = allArticles;
             FeedRenderer.renderArticleList(allArticles);
@@ -211,22 +217,22 @@ function loadCategoryFeeds(categoryFeeds, categoryName) {
     }
 
     for (var i = 0; i < categoryFeeds.length; i++) {
-        (function(feed) {
+        (function(feed, feedIndex) {
             if (AppConfig.USE_BACKEND) {
                 BackendClient.fetchFeed(feed.url, function(error, data) {
                     if (error || !data || !data.articles) {
-                        onFeedDone(null);
+                        onFeedDone(feedIndex, null);
                     } else {
                         for (var k = 0; k < data.articles.length; k++) {
                             data.articles[k].feedTitle = data.title || feed.title;
                         }
-                        onFeedDone(data.articles);
+                        onFeedDone(feedIndex, data.articles);
                     }
                 });
             } else {
                 fetchUrl(feed.url, function(error, xmlText) {
                     if (error) {
-                        onFeedDone(null);
+                        onFeedDone(feedIndex, null);
                         return;
                     }
                     try {
@@ -234,12 +240,12 @@ function loadCategoryFeeds(categoryFeeds, categoryName) {
                         for (var k = 0; k < parsed.articles.length; k++) {
                             parsed.articles[k].feedTitle = parsed.title || feed.title;
                         }
-                        onFeedDone(parsed.articles.length > 0 ? parsed.articles : null);
+                        onFeedDone(feedIndex, parsed.articles.length > 0 ? parsed.articles : null);
                     } catch (e) {
-                        onFeedDone(null);
+                        onFeedDone(feedIndex, null);
                     }
                 });
             }
-        })(categoryFeeds[i]);
+        })(categoryFeeds[i], i);
     }
 }
