@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -34,7 +35,16 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	// Include legacy cipher suites for compatibility with older servers (e.g. fsf.org)
+	allSuites := append(tls.CipherSuites(), tls.InsecureCipherSuites()...)
+	cipherIDs := make([]uint16, len(allSuites))
+	for i, s := range allSuites {
+		cipherIDs[i] = s.ID
+	}
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{CipherSuites: cipherIDs},
+	}
+	client := &http.Client{Timeout: 30 * time.Second, Transport: transport}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		jsonError(w, err.Error(), http.StatusBadRequest)
