@@ -28,6 +28,9 @@ var AppConfig = {
     // Comments configuration
     MAX_TOP_LEVEL_COMMENTS: 100,
     MAX_REPLIES_PER_COMMENT: 50,
+
+    // EPUB options
+    EPUB_EMBED_IMAGES: true,
 };
 
 (function() {
@@ -39,5 +42,9 @@ var AppConfig = {
     if (backendUrl) {
         AppConfig.BACKEND_URL = backendUrl;
         AppConfig.USE_BACKEND = localStorage.getItem("backendEnabled") !== "false";
+    }
+    var embedImages = localStorage.getItem("epubEmbedImages");
+    if (embedImages !== null) {
+        AppConfig.EPUB_EMBED_IMAGES = embedImages !== "false";
     }
 })();
