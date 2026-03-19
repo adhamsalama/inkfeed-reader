@@ -156,12 +156,18 @@
                 <div style="margin-top: 8px;">
                     <button id="use-backend-btn" class="secondary" onclick="toggleUseBackend()">Backend: OFF</button>
                 </div>
+                <div style="margin-top: 8px; font-size: 0.85em; color: #555;">
+                    Backend-only features: send to email, embed images in EPUB.<br/>Using the backend for article fetches and downloads saves battery.
+                </div>
             </div>
             <div class="settings-section" id="settings-email-section">
                 <div class="settings-section-title">Email Address</div>
                 <div class="proxy-input-row">
                     <input type="text" id="email-to-input" placeholder="recipient@example.com" />
                     <button onclick="saveEmailAddress()">Save</button>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.85em; color: #555;">
+                    If using a Kindle email, add <strong>export@sender.inkfeed.xyz</strong> to your approved senders.
                 </div>
             </div>
             <div class="settings-section" id="settings-epub-section">
