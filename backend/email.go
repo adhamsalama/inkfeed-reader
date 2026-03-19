@@ -254,6 +254,7 @@ type EmailRequest struct {
 	Format      string   `json:"format"`
 	Author      string   `json:"author"`
 	CommentsURL string   `json:"commentsUrl"`
+	EmbedImages *bool    `json:"embedImages"`
 }
 
 func emailHandler(w http.ResponseWriter, r *http.Request) {
@@ -300,7 +301,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 			}}
 		default: // epub
 			xhtmlBody := buildEpubMultiArticleBody(req.URLs, title)
-			data, err := generateEpub(title, req.Author, xhtmlBody)
+			data, err := generateEpub(title, req.Author, xhtmlBody, req.EmbedImages == nil || *req.EmbedImages)
 			if err != nil {
 				jsonError(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -367,7 +368,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 		if commentsHTML != "" {
 			xhtmlBody += "<hr/><h2>Comments</h2>" + commentsHTML
 		}
-		data, err := generateEpub(title, req.Author, xhtmlBody)
+		data, err := generateEpub(title, req.Author, xhtmlBody, req.EmbedImages == nil || *req.EmbedImages)
 		if err != nil {
 			jsonError(w, err.Error(), http.StatusInternalServerError)
 			return

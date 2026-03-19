@@ -25,6 +25,7 @@ type EpubRequest struct {
 	Title       string   `json:"title"`
 	Author      string   `json:"author"`
 	CommentsURL string   `json:"commentsUrl"`
+	EmbedImages *bool    `json:"embedImages"`
 }
 
 func epubHandler(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +66,8 @@ func epubHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := generateEpub(req.Title, req.Author, xhtmlBody)
+	embedImages := req.EmbedImages == nil || *req.EmbedImages
+	data, err := generateEpub(req.Title, req.Author, xhtmlBody, embedImages)
 	if err != nil {
 		jsonError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -264,11 +266,14 @@ func imgMediaTypeExt(ct string) string {
 	}
 }
 
-func generateEpub(title, author, bodyHTML string) ([]byte, error) {
+func generateEpub(title, author, bodyHTML string, embedImages bool) ([]byte, error) {
 	uid := fmt.Sprintf("%x", time.Now().UnixNano())
 	modTime := time.Now().UTC().Format("2006-01-02T15:04:05Z")
 
-	bodyHTML, images := downloadAndEmbedImages(bodyHTML)
+	var images []embeddedImage
+	if embedImages {
+		bodyHTML, images = downloadAndEmbedImages(bodyHTML)
+	}
 	bodyHTML = sanitizeXHTML(bodyHTML)
 
 	xhtml := `<?xml version="1.0" encoding="UTF-8"?>` +
