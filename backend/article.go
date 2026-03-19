@@ -13,9 +13,12 @@ import (
 )
 
 type ArticleResponse struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	Byline  string `json:"byline"`
+	Title         string `json:"title"`
+	Content       string `json:"content"`
+	Byline        string `json:"byline"`
+	SiteName      string `json:"siteName"`
+	PublishedTime string `json:"publishedTime"`
+	WordCount     int    `json:"wordCount"`
 }
 
 func textHandler(w http.ResponseWriter, r *http.Request) {
@@ -52,10 +55,17 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "public, max-age=300")
+	publishedTime := ""
+	if article.PublishedTime != nil {
+		publishedTime = article.PublishedTime.Format("2 January 2006")
+	}
 	json.NewEncoder(w).Encode(ArticleResponse{
-		Title:   article.Title,
-		Content: article.Content,
-		Byline:  article.Byline,
+		Title:         article.Title,
+		Content:       article.Content,
+		Byline:        article.Byline,
+		SiteName:      article.SiteName,
+		PublishedTime: publishedTime,
+		WordCount:     len(strings.Fields(article.TextContent)),
 	})
 }
 
