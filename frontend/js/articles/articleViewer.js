@@ -128,6 +128,7 @@ var ArticleViewer = {
 
             // Helper function to display article content
             function displayArticleContent(contentDiv, article, finalUrl, content) {
+                setText(document.getElementById("article-title-bar"), article.title);
                 var html = "<h2>" + escapeHtml(article.title) + "</h2>";
                 if (article.pubDate) {
                     html +=

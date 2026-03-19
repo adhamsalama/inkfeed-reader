@@ -118,7 +118,9 @@ function fetchFullArticle() {
                     return;
                 }
                 var article = AppState.currentArticles[AppState.currentArticleIndex];
-                var html = "<h2>" + escapeHtml(data.title || article.title) + "</h2>";
+                var resolvedTitle = data.title || article.title;
+                setText(document.getElementById("article-title-bar"), resolvedTitle);
+                var html = "<h2>" + escapeHtml(resolvedTitle) + "</h2>";
                 if (article.pubDate) {
                     html += '<p class="article-meta">' + escapeHtml(article.pubDate) + "</p>";
                 }

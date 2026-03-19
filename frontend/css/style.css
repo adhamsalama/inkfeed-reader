@@ -131,6 +131,15 @@ input[type="text"] {
   color: #333;
 }
 
+#article-title-bar {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #ccc;
+  min-height: 1em;
+}
+
 .article-content {
   display: none;
   padding: 15px;
