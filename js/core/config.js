@@ -7,7 +7,7 @@ var AppConfig = {
 
     // Backend
     USE_BACKEND: false,
-    BACKEND_URL: "",
+    BACKEND_URL: "https://api.inkfeed.xyz",
 
     // Font size constraints
     MIN_FONT_SIZE: 12,
@@ -41,7 +41,10 @@ var AppConfig = {
     var backendUrl = localStorage.getItem("backendUrl");
     if (backendUrl) {
         AppConfig.BACKEND_URL = backendUrl;
-        AppConfig.USE_BACKEND = localStorage.getItem("backendEnabled") !== "false";
+    }
+    var backendEnabled = localStorage.getItem("backendEnabled");
+    if (backendEnabled !== null) {
+        AppConfig.USE_BACKEND = backendEnabled === "true";
     }
     var embedImages = localStorage.getItem("epubEmbedImages");
     if (embedImages !== null) {
