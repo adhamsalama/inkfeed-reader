@@ -77,6 +77,49 @@ var FeedRenderer = {
         }
     },
 
+    renderSuggestedFeeds: function() {
+        var container = document.getElementById("suggested-feeds-container");
+        container.innerHTML = "";
+
+        for (var i = 0; i < SUGGESTED_FEEDS.length; i++) {
+            var section = SUGGESTED_FEEDS[i];
+
+            var heading = document.createElement("h4");
+            heading.className = "suggested-feeds-category";
+            setText(heading, section.category);
+            container.appendChild(heading);
+
+            var ul = document.createElement("ul");
+            ul.className = "saved-feeds-list";
+
+            for (var j = 0; j < section.feeds.length; j++) {
+                var feed = section.feeds[j];
+
+                var li = document.createElement("li");
+                li.className = "saved-feed-item";
+
+                var link = document.createElement("a");
+                link.className = "saved-feed-link";
+                setText(link, feed.title);
+                link.title = feed.url;
+                (function(url) {
+                    link.onclick = function() {
+                        var feedInput = document.getElementById("feed-url");
+                        feedInput.value = url;
+                        addClass(document.getElementById("suggested-feeds-section"), "hidden");
+                        loadFeed();
+                        return false;
+                    };
+                })(feed.url);
+
+                li.appendChild(link);
+                ul.appendChild(li);
+            }
+
+            container.appendChild(ul);
+        }
+    },
+
     renderArticleList: function(articles) {
         try {
             var list = document.getElementById("article-list");

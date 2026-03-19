@@ -258,6 +258,14 @@ input[type="text"] {
   background-color: #ddd;
 }
 
+.suggested-feeds-category {
+  margin: 12px 0 4px 0;
+  font-size: 0.95em;
+  color: #444;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
+}
+
 .delete-feed-btn {
   padding: 4px 8px;
   font-size: 0.85em;

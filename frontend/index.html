@@ -64,6 +64,9 @@
                 <button class="secondary" onclick="toggleSavedFeeds()">
                     Saved Feeds
                 </button>
+                <button class="secondary" onclick="toggleSuggestedFeeds()">
+                    Suggested Feeds
+                </button>
                 <div id="render-progress" style="display: inline" class="loading">
                     0/0
                 </div>
@@ -71,6 +74,9 @@
             <div id="input-error" class="error hidden"></div>
             <div id="saved-feeds-section" class="saved-feeds-section hidden">
                 <ul id="saved-feeds-list" class="saved-feeds-list"></ul>
+            </div>
+            <div id="suggested-feeds-section" class="saved-feeds-section hidden">
+                <div id="suggested-feeds-container"></div>
             </div>
         </div>
 
@@ -171,6 +177,7 @@
     <!-- Core (no dependencies) -->
     <script src="./js/core/config.js"></script>
     <script src="./js/core/state.js"></script>
+    <script src="./js/core/suggestedFeeds.js"></script>
 
     <!-- Utils -->
     <script src="./js/utils/urlHelpers.js"></script>

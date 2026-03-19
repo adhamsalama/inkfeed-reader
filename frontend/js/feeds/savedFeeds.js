@@ -101,3 +101,13 @@ function saveCurrentFeed() {
 function toggleSavedFeeds() {
     SavedFeedsManager.toggleSavedFeeds();
 }
+
+function toggleSuggestedFeeds() {
+    var section = document.getElementById("suggested-feeds-section");
+    if (section.className.indexOf("hidden") >= 0) {
+        FeedRenderer.renderSuggestedFeeds();
+        removeClass(section, "hidden");
+    } else {
+        addClass(section, "hidden");
+    }
+}
