@@ -334,7 +334,7 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 		title = "Article"
 	}
 
-	links := `<p><a href="` + html.EscapeString(req.URL) + `">Original Article</a></p>`
+	links := `<p><a href="` + html.EscapeString(req.URL) + `">` + html.EscapeString(req.URL) + `</a></p>`
 	if req.CommentsURL != "" {
 		links += `<p><a href="` + html.EscapeString(req.CommentsURL) + `">Comments</a></p>`
 	}
