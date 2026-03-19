@@ -54,7 +54,8 @@ func epubHandler(w http.ResponseWriter, r *http.Request) {
 			req.Title = article.Title
 		}
 		commentsHTML := fetchCommentsHTML(req.CommentsURL)
-		xhtmlBody = "<h1>" + html.EscapeString(req.Title) + "</h1>" + articleMetaHTML(article) + article.Content
+		link := `<p><a href="` + html.EscapeString(req.URL) + `">` + html.EscapeString(req.URL) + `</a></p>`
+		xhtmlBody = "<h1>" + html.EscapeString(req.Title) + "</h1>" + link + articleMetaHTML(article) + article.Content
 		if commentsHTML != "" {
 			xhtmlBody += "<hr/><h2>Comments</h2>" + commentsHTML
 		}
@@ -104,7 +105,7 @@ func buildEpubMultiArticleBody(urls []string, feedTitle string) string {
 			if err != nil {
 				resultCh <- result{index: idx, err: err}
 			} else {
-				resultCh <- result{index: idx, title: article.Title, meta: articleMetaHTML(article), content: article.Content}
+				resultCh <- result{index: idx, title: article.Title, meta: articleMetaHTML(article), content: `<p><a href="` + html.EscapeString(url) + `">` + html.EscapeString(url) + `</a></p>` + article.Content}
 			}
 		}(i, u)
 	}
