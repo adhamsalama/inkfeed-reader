@@ -38,6 +38,11 @@ function loadFeed() {
                     ViewManager.showError("input-error", "Error loading feed: " + error.message);
                     return;
                 }
+                if (!data.articles || data.articles.length === 0) {
+                    ViewManager.showInputView();
+                    ViewManager.showError("input-error", "Error loading feed: No articles found in feed");
+                    return;
+                }
                 AppState.currentArticles = data.articles;
                 setText(document.getElementById("feed-title"), data.title);
                 document.title = data.title;
