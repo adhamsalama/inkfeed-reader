@@ -97,7 +97,7 @@ var MobiDownloader = {
                 ArticleFetcher.fetchFullArticleWithRetry(article.link, AppConfig.MAX_FETCH_RETRIES, function(error, extractedArticle) {
                     allArticlesHtml.push("<h2>" + escapeHtml(article.title) + "</h2>");
                     if (article.pubDate) { allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>"); }
-                    allArticlesHtml.push("<p><a href=\"" + escapeHtml(article.link) + "\">Original Article</a></p>");
+                    allArticlesHtml.push("<p><a href=\"" + escapeHtml(article.link) + "\">" + escapeHtml(article.link) + "</a></p>");
                     if (error) {
                         allArticlesHtml.push("<p><strong>[Failed to fetch full article]</strong></p>");
                         allArticlesHtml.push(article.content || article.description || "");
@@ -184,7 +184,7 @@ var MobiDownloader = {
                     if (article.pubDate) {
                         allArticlesHtml.push("<p><em>" + escapeHtml(article.pubDate) + "</em></p>");
                     }
-                    allArticlesHtml.push("<p><a href=\"" + escapeHtml(article.link) + "\">Original Article</a></p>");
+                    allArticlesHtml.push("<p><a href=\"" + escapeHtml(article.link) + "\">" + escapeHtml(article.link) + "</a></p>");
 
                     if (error) {
                         allArticlesHtml.push("<p><strong>[Failed to fetch full article after " + AppConfig.MAX_FETCH_RETRIES + " attempts]</strong></p>");
