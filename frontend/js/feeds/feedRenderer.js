@@ -84,10 +84,13 @@ var FeedRenderer = {
         for (var i = 0; i < SUGGESTED_FEEDS.length; i++) {
             var section = SUGGESTED_FEEDS[i];
 
+            var block = document.createElement("div");
+            block.className = "suggested-feeds-section-block";
+
             var heading = document.createElement("h4");
             heading.className = "suggested-feeds-category";
             setText(heading, section.category);
-            container.appendChild(heading);
+            block.appendChild(heading);
 
             var ul = document.createElement("ul");
             ul.className = "saved-feeds-list";
@@ -116,7 +119,8 @@ var FeedRenderer = {
                 ul.appendChild(li);
             }
 
-            container.appendChild(ul);
+            block.appendChild(ul);
+            container.appendChild(block);
         }
     },
 

@@ -258,6 +258,16 @@ input[type="text"] {
   background-color: #ddd;
 }
 
+#suggested-feeds-container {
+  column-count: 2;
+  column-gap: 20px;
+}
+
+.suggested-feeds-section-block {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+}
+
 .suggested-feeds-category {
   margin: 12px 0 4px 0;
   font-size: 0.95em;
