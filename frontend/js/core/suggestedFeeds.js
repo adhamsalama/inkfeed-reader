@@ -87,7 +87,7 @@ var SUGGESTED_FEEDS = [
                 url: "https://www.reddit.com/r/kubernetes/.rss",
             },
             { title: "r/sysadmin", url: "https://www.reddit.com/r/sysadmin/.rss" },
-            { title: "Free Software Foundation", url: "https://www.fsf.org/blogs/RSS" },
+            // { title: "Free Software Foundation", url: "https://www.fsf.org/blogs/RSS" },
             { title: "GNOME", url: "https://planet.gnome.org/rss20.xml" },
             { title: "Fedora Magazine", url: "https://fedoramagazine.org/feed/" },
         ],
