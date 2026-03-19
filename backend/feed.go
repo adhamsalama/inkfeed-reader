@@ -67,6 +67,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp := parseFeed(body)
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "public, max-age=300")
 	json.NewEncoder(w).Encode(resp)
 }
 

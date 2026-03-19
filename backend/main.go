@@ -45,10 +45,10 @@ func main() {
 	}
 
 	mux.Handle("/login", corsMiddleware(http.HandlerFunc(loginHandler)))
-	mux.Handle("/feed", protected(feedHandler))
-	mux.Handle("/article", protected(articleHandler))
+	mux.Handle("/feed", protected(cached(feedHandler)))
+	mux.Handle("/article", protected(cached(articleHandler)))
 	mux.Handle("/text", protected(textHandler))
-	mux.Handle("/comments", protected(commentsHandler))
+	mux.Handle("/comments", protected(cached(commentsHandler)))
 	mux.Handle("/mobi", protected(mobiHandler))
 	mux.Handle("/epub", protected(epubHandler))
 	mux.Handle("/reddit-post", protected(redditPostHandler))
