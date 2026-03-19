@@ -39,10 +39,7 @@ var SUGGESTED_FEEDS = [
                 title: "NY Times",
                 url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
             },
-            {
-                title: "Associated Press",
-                url: "https://apnews.com/apf-topnews?format=rss",
-            },
+            { title: "Bloomberg", url: "https://feeds.bloomberg.com/markets/news.rss" },
             { title: "r/worldnews", url: "https://www.reddit.com/r/worldnews/.rss" },
             { title: "r/news", url: "https://www.reddit.com/r/news/.rss" },
         ],
