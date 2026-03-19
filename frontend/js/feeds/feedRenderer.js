@@ -147,9 +147,18 @@ var FeedRenderer = {
             setText(progress, "0/" + total);
 
             var fragment = document.createDocumentFragment();
+            var lastFeedTitle = null;
 
             for (var i = 0; i < articles.length; i++) {
                 var article = articles[i];
+
+                if (article.feedTitle && article.feedTitle !== lastFeedTitle) {
+                    var separator = document.createElement("li");
+                    separator.className = "feed-separator";
+                    setText(separator, article.feedTitle);
+                    fragment.appendChild(separator);
+                    lastFeedTitle = article.feedTitle;
+                }
 
                 var li = document.createElement("li");
                 li.className = "article-item";

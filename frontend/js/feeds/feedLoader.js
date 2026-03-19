@@ -217,6 +217,9 @@ function loadCategoryFeeds(categoryFeeds, categoryName) {
                     if (error || !data || !data.articles) {
                         onFeedDone(null);
                     } else {
+                        for (var k = 0; k < data.articles.length; k++) {
+                            data.articles[k].feedTitle = data.title || feed.title;
+                        }
                         onFeedDone(data.articles);
                     }
                 });
@@ -228,6 +231,9 @@ function loadCategoryFeeds(categoryFeeds, categoryName) {
                     }
                     try {
                         var parsed = parseFeedXml(xmlText);
+                        for (var k = 0; k < parsed.articles.length; k++) {
+                            parsed.articles[k].feedTitle = parsed.title || feed.title;
+                        }
                         onFeedDone(parsed.articles.length > 0 ? parsed.articles : null);
                     } catch (e) {
                         onFeedDone(null);
