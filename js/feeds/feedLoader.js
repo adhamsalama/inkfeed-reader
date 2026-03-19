@@ -1,5 +1,97 @@
 // RSS/Atom Feed Loader
 
+function parseFeedXml(xmlText) {
+    var xml;
+    if (window.DOMParser) {
+        var parser = new DOMParser();
+        xml = parser.parseFromString(xmlText, "text/xml");
+    } else {
+        xml = new ActiveXObject("Microsoft.XMLDOM");
+        xml.async = false;
+        xml.loadXML(xmlText);
+    }
+
+    var articles = [];
+    var feedTitle = "Feed";
+    var i, item, entry, titleEl, linkEl, descEl, contentEl, pubDateEl;
+
+    // Try RSS 2.0
+    var channels = xml.getElementsByTagName("channel");
+    if (channels.length > 0) {
+        var channel = channels[0];
+        var channelTitle = getFirstByTag(channel, "title");
+        feedTitle = channelTitle ? getText(channelTitle) : "RSS Feed";
+
+        var items = xml.getElementsByTagName("item");
+        for (i = 0; i < items.length; i++) {
+            item = items[i];
+            titleEl = getFirstByTag(item, "title");
+            linkEl = getFirstByTag(item, "link");
+            descEl = getFirstByTag(item, "description");
+            contentEl = getFirstByTag(item, "encoded");
+            pubDateEl = getFirstByTag(item, "pubDate");
+            var commentsEl = getFirstByTag(item, "comments");
+
+            articles.push({
+                index: i,
+                title: titleEl ? getText(titleEl) : "Untitled",
+                link: linkEl ? getText(linkEl) : "",
+                comments: commentsEl ? getText(commentsEl) : "",
+                description: descEl ? getText(descEl) : "",
+                content: contentEl ? getText(contentEl) : "",
+                pubDate: pubDateEl ? getText(pubDateEl) : ""
+            });
+        }
+    }
+
+    // Try Atom
+    if (articles.length === 0) {
+        var atomFeeds = xml.getElementsByTagName("feed");
+        if (atomFeeds.length > 0) {
+            var feedTitleEl = getFirstByTag(atomFeeds[0], "title");
+            feedTitle = feedTitleEl ? getText(feedTitleEl) : "Atom Feed";
+        }
+
+        var entries = xml.getElementsByTagName("entry");
+        for (i = 0; i < entries.length; i++) {
+            entry = entries[i];
+            titleEl = getFirstByTag(entry, "title");
+
+            var linkHref = "";
+            var links = entry.getElementsByTagName("link");
+            for (var j = 0; j < links.length; j++) {
+                var rel = links[j].getAttribute("rel");
+                if (!rel || rel === "alternate") {
+                    linkHref = links[j].getAttribute("href") || "";
+                    break;
+                }
+            }
+
+            descEl = getFirstByTag(entry, "summary");
+            contentEl = getFirstByTag(entry, "content");
+            pubDateEl = getFirstByTag(entry, "published");
+            if (!pubDateEl) pubDateEl = getFirstByTag(entry, "updated");
+
+            var commentsUrl = "";
+            if (linkHref && linkHref.indexOf("reddit.com") >= 0) {
+                commentsUrl = linkHref + "/.json";
+            }
+
+            articles.push({
+                index: i,
+                title: titleEl ? getText(titleEl) : "Untitled",
+                link: linkHref,
+                comments: commentsUrl,
+                description: descEl ? getText(descEl) : "",
+                content: contentEl ? getText(contentEl) : "",
+                pubDate: pubDateEl ? getText(pubDateEl) : ""
+            });
+        }
+    }
+
+    return { title: feedTitle, articles: articles };
+}
+
 // Global function for HTML onclick handler
 function loadFeed() {
     try {
@@ -60,113 +152,14 @@ function loadFeed() {
             }
 
             try {
-                var xml;
-                if (window.DOMParser) {
-                    var parser = new DOMParser();
-                    xml = parser.parseFromString(xmlText, "text/xml");
-                } else {
-                    xml = new ActiveXObject("Microsoft.XMLDOM");
-                    xml.async = false;
-                    xml.loadXML(xmlText);
-                }
-
-                var articles = [];
-                var feedTitle = "Feed";
-                var progress = document.getElementById("render-progress");
-                var i, item, entry, titleEl, linkEl, descEl, contentEl, pubDateEl;
-
-                // Try RSS 2.0
-                var channels = xml.getElementsByTagName("channel");
-                if (channels.length > 0) {
-                    var channel = channels[0];
-                    var channelTitle = getFirstByTag(channel, "title");
-                    feedTitle = channelTitle ? getText(channelTitle) : "RSS Feed";
-
-                    var items = xml.getElementsByTagName("item");
-                    var total = items.length;
-                    setText(progress, "0/" + total);
-
-                    for (i = 0; i < items.length; i++) {
-                        item = items[i];
-                        titleEl = getFirstByTag(item, "title");
-                        linkEl = getFirstByTag(item, "link");
-                        descEl = getFirstByTag(item, "description");
-                        contentEl = getFirstByTag(item, "encoded");
-                        pubDateEl = getFirstByTag(item, "pubDate");
-                        var commentsEl = getFirstByTag(item, "comments");
-
-                        articles.push({
-                            index: i,
-                            title: titleEl ? getText(titleEl) : "Untitled",
-                            link: linkEl ? getText(linkEl) : "",
-                            comments: commentsEl ? getText(commentsEl) : "",
-                            description: descEl ? getText(descEl) : "",
-                            content: contentEl ? getText(contentEl) : "",
-                            pubDate: pubDateEl ? getText(pubDateEl) : ""
-                        });
-                        setText(progress, i + 1 + "/" + total);
-                    }
-                }
-
-                // Try Atom
-                if (articles.length === 0) {
-                    var feeds = xml.getElementsByTagName("feed");
-                    if (feeds.length > 0) {
-                        var feedTitleEl = getFirstByTag(feeds[0], "title");
-                        feedTitle = feedTitleEl ? getText(feedTitleEl) : "Atom Feed";
-                    }
-
-                    var entries = xml.getElementsByTagName("entry");
-                    var totalEntries = entries.length;
-                    setText(progress, "0/" + totalEntries);
-
-                    for (i = 0; i < entries.length; i++) {
-                        entry = entries[i];
-                        titleEl = getFirstByTag(entry, "title");
-
-                        // Get link href attribute
-                        var linkHref = "";
-                        var links = entry.getElementsByTagName("link");
-                        for (var j = 0; j < links.length; j++) {
-                            var rel = links[j].getAttribute("rel");
-                            if (!rel || rel === "alternate") {
-                                linkHref = links[j].getAttribute("href") || "";
-                                break;
-                            }
-                        }
-
-                        descEl = getFirstByTag(entry, "summary");
-                        contentEl = getFirstByTag(entry, "content");
-                        pubDateEl = getFirstByTag(entry, "published");
-                        if (!pubDateEl) pubDateEl = getFirstByTag(entry, "updated");
-
-                        // For Reddit feeds, the link is the comments page
-                        var commentsUrl = "";
-                        if (linkHref && linkHref.indexOf("reddit.com") >= 0) {
-                            commentsUrl = linkHref + "/.json";
-                        }
-
-                        articles.push({
-                            index: i,
-                            title: titleEl ? getText(titleEl) : "Untitled",
-                            link: linkHref,
-                            comments: commentsUrl,
-                            description: descEl ? getText(descEl) : "",
-                            content: contentEl ? getText(contentEl) : "",
-                            pubDate: pubDateEl ? getText(pubDateEl) : ""
-                        });
-                        setText(progress, i + 1 + "/" + totalEntries);
-                    }
-                }
-
-                if (articles.length === 0) {
+                var parsed = parseFeedXml(xmlText);
+                if (parsed.articles.length === 0) {
                     throw new Error("No articles found in feed");
                 }
-
-                AppState.currentArticles = articles;
-                setText(document.getElementById("feed-title"), feedTitle);
-                document.title = feedTitle;
-                FeedRenderer.renderArticleList(articles);
+                AppState.currentArticles = parsed.articles;
+                setText(document.getElementById("feed-title"), parsed.title);
+                document.title = parsed.title;
+                FeedRenderer.renderArticleList(parsed.articles);
             } catch (e) {
                 ViewManager.showInputView();
                 ViewManager.showError("input-error", "Error loading feed: " + e.message);
@@ -176,5 +169,71 @@ function loadFeed() {
         });
     } catch (e) {
         alert("loadFeed error: " + e.message);
+    }
+}
+
+function loadCategoryFeeds(categoryFeeds, categoryName) {
+    var total = categoryFeeds.length;
+    var completed = 0;
+    var allArticles = [];
+    var progress = document.getElementById("render-progress");
+
+    ViewManager.hideError("input-error");
+    removeClass(document.getElementById("feed-loading"), "hidden");
+    document.getElementById("article-list").innerHTML = "";
+    ViewManager.showFeedView();
+    setText(document.getElementById("feed-title"), categoryName);
+    document.title = categoryName;
+    setText(progress, "0/" + total);
+
+    function onFeedDone(articles) {
+        completed++;
+        if (articles) {
+            for (var i = 0; i < articles.length; i++) {
+                allArticles.push(articles[i]);
+            }
+        }
+        setText(progress, completed + "/" + total);
+
+        if (completed === total) {
+            addClass(document.getElementById("feed-loading"), "hidden");
+            if (allArticles.length === 0) {
+                ViewManager.showInputView();
+                ViewManager.showError("input-error", "No articles found in category feeds");
+                return;
+            }
+            for (var j = 0; j < allArticles.length; j++) {
+                allArticles[j].index = j;
+            }
+            AppState.currentArticles = allArticles;
+            FeedRenderer.renderArticleList(allArticles);
+        }
+    }
+
+    for (var i = 0; i < categoryFeeds.length; i++) {
+        (function(feed) {
+            if (AppConfig.USE_BACKEND) {
+                BackendClient.fetchFeed(feed.url, function(error, data) {
+                    if (error || !data || !data.articles) {
+                        onFeedDone(null);
+                    } else {
+                        onFeedDone(data.articles);
+                    }
+                });
+            } else {
+                fetchUrl(feed.url, function(error, xmlText) {
+                    if (error) {
+                        onFeedDone(null);
+                        return;
+                    }
+                    try {
+                        var parsed = parseFeedXml(xmlText);
+                        onFeedDone(parsed.articles.length > 0 ? parsed.articles : null);
+                    } catch (e) {
+                        onFeedDone(null);
+                    }
+                });
+            }
+        })(categoryFeeds[i]);
     }
 }

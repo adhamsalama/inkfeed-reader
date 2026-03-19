@@ -90,6 +90,19 @@ var FeedRenderer = {
             var heading = document.createElement("h4");
             heading.className = "suggested-feeds-category";
             setText(heading, section.category);
+
+            var loadAllBtn = document.createElement("button");
+            loadAllBtn.className = "secondary load-all-btn";
+            setText(loadAllBtn, "Load All");
+            (function(feeds, name) {
+                loadAllBtn.onclick = function() {
+                    addClass(document.getElementById("suggested-feeds-section"), "hidden");
+                    loadCategoryFeeds(feeds, name);
+                    return false;
+                };
+            })(section.feeds, section.category);
+
+            heading.appendChild(loadAllBtn);
             block.appendChild(heading);
 
             var ul = document.createElement("ul");
