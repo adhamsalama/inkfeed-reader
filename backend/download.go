@@ -50,7 +50,8 @@ func mobiHandler(w http.ResponseWriter, r *http.Request) {
 			req.Title = article.Title
 		}
 		commentsHTML := fetchCommentsHTML(req.CommentsURL)
-		htmlContent = "<html><body><h1>" + html.EscapeString(req.Title) + "</h1>" + articleMetaHTML(article) + article.Content
+		link := `<p><a href="` + html.EscapeString(req.URL) + `">` + html.EscapeString(req.URL) + `</a></p>`
+		htmlContent = "<html><body><h1>" + html.EscapeString(req.Title) + "</h1>" + link + articleMetaHTML(article) + article.Content
 		if commentsHTML != "" {
 			htmlContent += "<hr/><h2>Comments</h2>" + commentsHTML
 		}
@@ -106,7 +107,7 @@ func fetchAndCombine(urls []string, feedTitle string) string {
 				results[idx] = result{index: idx, err: err}
 				return
 			}
-			results[idx] = result{index: idx, title: article.Title, meta: articleMetaHTML(article), content: article.Content}
+			results[idx] = result{index: idx, title: article.Title, meta: articleMetaHTML(article), content: `<p><a href="` + html.EscapeString(url) + `">` + html.EscapeString(url) + `</a></p>` + article.Content}
 		}(i, u)
 	}
 	wg.Wait()
