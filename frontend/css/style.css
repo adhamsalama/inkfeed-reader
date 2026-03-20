@@ -224,6 +224,36 @@ input[type="text"] {
   flex-wrap: wrap;
 }
 
+.article-buttons {
+  margin-bottom: 15px;
+}
+
+.article-nav-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.article-action-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.action-label {
+  font-weight: bold;
+  font-size: 0.85em;
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.article-nav-row button,
+.article-action-row button {
+  white-space: nowrap;
+}
+
 .saved-feeds-section {
   margin-top: 15px;
   padding: 10px;

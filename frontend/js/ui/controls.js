@@ -131,9 +131,13 @@ function saveEmailAddress() {
 }
 
 function setEmailButtonVisible(visible) {
-    var ids = ["email-mobi-btn", "email-epub-btn", "email-all-mobi-btn", "email-all-epub-btn"];
-    for (var i = 0; i < ids.length; i++) {
-        var btn = document.getElementById(ids[i]);
+    var emailRow = document.getElementById("email-row");
+    if (emailRow) {
+        emailRow.style.display = visible ? "" : "none";
+    }
+    var bulkIds = ["email-all-mobi-btn", "email-all-epub-btn"];
+    for (var i = 0; i < bulkIds.length; i++) {
+        var btn = document.getElementById(bulkIds[i]);
         if (btn) {
             btn.style.display = visible ? "" : "none";
         }

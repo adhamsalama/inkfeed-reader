@@ -103,23 +103,25 @@
         </div>
 
         <div id="article-view">
-            <div class="nav-buttons">
-                <button class="secondary" onclick="showFeedView()">
-                    Back to List
-                </button>
-                <button onclick="fetchFullArticle()">Get Full Article</button>
-                <button onclick="downloadArticle()">Download (text)</button>
-                <button id="download-mobi-btn">Download (MOBI)</button>
-                <button id="email-mobi-btn" style="display: none" onclick="openEmailInput('mobi')">Email (MOBI)</button>
-                <button id="download-epub-btn">Download (EPUB)</button>
-                <button id="email-epub-btn" style="display: none" onclick="openEmailInput('epub')">Email (EPUB)</button>
-                <span id="email-send-status"></span>
-                <button id="view-comments-btn" style="display: none">
-                    View Comments
-                </button>
-                <button id="view-comments-html-btn" style="display: none">
-                    View Comments HTML
-                </button>
+            <div class="article-buttons">
+                <div class="article-nav-row">
+                    <button class="secondary" onclick="showFeedView()">Back</button>
+                    <button onclick="fetchFullArticle()">Full Article</button>
+                    <button id="view-comments-btn" style="display:none">Comments</button>
+                </div>
+                <div class="article-action-row">
+                    <span class="action-label">Download</span>
+                    <button onclick="downloadArticle()">Text</button>
+                    <button id="download-mobi-btn">MOBI</button>
+                    <button id="download-epub-btn">EPUB</button>
+                </div>
+                <div class="article-action-row" id="email-row" style="display:none">
+                    <span class="action-label">Email</span>
+                    <button id="email-mobi-btn" onclick="openEmailInput('mobi')">MOBI</button>
+                    <button id="email-epub-btn" onclick="openEmailInput('epub')">EPUB</button>
+                </div>
+                <div id="email-send-status" style="font-size:0.9em; margin-top:4px;"></div>
+                <span id="view-comments-html-btn" style="display:none"></span>
             </div>
             <div id="article-title-bar"></div>
             <div id="article-loading" class="loading hidden">
