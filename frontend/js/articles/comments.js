@@ -22,7 +22,7 @@ var CommentsViewer = {
 
             var isHnComments = article.comments.indexOf("news.ycombinator.com/item?id=") >= 0;
 
-            if (isHnComments) {
+            if (isHnComments && !AppConfig.USE_BACKEND) {
                 var hnId = "";
                 var qIdx = article.comments.indexOf("?id=");
                 if (qIdx >= 0) {
@@ -145,79 +145,74 @@ var CommentsViewer = {
                     if (isJsonFeed) {
                         // Parse Reddit JSON
                         var json = JSON.parse(responseText);
-                        var htmlParts = [];
-
-                        // Recursive function to render comment and its replies
+                        var redditCounter = [0];
                         var replyCount = {count: 0};
-                        function renderComment(commentData, depth, isTopLevel) {
-                            if (!commentData || !commentData.data) return;
+
+                        var renderRedditComment = function(commentData, depth, isTopLevel) {
+                            if (!commentData || !commentData.data) return "";
                             var data = commentData.data;
 
                             // Skip "more" comments
-                            if (commentData.kind === "more") return;
+                            if (commentData.kind === "more") return "";
 
-                            // Limit replies to 50 per top-level comment
+                            // Limit replies per top-level comment
                             if (!isTopLevel) {
-                                if (replyCount.count >= AppConfig.MAX_REPLIES_PER_COMMENT) return;
+                                if (replyCount.count >= AppConfig.MAX_REPLIES_PER_COMMENT) return "";
                                 replyCount.count++;
                             }
 
+                            var n = redditCounter[0]++;
+                            var collapseId = "rc-" + n;
                             var indent = depth * 20;
-                            htmlParts.push('<div style="margin-left: ' + indent + 'px; margin-bottom: 15px; padding: 10px; border-left: 2px solid #ccc;">');
+                            var author = data.author || "[deleted]";
 
-                            if (data.author) {
-                                htmlParts.push('<p style="font-weight: bold; margin-bottom: 5px;">');
-                                htmlParts.push(escapeHtml(data.author));
-                                htmlParts.push('</p>');
-                            }
-
+                            var parts = [];
+                            parts.push('<div class="hn-comment" style="margin-left:' + indent + 'px">');
+                            parts.push('<div class="hn-comment-header">');
+                            parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleRedditComment(\'' + collapseId + '\')">[&minus;]</span> ');
+                            parts.push('<strong class="hn-author">' + escapeHtml(author) + '</strong>');
                             if (data.created_utc) {
                                 var date = new Date(data.created_utc * 1000);
-                                htmlParts.push('<p style="font-size: 0.85em; color: #666; margin-bottom: 10px;">');
-                                htmlParts.push(escapeHtml(date.toLocaleString()));
-                                htmlParts.push('</p>');
+                                parts.push(' <span class="hn-date">' + escapeHtml(date.toLocaleDateString()) + '</span>');
                             }
+                            parts.push('</div>');
 
+                            parts.push('<div id="' + collapseId + '" class="hn-comment-body">');
                             if (data.body_html) {
-                                htmlParts.push('<div style="margin-bottom: 10px;">');
-                                // Decode HTML entities in body_html
                                 var tempDiv = document.createElement("div");
                                 tempDiv.innerHTML = data.body_html;
-                                // Get just the text content (strips HTML tags)
                                 var textContent = getText(tempDiv);
-                                // Replace newlines with <br> for display
                                 textContent = textContent.replace(/\n/g, "<br>");
-                                htmlParts.push(textContent);
-                                htmlParts.push('</div>');
+                                parts.push('<div class="hn-comment-text">' + textContent + '</div>');
                             }
 
-                            htmlParts.push('</div>');
-
-                            // Render replies recursively
+                            // Render replies recursively inside collapsible body
                             if (data.replies && data.replies.data && data.replies.data.children) {
                                 var replies = data.replies.data.children;
-                                for (var i = 0; i < replies.length; i++) {
-                                    renderComment(replies[i], depth + 1, false);
+                                for (var ri = 0; ri < replies.length; ri++) {
+                                    parts.push(renderRedditComment(replies[ri], depth + 1, false));
                                 }
                             }
-                        }
+                            parts.push('</div>');
+                            parts.push('</div>');
+                            return parts.join("");
+                        };
 
+                        var htmlParts = [];
                         // json[0] is post, json[1] is comments
                         if (json.length > 1 && json[1].data && json[1].data.children) {
                             var comments = json[1].data.children;
                             var maxComments = Math.min(comments.length, AppConfig.MAX_TOP_LEVEL_COMMENTS);
                             for (var i = 0; i < maxComments; i++) {
-                                replyCount.count = 0; // Reset reply counter for each top-level comment
-                                renderComment(comments[i], 0, true);
+                                replyCount.count = 0;
+                                htmlParts.push(renderRedditComment(comments[i], 0, true));
                             }
                         }
 
                         if (htmlParts.length === 0) {
-                            commentsContent.innerHTML =
-                                '<p class="error">No comments found.</p>';
+                            commentsContent.innerHTML = '<p class="error">No comments found.</p>';
                         } else {
-                            commentsContent.innerHTML =
-                                '<div class="comments-body">' + htmlParts.join("") + "</div>";
+                            commentsContent.innerHTML = '<div class="comments-body">' + htmlParts.join("") + '</div>';
                         }
                         addClass(commentsContent, "visible");
                     } else {
@@ -310,6 +305,19 @@ var CommentsViewer = {
         } catch (e) {
             alert("fetchCommentsHtml error: " + e.message);
         }
+    }
+};
+
+window.toggleRedditComment = function(collapseId) {
+    var el = document.getElementById(collapseId);
+    var btn = document.getElementById(collapseId + "-btn");
+    if (!el) return;
+    if (el.style.display === "none") {
+        el.style.display = "";
+        if (btn) btn.innerHTML = "[&minus;]";
+    } else {
+        el.style.display = "none";
+        if (btn) btn.innerHTML = "[+]";
     }
 };
 
