@@ -37,6 +37,11 @@
             var feedParam = getUrlParam("feed") || getHashParam("feed");
             if (feedParam) {
                 feedInput.value = feedParam;
+                // Capture article hash before replaceState strips it
+                var initialHash = window.location.hash;
+                if (initialHash && initialHash.indexOf("#article-") === 0) {
+                    AppState.pendingScrollTarget = initialHash.substring(1);
+                }
                 loadFeed(); // Auto-load the feed
             } else if (!feedInput.value) {
                 toggleSuggestedFeeds();

@@ -5,7 +5,8 @@ var AppState = {
     currentLineHeight: 1.5,
     currentArticles: [],
     currentArticleIndex: -1,
-    currentArticleUrl: ""
+    currentArticleUrl: "",
+    pendingScrollTarget: ""
 };
 
 // Article selection state

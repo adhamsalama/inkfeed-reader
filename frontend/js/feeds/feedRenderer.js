@@ -211,6 +211,16 @@ var FeedRenderer = {
             }
 
             list.appendChild(fragment);
+
+            // Scroll to article if returning to feed after page refresh
+            var scrollTarget = AppState.pendingScrollTarget;
+            if (scrollTarget) {
+                AppState.pendingScrollTarget = "";
+                var targetEl = document.getElementById(scrollTarget);
+                if (targetEl && targetEl.scrollIntoView) {
+                    targetEl.scrollIntoView();
+                }
+            }
         } catch (e) {
             alert("renderArticleList error: " + e.message);
         }
