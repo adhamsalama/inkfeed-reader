@@ -20,6 +20,100 @@ var CommentsViewer = {
             // Show loading indicator
             removeClass(commentsLoading, "hidden");
 
+            var isHnComments = article.comments.indexOf("news.ycombinator.com/item?id=") >= 0;
+
+            if (isHnComments) {
+                var hnId = "";
+                var qIdx = article.comments.indexOf("?id=");
+                if (qIdx >= 0) {
+                    hnId = article.comments.substring(qIdx + 4);
+                    var ampIdx = hnId.indexOf("&");
+                    if (ampIdx >= 0) hnId = hnId.substring(0, ampIdx);
+                    var hashIdx = hnId.indexOf("#");
+                    if (hashIdx >= 0) hnId = hnId.substring(0, hashIdx);
+                }
+                if (!hnId) {
+                    commentsContent.innerHTML = '<p class="error">Could not extract HN item ID from URL.</p>';
+                    addClass(commentsContent, "visible");
+                    addClass(commentsLoading, "hidden");
+                    return;
+                }
+
+                var algoliaUrl = "https://hn.algolia.com/api/v1/items/" + hnId;
+                var hnXhr;
+                if (window.XMLHttpRequest) {
+                    hnXhr = new XMLHttpRequest();
+                } else {
+                    hnXhr = new ActiveXObject("Microsoft.XMLHTTP");
+                }
+                hnXhr.onreadystatechange = function() {
+                    if (hnXhr.readyState !== 4) return;
+                    addClass(commentsLoading, "hidden");
+                    if (hnXhr.status !== 200) {
+                        commentsContent.innerHTML = '<p class="error">Error fetching HN comments: HTTP ' + hnXhr.status + '</p>';
+                        addClass(commentsContent, "visible");
+                        return;
+                    }
+                    try {
+                        var data = JSON.parse(hnXhr.responseText);
+                        var hnCounter = [0];
+
+                        var renderHNComment = function(comment, depth) {
+                            if (!comment) return "";
+                            var text = comment.text || "";
+                            var author = comment.author || "[deleted]";
+                            var createdAt = comment.created_at || "";
+                            var children = comment.children || [];
+                            var n = hnCounter[0]++;
+                            var collapseId = "hn-c-" + n;
+                            var dateStr = createdAt ? createdAt.substring(0, 10) : "";
+                            var indent = depth * 16;
+
+                            var parts = [];
+                            parts.push('<div class="hn-comment" style="margin-left:' + indent + 'px">');
+                            parts.push('<div class="hn-comment-header">');
+                            parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleHNComment(\'' + collapseId + '\')">[&minus;]</span> ');
+                            parts.push('<strong class="hn-author">' + escapeHtml(author) + '</strong>');
+                            if (dateStr) {
+                                parts.push(' <span class="hn-date">' + escapeHtml(dateStr) + '</span>');
+                            }
+                            parts.push('</div>');
+                            parts.push('<div id="' + collapseId + '" class="hn-comment-body">');
+                            if (text) {
+                                parts.push('<div class="hn-comment-text">' + text + '</div>');
+                            } else {
+                                parts.push('<div class="hn-comment-text hn-deleted">[deleted]</div>');
+                            }
+                            for (var ci = 0; ci < children.length; ci++) {
+                                parts.push(renderHNComment(children[ci], depth + 1));
+                            }
+                            parts.push('</div>');
+                            parts.push('</div>');
+                            return parts.join("");
+                        };
+
+                        var topChildren = data.children || [];
+                        if (topChildren.length === 0) {
+                            commentsContent.innerHTML = '<p>No comments yet.</p>';
+                        } else {
+                            var htmlParts = [];
+                            var maxComments = Math.min(topChildren.length, AppConfig.MAX_TOP_LEVEL_COMMENTS);
+                            for (var ci = 0; ci < maxComments; ci++) {
+                                htmlParts.push(renderHNComment(topChildren[ci], 0));
+                            }
+                            commentsContent.innerHTML = '<div class="comments-body hn-comments">' + htmlParts.join("") + '</div>';
+                        }
+                        addClass(commentsContent, "visible");
+                    } catch (e) {
+                        commentsContent.innerHTML = '<p class="error">Error parsing HN comments: ' + escapeHtml(e.message) + '</p>';
+                        addClass(commentsContent, "visible");
+                    }
+                };
+                hnXhr.open("GET", algoliaUrl, true);
+                hnXhr.send(null);
+                return;
+            }
+
             if (AppConfig.USE_BACKEND) {
                 BackendClient.fetchComments(article.comments, function(error, data) {
                     addClass(commentsLoading, "hidden");
@@ -216,5 +310,18 @@ var CommentsViewer = {
         } catch (e) {
             alert("fetchCommentsHtml error: " + e.message);
         }
+    }
+};
+
+window.toggleHNComment = function(collapseId) {
+    var el = document.getElementById(collapseId);
+    var btn = document.getElementById(collapseId + "-btn");
+    if (!el) return;
+    if (el.style.display === "none") {
+        el.style.display = "";
+        if (btn) btn.innerHTML = "[&minus;]";
+    } else {
+        el.style.display = "none";
+        if (btn) btn.innerHTML = "[+]";
     }
 };
