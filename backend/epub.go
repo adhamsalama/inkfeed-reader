@@ -1,7 +1,6 @@
 package main
 
 import (
-	"archive/zip"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -14,10 +13,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
+
+	epub "github.com/go-shiori/go-epub"
 )
 
 type EpubRequest struct {
@@ -147,17 +148,32 @@ func buildEpubMultiArticleBody(urls []string, feedTitle string) string {
 }
 
 var (
-	imgSrcRe  = regexp.MustCompile(`(?i)<img\s[^>]*\bsrc="(https?://[^"]+)"[^>]*>`)
-	brRe      = regexp.MustCompile(`(?i)<br(\s[^>]*)?>`)
-	hrRe      = regexp.MustCompile(`(?i)<hr(\s[^>]*)?>`)
-	imgVoidRe = regexp.MustCompile(`(?i)<img(\s[^>]*[^/])>`)
+	imgSrcRe   = regexp.MustCompile(`(?i)<img\s[^>]*\bsrc="(https?://[^"]+)"[^>]*>`)
+	brRe       = regexp.MustCompile(`(?i)<br(\s[^>]*)?>`)
+	hrRe       = regexp.MustCompile(`(?i)<hr(\s[^>]*)?>`)
+	imgVoidRe  = regexp.MustCompile(`(?i)<img(\s[^>]*[^/])>`)
+	htmlTagRe2 = regexp.MustCompile(`(?i)<[a-z][a-z0-9]*(\s[^>]*)?>`)
+	attrRe     = regexp.MustCompile(`(?i)\s([a-z][a-z0-9-]*)="[^"]*"`)
 )
 
-// sanitizeXHTML fixes void HTML elements to be self-closing, as required by XHTML.
+// sanitizeXHTML fixes void HTML elements to be self-closing, as required by XHTML,
+// and removes duplicate attributes which would make the document invalid XML.
 func sanitizeXHTML(s string) string {
 	s = brRe.ReplaceAllString(s, "<br/>")
 	s = hrRe.ReplaceAllString(s, "<hr/>")
 	s = imgVoidRe.ReplaceAllString(s, "<img$1/>")
+	s = htmlTagRe2.ReplaceAllStringFunc(s, func(tag string) string {
+		seen := map[string]bool{}
+		return attrRe.ReplaceAllStringFunc(tag, func(attr string) string {
+			name := attrRe.FindStringSubmatch(attr)[1]
+			key := strings.ToLower(name)
+			if seen[key] {
+				return ""
+			}
+			seen[key] = true
+			return attr
+		})
+	})
 	return s
 }
 
@@ -280,90 +296,51 @@ func imgMediaTypeExt(ct string) string {
 }
 
 func generateEpub(title, author, bodyHTML string, embedImages bool) ([]byte, error) {
-	uid := fmt.Sprintf("%x", time.Now().UnixNano())
-	modTime := time.Now().UTC().Format("2006-01-02T15:04:05Z")
-
-	var images []embeddedImage
-	if embedImages {
-		bodyHTML, images = downloadAndEmbedImages(bodyHTML)
-	}
-	bodyHTML = sanitizeXHTML(bodyHTML)
-
-	xhtml := `<?xml version="1.0" encoding="UTF-8"?>` +
-		`<!DOCTYPE html>` +
-		`<html xmlns="http://www.w3.org/1999/xhtml"><head><title>` +
-		html.EscapeString(title) +
-		`</title></head><body>` +
-		bodyHTML +
-		`</body></html>`
-
-	var manifestItems strings.Builder
-	manifestItems.WriteString(`<item id="content" href="content.xhtml" media-type="application/xhtml+xml"/>`)
-	for i, img := range images {
-		manifestItems.WriteString(fmt.Sprintf(`<item id="img%d" href="%s" media-type="%s"/>`, i, img.path, img.mediaType))
-	}
-
-	opf := `<?xml version="1.0" encoding="UTF-8"?>` +
-		`<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0">` +
-		`<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">` +
-		`<dc:title>` + html.EscapeString(title) + `</dc:title>` +
-		`<dc:language>en</dc:language>` +
-		`<dc:creator>` + html.EscapeString(author) + `</dc:creator>` +
-		`<dc:identifier id="BookId">urn:uuid:` + uid + `</dc:identifier>` +
-		`<meta property="dcterms:modified">` + modTime + `</meta>` +
-		`</metadata>` +
-		`<manifest>` + manifestItems.String() + `</manifest>` +
-		`<spine><itemref idref="content"/></spine>` +
-		`</package>`
-
-	container := `<?xml version="1.0"?>` +
-		`<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">` +
-		`<rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles>` +
-		`</container>`
-
-	var buf bytes.Buffer
-	zw := zip.NewWriter(&buf)
-
-	// mimetype must be first and uncompressed
-	mw, err := zw.CreateHeader(&zip.FileHeader{
-		Name:   "mimetype",
-		Method: zip.Store,
-	})
+	e, err := epub.NewEpub(title)
 	if err != nil {
 		return nil, err
 	}
-	mw.Write([]byte("application/epub+zip"))
-
-	addFile := func(name, content string) error {
-		f, err := zw.Create(name)
-		if err != nil {
-			return err
-		}
-		_, err = f.Write([]byte(content))
-		return err
+	if author != "" {
+		e.SetAuthor(author)
 	}
 
-	if err := addFile("META-INF/container.xml", container); err != nil {
+	if embedImages {
+		var images []embeddedImage
+		bodyHTML, images = downloadAndEmbedImages(bodyHTML)
+
+		if len(images) > 0 {
+			tmpDir, err := os.MkdirTemp("", "epub-images-*")
+			if err != nil {
+				return nil, err
+			}
+			defer os.RemoveAll(tmpDir)
+
+			for _, img := range images {
+				tmpFile := filepath.Join(tmpDir, filepath.Base(img.path))
+				if err := os.WriteFile(tmpFile, img.data, 0644); err != nil {
+					log.Printf("epub: failed to write temp image: %v", err)
+					continue
+				}
+				epubImgPath, err := e.AddImage(tmpFile, filepath.Base(img.path))
+				if err != nil {
+					log.Printf("epub: failed to add image: %v", err)
+					continue
+				}
+				bodyHTML = strings.ReplaceAll(bodyHTML, `src="`+img.path+`"`, `src="`+epubImgPath+`"`)
+			}
+		}
+	} else {
+		bodyHTML = imgSrcRe.ReplaceAllString(bodyHTML, "")
+	}
+
+	bodyHTML = sanitizeXHTML(bodyHTML)
+
+	if _, err := e.AddSection(bodyHTML, title, "", ""); err != nil {
 		return nil, err
 	}
-	if err := addFile("OEBPS/content.opf", opf); err != nil {
-		return nil, err
-	}
-	if err := addFile("OEBPS/content.xhtml", xhtml); err != nil {
-		return nil, err
-	}
 
-	for _, img := range images {
-		f, err := zw.Create("OEBPS/" + img.path)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := f.Write(img.data); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := zw.Close(); err != nil {
+	var buf bytes.Buffer
+	if _, err := e.WriteTo(&buf); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
