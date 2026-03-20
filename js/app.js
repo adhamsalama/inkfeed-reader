@@ -38,6 +38,8 @@
             if (feedParam) {
                 feedInput.value = feedParam;
                 loadFeed(); // Auto-load the feed
+            } else if (!feedInput.value) {
+                toggleSuggestedFeeds();
             }
         } catch (e) {
             alert("init error: " + e.message);
