@@ -18,41 +18,6 @@
         <button id="scroll-down-btn" class="scroll-btn" onclick="scrollPage(1)">v</button>
     </div>
     <div class="container">
-        <div class="controls">
-            <div class="control-row">
-                <div class="control-group">
-                    <span class="control-label">Font:</span>
-                    <button onclick="adjustFontSize(-2)" aria-label="Decrease font size">
-                        A-
-                    </button>
-                    <button onclick="adjustFontSize(2)" aria-label="Increase font size">
-                        A+
-                    </button>
-                </div>
-                <div class="control-group">
-                    <span class="control-label">Spacing:</span>
-                    <button onclick="adjustSpacing(-1)" aria-label="Decrease spacing">
-                        -
-                    </button>
-                    <button onclick="adjustSpacing(1)" aria-label="Increase spacing">
-                        +
-                    </button>
-                </div>
-                <div class="control-group">
-                    <span class="control-label">Line:</span>
-                    <button onclick="adjustLineHeight(-0.1)" aria-label="Decrease line height">
-                        -
-                    </button>
-                    <button onclick="adjustLineHeight(0.1)" aria-label="Increase line height">
-                        +
-                    </button>
-                </div>
-                <div class="control-group">
-                    <button class="secondary" onclick="openSettings()" aria-label="Settings">Settings</button>
-                </div>
-            </div>
-        </div>
-
         <div id="input-view" class="active">
             <div class="feed-input-section">
                 <input type="text" id="feed-url" placeholder="Enter RSS feed URL..." />
@@ -61,6 +26,7 @@
                     <button class="secondary" onclick="saveCurrentFeed()">Save</button>
                     <button class="secondary" onclick="toggleSavedFeeds()">Saved</button>
                     <button class="secondary" onclick="toggleSuggestedFeeds()">Suggested</button>
+                    <button class="secondary" onclick="openSettings()">Settings</button>
                 </div>
                 <div id="render-progress" style="display: inline" class="loading">0/0</div>
             </div>
@@ -140,6 +106,26 @@
             <div class="settings-header">
                 <strong>Settings</strong>
                 <button class="secondary" onclick="closeSettings()">Close</button>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title">Display</div>
+                <div class="control-row">
+                    <div class="control-group">
+                        <span class="control-label">Font:</span>
+                        <button onclick="adjustFontSize(-2)">A-</button>
+                        <button onclick="adjustFontSize(2)">A+</button>
+                    </div>
+                    <div class="control-group">
+                        <span class="control-label">Spacing:</span>
+                        <button onclick="adjustSpacing(-1)">-</button>
+                        <button onclick="adjustSpacing(1)">+</button>
+                    </div>
+                    <div class="control-group">
+                        <span class="control-label">Line:</span>
+                        <button onclick="adjustLineHeight(-0.1)">-</button>
+                        <button onclick="adjustLineHeight(0.1)">+</button>
+                    </div>
+                </div>
             </div>
             <div class="settings-section">
                 <div class="settings-section-title">Proxy URL</div>
