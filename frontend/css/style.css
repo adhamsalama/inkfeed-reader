@@ -106,14 +106,23 @@ input[type="text"] {
   border-bottom: 1px solid #ccc;
 }
 
+.article-title-row {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-align: baseline;
+  -webkit-align-items: baseline;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
 .article-title {
   font-size: 1.1em;
   font-weight: bold;
   color: #000;
-  text-decoration: underline;
+  text-decoration: none;
   cursor: pointer;
-  display: block;
-  margin-bottom: 5px;
 }
 
 .article-title:active {
@@ -123,6 +132,9 @@ input[type="text"] {
 .article-meta {
   font-size: 0.85em;
   color: #444;
+  white-space: nowrap;
+  -webkit-flex-shrink: 0;
+  flex-shrink: 0;
 }
 
 .article-description {

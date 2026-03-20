@@ -164,6 +164,9 @@ var FeedRenderer = {
                 li.className = "article-item";
                 li.id = "article-" + i;
 
+                var titleRow = document.createElement("div");
+                titleRow.className = "article-title-row";
+
                 var title = document.createElement("a");
                 title.className = "article-title";
                 setText(title, article.title);
@@ -175,14 +178,19 @@ var FeedRenderer = {
                     };
                 })(i);
 
-                var meta = document.createElement("div");
-                meta.className = "article-meta";
+                titleRow.appendChild(title);
+
                 if (article.pubDate) {
                     var date = new Date(article.pubDate);
                     var dateText = isNaN(date.getTime())
                         ? article.pubDate
-                        : date.toLocaleDateString();
+                        : (date.getDate() < 10 ? "0" + date.getDate() : "" + date.getDate()) + "-" +
+                          (date.getMonth() + 1 < 10 ? "0" + (date.getMonth() + 1) : "" + (date.getMonth() + 1)) + "-" +
+                          ("" + date.getFullYear()).slice(2);
+                    var meta = document.createElement("span");
+                    meta.className = "article-meta";
                     setText(meta, dateText);
+                    titleRow.appendChild(meta);
                 }
 
                 var desc = document.createElement("div");
@@ -195,8 +203,7 @@ var FeedRenderer = {
                 if (plainText.length > 200) truncated += "...";
                 setText(desc, truncated);
 
-                li.appendChild(title);
-                if (getText(meta)) li.appendChild(meta);
+                li.appendChild(titleRow);
                 if (getText(desc)) li.appendChild(desc);
                 fragment.appendChild(li);
 
