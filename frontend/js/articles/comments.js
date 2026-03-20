@@ -114,8 +114,92 @@ var CommentsViewer = {
                 return;
             }
 
+            var isRedditComments = article.comments.indexOf(".json") >= 0;
+
+            // Client-side Reddit fetch+render, used directly or as backend fallback
+            var fetchRedditClientSide = function() {
+                fetchUrl(article.comments, function(error, responseText) {
+                    addClass(commentsLoading, "hidden");
+                    if (error) {
+                        commentsContent.innerHTML = '<p class="error">Error fetching comments: ' + escapeHtml(error.message) + "</p>";
+                        addClass(commentsContent, "visible");
+                        return;
+                    }
+                    try {
+                        var json = JSON.parse(responseText);
+                        var redditCounter = [0];
+                        var replyCount = {count: 0};
+
+                        var renderRedditComment = function(commentData, depth, isTopLevel) {
+                            if (!commentData || !commentData.data) return "";
+                            var data = commentData.data;
+                            if (commentData.kind === "more") return "";
+                            if (!isTopLevel) {
+                                if (replyCount.count >= AppConfig.MAX_REPLIES_PER_COMMENT) return "";
+                                replyCount.count++;
+                            }
+                            var n = redditCounter[0]++;
+                            var collapseId = "rc-" + n;
+                            var indent = depth * 20;
+                            var author = data.author || "[deleted]";
+                            var parts = [];
+                            parts.push('<div class="hn-comment" style="margin-left:' + indent + 'px">');
+                            parts.push('<div class="hn-comment-header">');
+                            parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleRedditComment(\'' + collapseId + '\')">[&minus;]</span> ');
+                            parts.push('<strong class="hn-author">' + escapeHtml(author) + '</strong>');
+                            if (data.created_utc) {
+                                var date = new Date(data.created_utc * 1000);
+                                parts.push(' <span class="hn-date">' + escapeHtml(date.toLocaleDateString()) + '</span>');
+                            }
+                            parts.push('</div>');
+                            parts.push('<div id="' + collapseId + '" class="hn-comment-body">');
+                            if (data.body_html) {
+                                var tempDiv = document.createElement("div");
+                                tempDiv.innerHTML = data.body_html;
+                                var textContent = getText(tempDiv);
+                                textContent = textContent.replace(/\n/g, "<br>");
+                                parts.push('<div class="hn-comment-text">' + textContent + '</div>');
+                            }
+                            if (data.replies && data.replies.data && data.replies.data.children) {
+                                var replies = data.replies.data.children;
+                                for (var ri = 0; ri < replies.length; ri++) {
+                                    parts.push(renderRedditComment(replies[ri], depth + 1, false));
+                                }
+                            }
+                            parts.push('</div>');
+                            parts.push('</div>');
+                            return parts.join("");
+                        };
+
+                        var htmlParts = [];
+                        if (json.length > 1 && json[1].data && json[1].data.children) {
+                            var comments = json[1].data.children;
+                            var maxComments = Math.min(comments.length, AppConfig.MAX_TOP_LEVEL_COMMENTS);
+                            for (var i = 0; i < maxComments; i++) {
+                                replyCount.count = 0;
+                                htmlParts.push(renderRedditComment(comments[i], 0, true));
+                            }
+                        }
+                        if (htmlParts.length === 0) {
+                            commentsContent.innerHTML = '<p class="error">No comments found.</p>';
+                        } else {
+                            commentsContent.innerHTML = '<div class="comments-body">' + htmlParts.join("") + '</div>';
+                        }
+                        addClass(commentsContent, "visible");
+                    } catch (e) {
+                        commentsContent.innerHTML = '<p class="error">Error parsing Reddit comments: ' + escapeHtml(e.message) + '</p>';
+                        addClass(commentsContent, "visible");
+                    }
+                });
+            };
+
             if (AppConfig.USE_BACKEND) {
                 BackendClient.fetchComments(article.comments, function(error, data) {
+                    if (error && isRedditComments) {
+                        // Backend failed (e.g. Reddit rate limit) — fall back to client-side
+                        fetchRedditClientSide();
+                        return;
+                    }
                     addClass(commentsLoading, "hidden");
                     if (error) {
                         commentsContent.innerHTML = '<p class="error">Error fetching comments: ' + escapeHtml(error.message) + "</p>";
@@ -124,6 +208,11 @@ var CommentsViewer = {
                     }
                     addClass(commentsContent, "visible");
                 });
+                return;
+            }
+
+            if (isRedditComments) {
+                fetchRedditClientSide();
                 return;
             }
 
@@ -139,112 +228,24 @@ var CommentsViewer = {
                 }
 
                 try {
-                    // Check if this is a JSON feed (Reddit)
-                    var isJsonFeed = article.comments.indexOf(".json") >= 0;
-
-                    if (isJsonFeed) {
-                        // Parse Reddit JSON
-                        var json = JSON.parse(responseText);
-                        var redditCounter = [0];
-                        var replyCount = {count: 0};
-
-                        var renderRedditComment = function(commentData, depth, isTopLevel) {
-                            if (!commentData || !commentData.data) return "";
-                            var data = commentData.data;
-
-                            // Skip "more" comments
-                            if (commentData.kind === "more") return "";
-
-                            // Limit replies per top-level comment
-                            if (!isTopLevel) {
-                                if (replyCount.count >= AppConfig.MAX_REPLIES_PER_COMMENT) return "";
-                                replyCount.count++;
-                            }
-
-                            var n = redditCounter[0]++;
-                            var collapseId = "rc-" + n;
-                            var indent = depth * 20;
-                            var author = data.author || "[deleted]";
-
-                            var parts = [];
-                            parts.push('<div class="hn-comment" style="margin-left:' + indent + 'px">');
-                            parts.push('<div class="hn-comment-header">');
-                            parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleRedditComment(\'' + collapseId + '\')">[&minus;]</span> ');
-                            parts.push('<strong class="hn-author">' + escapeHtml(author) + '</strong>');
-                            if (data.created_utc) {
-                                var date = new Date(data.created_utc * 1000);
-                                parts.push(' <span class="hn-date">' + escapeHtml(date.toLocaleDateString()) + '</span>');
-                            }
-                            parts.push('</div>');
-
-                            parts.push('<div id="' + collapseId + '" class="hn-comment-body">');
-                            if (data.body_html) {
-                                var tempDiv = document.createElement("div");
-                                tempDiv.innerHTML = data.body_html;
-                                var textContent = getText(tempDiv);
-                                textContent = textContent.replace(/\n/g, "<br>");
-                                parts.push('<div class="hn-comment-text">' + textContent + '</div>');
-                            }
-
-                            // Render replies recursively inside collapsible body
-                            if (data.replies && data.replies.data && data.replies.data.children) {
-                                var replies = data.replies.data.children;
-                                for (var ri = 0; ri < replies.length; ri++) {
-                                    parts.push(renderRedditComment(replies[ri], depth + 1, false));
-                                }
-                            }
-                            parts.push('</div>');
-                            parts.push('</div>');
-                            return parts.join("");
-                        };
-
-                        var htmlParts = [];
-                        // json[0] is post, json[1] is comments
-                        if (json.length > 1 && json[1].data && json[1].data.children) {
-                            var comments = json[1].data.children;
-                            var maxComments = Math.min(comments.length, AppConfig.MAX_TOP_LEVEL_COMMENTS);
-                            for (var i = 0; i < maxComments; i++) {
-                                replyCount.count = 0;
-                                htmlParts.push(renderRedditComment(comments[i], 0, true));
-                            }
-                        }
-
-                        if (htmlParts.length === 0) {
-                            commentsContent.innerHTML = '<p class="error">No comments found.</p>';
-                        } else {
-                            commentsContent.innerHTML = '<div class="comments-body">' + htmlParts.join("") + '</div>';
-                        }
-                        addClass(commentsContent, "visible");
+                    // Readability fallback for non-Reddit/non-HN pages
+                    var doc;
+                    if (window.DOMParser) {
+                        doc = new DOMParser().parseFromString(responseText, "text/html");
                     } else {
-                        // Parse as HTML using Readability
-                        var doc;
-                        if (window.DOMParser) {
-                            doc = new DOMParser().parseFromString(responseText, "text/html");
-                        } else {
-                            doc = document.createElement("div");
-                            doc.innerHTML = responseText;
-                        }
-
-                        var reader = new Readability(doc);
-                        var extractedContent = reader.parse();
-
-                        if (extractedContent && extractedContent.content) {
-                            commentsContent.innerHTML =
-                                '<div class="comments-body">' +
-                                extractedContent.content +
-                                "</div>";
-                            addClass(commentsContent, "visible");
-                        } else {
-                            commentsContent.innerHTML =
-                                '<p class="error">Could not parse comments from this page.</p>';
-                            addClass(commentsContent, "visible");
-                        }
+                        doc = document.createElement("div");
+                        doc.innerHTML = responseText;
                     }
+                    var reader = new Readability(doc);
+                    var extractedContent = reader.parse();
+                    if (extractedContent && extractedContent.content) {
+                        commentsContent.innerHTML = '<div class="comments-body">' + extractedContent.content + "</div>";
+                    } else {
+                        commentsContent.innerHTML = '<p class="error">Could not parse comments from this page.</p>';
+                    }
+                    addClass(commentsContent, "visible");
                 } catch (e) {
-                    commentsContent.innerHTML =
-                        '<p class="error">Error parsing comments: ' +
-                        escapeHtml(e.message) +
-                        "</p>";
+                    commentsContent.innerHTML = '<p class="error">Error parsing comments: ' + escapeHtml(e.message) + "</p>";
                     addClass(commentsContent, "visible");
                 }
 
