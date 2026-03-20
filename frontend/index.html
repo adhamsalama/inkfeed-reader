@@ -82,13 +82,19 @@
 
         <div id="feed-view">
             <h2 id="feed-title">Feed Articles</h2>
-            <div class="nav-buttons" id="normal-nav-buttons" style="display: flex;">
-                <button onclick="startArticleSelection('text')">Download All (text)</button>
-                <button onclick="startArticleSelection('mobi')">Download All (MOBI)</button>
-                <button onclick="startArticleSelection('epub')">Download All (EPUB)</button>
-                <button id="email-all-mobi-btn" style="display: none" onclick="startArticleSelection('email-mobi')">Email All (MOBI)</button>
-                <button id="email-all-epub-btn" style="display: none" onclick="startArticleSelection('email-epub')">Email All (EPUB)</button>
-                <span id="email-all-status"></span>
+            <div class="article-buttons" id="normal-nav-buttons">
+                <div class="article-action-row">
+                    <span class="action-label">Download</span>
+                    <button onclick="startArticleSelection('text')">Text</button>
+                    <button onclick="startArticleSelection('mobi')">MOBI</button>
+                    <button onclick="startArticleSelection('epub')">EPUB</button>
+                </div>
+                <div class="article-action-row" id="email-all-row" style="display:none">
+                    <span class="action-label">Email</span>
+                    <button id="email-all-mobi-btn" onclick="startArticleSelection('email-mobi')">MOBI</button>
+                    <button id="email-all-epub-btn" onclick="startArticleSelection('email-epub')">EPUB</button>
+                </div>
+                <div id="email-all-status" style="font-size:0.9em; margin-top:4px;"></div>
             </div>
             <div class="nav-buttons" id="selection-nav-buttons" style="display: none;">
                 <button id="selection-action-btn" onclick="downloadSelectedArticles()" class="primary">Download Selected</button>

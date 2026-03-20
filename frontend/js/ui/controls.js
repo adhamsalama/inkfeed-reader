@@ -135,12 +135,9 @@ function setEmailButtonVisible(visible) {
     if (emailRow) {
         emailRow.style.display = visible ? "" : "none";
     }
-    var bulkIds = ["email-all-mobi-btn", "email-all-epub-btn"];
-    for (var i = 0; i < bulkIds.length; i++) {
-        var btn = document.getElementById(bulkIds[i]);
-        if (btn) {
-            btn.style.display = visible ? "" : "none";
-        }
+    var emailAllRow = document.getElementById("email-all-row");
+    if (emailAllRow) {
+        emailAllRow.style.display = visible ? "" : "none";
     }
 }
 
