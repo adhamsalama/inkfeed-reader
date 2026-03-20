@@ -263,6 +263,7 @@ input[type="text"] {
 .article-nav-row button,
 .article-action-row button {
   white-space: nowrap;
+  flex: 1;
 }
 
 .saved-feeds-section {
