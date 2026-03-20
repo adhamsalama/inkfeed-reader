@@ -97,6 +97,17 @@ input[type="text"] {
   margin-bottom: 15px;
 }
 
+.feed-action-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.feed-action-row button {
+  flex: 1;
+  white-space: nowrap;
+}
+
 .article-list {
   list-style: none;
 }

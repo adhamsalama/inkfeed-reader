@@ -55,21 +55,14 @@
 
         <div id="input-view" class="active">
             <div class="feed-input-section">
-                <label for="feed-url"><strong>Enter RSS Feed URL:</strong></label>
-                <input type="text" id="feed-url" placeholder="https://example.com/feed.xml" />
-                <button onclick="loadFeed()">Load Feed</button>
-                <button class="secondary" onclick="saveCurrentFeed()">
-                    Save Feed
-                </button>
-                <button class="secondary" onclick="toggleSavedFeeds()">
-                    Saved Feeds
-                </button>
-                <button class="secondary" onclick="toggleSuggestedFeeds()">
-                    Suggested Feeds
-                </button>
-                <div id="render-progress" style="display: inline" class="loading">
-                    0/0
+                <input type="text" id="feed-url" placeholder="Enter RSS feed URL..." />
+                <div class="feed-action-row">
+                    <button onclick="loadFeed()">Load</button>
+                    <button class="secondary" onclick="saveCurrentFeed()">Save</button>
+                    <button class="secondary" onclick="toggleSavedFeeds()">Saved</button>
+                    <button class="secondary" onclick="toggleSuggestedFeeds()">Suggested</button>
                 </div>
+                <div id="render-progress" style="display: inline" class="loading">0/0</div>
             </div>
             <div id="input-error" class="error hidden"></div>
             <div id="saved-feeds-section" class="saved-feeds-section hidden">
