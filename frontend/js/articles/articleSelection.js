@@ -33,9 +33,9 @@ var ArticleSelectionManager = {
                 if (actionBtn) { actionBtn.textContent = "Download Selected"; }
             }
 
-            // Add selection buttons to each article
+            // Add selection buttons to each article (skip feed separators)
             var articleList = document.getElementById("article-list");
-            var items = articleList.getElementsByTagName("li");
+            var items = articleList.getElementsByClassName("article-item");
 
             for (var i = 0; i < items.length; i++) {
                 this.addSelectionButtonsToArticle(items[i], i);
@@ -100,7 +100,7 @@ var ArticleSelectionManager = {
     cancelArticleSelection: function() {
         // Remove selection buttons from all articles
         var articleList = document.getElementById("article-list");
-        var items = articleList.getElementsByTagName("li");
+        var items = articleList.getElementsByClassName("article-item");
 
         for (var i = 0; i < items.length; i++) {
             var buttons = items[i].querySelector(".article-selection-buttons");
