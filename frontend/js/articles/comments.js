@@ -67,10 +67,10 @@ var CommentsViewer = {
                             var n = hnCounter[0]++;
                             var collapseId = "hn-c-" + n;
                             var dateStr = createdAt ? createdAt.substring(0, 10) : "";
-                            var indent = depth * 16;
+
 
                             var parts = [];
-                            parts.push('<div class="hn-comment" style="margin-left:' + indent + 'px">');
+                            parts.push('<div class="hn-comment">');
                             parts.push('<div class="hn-comment-header">');
                             parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleHNComment(\'' + collapseId + '\')">[&minus;]</span> ');
                             parts.push('<strong class="hn-author">' + escapeHtml(author) + '</strong>');
@@ -140,10 +140,10 @@ var CommentsViewer = {
                             }
                             var n = redditCounter[0]++;
                             var collapseId = "rc-" + n;
-                            var indent = depth * 20;
+
                             var author = data.author || "[deleted]";
                             var parts = [];
-                            parts.push('<div class="hn-comment" style="margin-left:' + indent + 'px">');
+                            parts.push('<div class="hn-comment">');
                             parts.push('<div class="hn-comment-header">');
                             parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleRedditComment(\'' + collapseId + '\')">[&minus;]</span> ');
                             parts.push('<strong class="hn-author">' + escapeHtml(author) + '</strong>');

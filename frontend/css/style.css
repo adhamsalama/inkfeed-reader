@@ -517,8 +517,12 @@ input[type="text"] {
 
 .hn-comment {
   border-left: 2px solid #ccc;
-  padding-left: 8px;
+  padding-left: 6px;
   margin-bottom: 10px;
+}
+
+.hn-comment-body {
+  padding-left: 8px;
 }
 
 .hn-comment-header {
