@@ -1,6 +1,11 @@
 // Scroll Controls (IIFE pattern for encapsulation)
 (function() {
     // Global function for onclick handler
+    window.scrollToTop = function() {
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+    };
+
     window.scrollPage = function(direction) {
         var scrollAmount = window.innerHeight || document.documentElement.clientHeight || 400;
         window.scrollBy(0, direction * scrollAmount * 0.8);
@@ -17,6 +22,16 @@
             removeClass(scrollButtons, "hidden");
         } else {
             addClass(scrollButtons, "hidden");
+        }
+
+        // Raise buttons and show Top button when near the bottom
+        var scrollTopBtn = document.getElementById("scroll-top-btn");
+        if (scrollTop + clientHeight >= scrollHeight - 60) {
+            addClass(scrollButtons, "scroll-buttons-raised");
+            if (scrollTopBtn) { scrollTopBtn.style.display = "inline"; }
+        } else {
+            removeClass(scrollButtons, "scroll-buttons-raised");
+            if (scrollTopBtn) { scrollTopBtn.style.display = "none"; }
         }
     }
 

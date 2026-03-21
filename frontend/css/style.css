@@ -455,6 +455,14 @@ input[type="text"] {
   display: flex;
 }
 
+.scroll-buttons-raised {
+  bottom: 50px;
+}
+
+.scroll-top-btn {
+  display: none;
+}
+
 .scroll-buttons > * + * {
   margin-left: 5px;
 }
