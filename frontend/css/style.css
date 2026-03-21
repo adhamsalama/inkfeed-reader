@@ -97,6 +97,17 @@ input[type="text"] {
   margin-bottom: 15px;
 }
 
+.feed-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.feed-title-row h2 {
+  margin-bottom: 0;
+}
+
 .feed-action-row {
   display: flex;
   gap: 8px;

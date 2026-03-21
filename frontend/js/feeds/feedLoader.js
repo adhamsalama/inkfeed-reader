@@ -188,12 +188,12 @@ function loadCategoryFeeds(categoryFeeds, categoryName) {
     ViewManager.showFeedView();
     setText(document.getElementById("feed-title"), categoryName);
     document.title = categoryName;
-    setText(progress, "0/" + total);
+    setText(progress, "");
 
     function onFeedDone(index, articles) {
         completed++;
         results[index] = articles || [];
-        setText(progress, completed + "/" + total);
+        setText(progress, "");
 
         if (completed === total) {
             addClass(document.getElementById("feed-loading"), "hidden");
