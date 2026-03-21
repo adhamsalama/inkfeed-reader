@@ -163,20 +163,19 @@ var FeedRenderer = {
                 var li = document.createElement("li");
                 li.className = "article-item";
                 li.id = "article-" + i;
-
-                var titleRow = document.createElement("div");
-                titleRow.className = "article-title-row";
-
-                var title = document.createElement("a");
-                title.className = "article-title";
-                setText(title, article.title);
-                // Use closure to capture index
                 (function (index) {
-                    title.onclick = function () {
+                    li.onclick = function () {
                         ArticleViewer.openArticle(index);
                         return false;
                     };
                 })(i);
+
+                var titleRow = document.createElement("div");
+                titleRow.className = "article-title-row";
+
+                var title = document.createElement("span");
+                title.className = "article-title";
+                setText(title, article.title);
 
                 titleRow.appendChild(title);
 
