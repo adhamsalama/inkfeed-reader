@@ -126,7 +126,9 @@ function fetchFullArticle() {
                 }
                 var article = AppState.currentArticles[AppState.currentArticleIndex];
                 var resolvedTitle = data.title || article.title;
-                setText(document.getElementById("article-title-bar"), resolvedTitle);
+                var feedTitle = getText(document.getElementById("feed-title"));
+                var titleBarText = feedTitle ? feedTitle + " \u2014 " + resolvedTitle : resolvedTitle;
+                setText(document.getElementById("article-title-bar"), titleBarText);
                 var html = "<h2>" + escapeHtml(resolvedTitle) + "</h2>";
                 if (article.pubDate) {
                     html += '<p class="article-meta">' + escapeHtml(article.pubDate) + "</p>";

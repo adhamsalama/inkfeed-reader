@@ -128,7 +128,9 @@ var ArticleViewer = {
 
             // Helper function to display article content
             function displayArticleContent(contentDiv, article, finalUrl, content) {
-                setText(document.getElementById("article-title-bar"), article.title);
+                var feedTitle = getText(document.getElementById("feed-title"));
+                var titleBarText = feedTitle ? feedTitle + " \u2014 " + article.title : article.title;
+                setText(document.getElementById("article-title-bar"), titleBarText);
                 var html = "<h2>" + escapeHtml(article.title) + "</h2>";
                 if (article.pubDate) {
                     html +=
