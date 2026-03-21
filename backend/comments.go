@@ -173,8 +173,6 @@ func renderHNComment(sb *strings.Builder, item hnItem, depth int, counter *int) 
 	n := *counter
 	*counter++
 	collapseID := fmt.Sprintf("hn-c-%d", n)
-	indent := depth * 16
-
 	author := item.Author
 	if author == "" {
 		author = "[deleted]"
@@ -192,7 +190,7 @@ func renderHNComment(sb *strings.Builder, item hnItem, depth int, counter *int) 
 		}
 	}
 
-	fmt.Fprintf(sb, `<div class="hn-comment" style="margin-left:%dpx">`, indent)
+	sb.WriteString(`<div class="hn-comment">`)
 	sb.WriteString(`<div class="hn-comment-header">`)
 	fmt.Fprintf(sb, `<span id="%s-btn" class="hn-toggle" onclick="toggleHNComment('%s')">[&minus;]</span> `, collapseID, collapseID)
 	fmt.Fprintf(sb, `<strong class="hn-author">%s</strong>`, html.EscapeString(author))
@@ -272,15 +270,13 @@ func renderRedditComment(sb *strings.Builder, thing redditThing, depth int, isTo
 	n := *counter
 	*counter++
 	collapseID := fmt.Sprintf("rc-%d", n)
-	indent := depth * 20
-
 	d := thing.Data
 	author := d.Author
 	if author == "" {
 		author = "[deleted]"
 	}
 
-	fmt.Fprintf(sb, `<div class="hn-comment" style="margin-left:%dpx">`, indent)
+	sb.WriteString(`<div class="hn-comment">`)
 	sb.WriteString(`<div class="hn-comment-header">`)
 	fmt.Fprintf(sb, `<span id="%s-btn" class="hn-toggle" onclick="toggleRedditComment('%s')">[&minus;]</span> `, collapseID, collapseID)
 	fmt.Fprintf(sb, `<strong class="hn-author">%s</strong>`, html.EscapeString(author))
