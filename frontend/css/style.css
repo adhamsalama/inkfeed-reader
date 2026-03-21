@@ -44,14 +44,18 @@ h2 {
 .control-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
   margin-bottom: 6px;
 }
 
 .control-group {
   display: flex;
   align-items: center;
-  gap: 5px;
+  margin-right: 12px;
+  margin-bottom: 4px;
+}
+
+.control-group > * + * {
+  margin-left: 5px;
 }
 
 .control-label {
@@ -100,23 +104,27 @@ input[type="text"] {
 .feed-title-row {
   display: flex;
   align-items: baseline;
-  gap: 10px;
   margin-bottom: 10px;
 }
 
 .feed-title-row h2 {
   margin-bottom: 0;
+  margin-right: 8px;
 }
 
 .feed-action-row {
   display: flex;
-  gap: 8px;
   margin-top: 8px;
 }
 
 .feed-action-row button {
   flex: 1;
   white-space: nowrap;
+  margin-right: 6px;
+}
+
+.feed-action-row button:last-child {
+  margin-right: 0;
 }
 
 .article-list {
@@ -135,8 +143,11 @@ input[type="text"] {
   -webkit-box-align: baseline;
   -webkit-align-items: baseline;
   align-items: baseline;
-  gap: 8px;
   margin-bottom: 5px;
+}
+
+.article-title-row > * + * {
+  margin-left: 8px;
 }
 
 .article-title {
@@ -241,9 +252,12 @@ input[type="text"] {
 
 .nav-buttons {
   display: flex;
-  gap: 10px;
   margin-bottom: 15px;
   flex-wrap: wrap;
+}
+
+.nav-buttons > * + * {
+  margin-left: 10px;
 }
 
 .article-buttons {
@@ -252,14 +266,12 @@ input[type="text"] {
 
 .article-nav-row {
   display: flex;
-  gap: 8px;
   margin-bottom: 10px;
   flex-wrap: wrap;
 }
 
 .article-action-row {
   display: flex;
-  gap: 8px;
   margin-bottom: 8px;
   align-items: center;
 }
@@ -268,13 +280,21 @@ input[type="text"] {
   font-weight: bold;
   font-size: 0.85em;
   min-width: 72px;
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
+  margin-right: 6px;
 }
 
 .article-nav-row button,
 .article-action-row button {
   white-space: nowrap;
   flex: 1;
+  margin-right: 6px;
+}
+
+.article-nav-row button:last-child,
+.article-action-row button:last-child {
+  margin-right: 0;
 }
 
 .saved-feeds-section {
@@ -290,8 +310,11 @@ input[type="text"] {
 
 .article-selection-buttons {
   display: flex;
-  gap: 5px;
   margin-top: 8px;
+}
+
+.article-selection-buttons > * + * {
+  margin-left: 5px;
 }
 
 .article-selection-buttons button {
@@ -318,7 +341,10 @@ input[type="text"] {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
+}
+
+.saved-feed-item > * + * {
+  margin-left: 10px;
 }
 
 .saved-feed-link {
@@ -378,8 +404,11 @@ input[type="text"] {
 .proxy-input-row {
   display: flex;
   align-items: center;
-  gap: 6px;
   margin-top: 6px;
+}
+
+.proxy-input-row > * + * {
+  margin-left: 6px;
 }
 
 .proxy-input-row.hidden {
@@ -404,7 +433,10 @@ input[type="text"] {
   bottom: 10px;
   right: 10px;
   display: flex;
-  gap: 5px;
+}
+
+.scroll-buttons > * + * {
+  margin-left: 5px;
 }
 
 .scroll-btn {
