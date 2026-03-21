@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -14,10 +15,28 @@ var (
 	rateLimitHits   map[string][]time.Time
 	rateLimitMax    int
 	rateLimitWindow time.Duration
+
+	emailRateLimitMu   sync.Mutex
+	emailRateLimitHits map[string]time.Time
 )
+
+func clientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		if i := strings.Index(xff, ","); i != -1 {
+			return strings.TrimSpace(xff[:i])
+		}
+		return strings.TrimSpace(xff)
+	}
+	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+	if ip == "" {
+		return r.RemoteAddr
+	}
+	return ip
+}
 
 func init() {
 	rateLimitHits = make(map[string][]time.Time)
+	emailRateLimitHits = make(map[string]time.Time)
 
 	rateLimitMax = 40
 	if v := os.Getenv("RATE_LIMIT_MAX"); v != "" {
@@ -34,15 +53,27 @@ func init() {
 	}
 }
 
+func emailRateLimitMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := clientIP(r)
+
+		emailRateLimitMu.Lock()
+		last, seen := emailRateLimitHits[ip]
+		if seen && time.Since(last) < time.Minute {
+			emailRateLimitMu.Unlock()
+			jsonError(w, "email rate limit exceeded: 1 per minute", http.StatusTooManyRequests)
+			return
+		}
+		emailRateLimitHits[ip] = time.Now()
+		emailRateLimitMu.Unlock()
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func rateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := r.Header.Get("True-Client-IP")
-		if ip == "" {
-			ip, _, _ = net.SplitHostPort(r.RemoteAddr)
-			if ip == "" {
-				ip = r.RemoteAddr
-			}
-		}
+		ip := clientIP(r)
 
 		rateLimitMu.Lock()
 		now := time.Now()
