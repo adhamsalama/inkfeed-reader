@@ -1,70 +1,54 @@
-# Kindle RSS Reader
+# Inkfeed
 
-A single-page web application for reading RSS feeds on Kindle devices. Displays articles in a format optimized for Kindle's browser and supports downloading articles as MOBI files for offline reading.
+A simple reader for RSS and Atom feeds. Designed for e-ink browsers, but functional everywhere. No signup, no tracking — just your feeds, cleanly presented.
 
-**Try it:** [https://adhamsalama.github.io/simple-rss-reader](https://adhamsalama.github.io/simple-rss-reader)
+**Open the reader:** [https://reader.inkfeed.xyz](https://reader.inkfeed.xyz)
 
 ## Features
 
-- **RSS Feed Support** - Works with both RSS 2.0 and Atom feeds
-- **Reading Controls** - Adjustable font size, letter/word spacing, and line height
-- **Full Article Extraction** - Fetches complete article content from summary-only feeds using Mozilla Readability
-- **MOBI Downloads** - Download articles as Kindle-native MOBI files
-- **Comments Integration** - Includes Hacker News comments in downloaded MOBI files
-- **Feed Persistence** - Saves feed URL in browser for easy reload
-- **Kindle Browser Compatible** - Uses ES3 JavaScript for maximum compatibility
+- **RSS 2.0 & Atom** — Parses both formats natively. Special handling for Reddit JSON feeds and Google News redirect URLs.
+- **Clean reader view** — Fetches the full article body using Mozilla Readability, stripping ads and site chrome. Adjustable font, spacing, and line height (in Settings).
+- **Download & send to Kindle** — Export articles as MOBI, EPUB, or plain text. Download or email individual articles or a selection from the feed to your Kindle.
+- **Comments** — Fetches and displays Reddit and Hacker News comments. Included in MOBI downloads.
+- **Save your feeds** — Feed URLs are persisted in browser local storage. No server, no account.
+- **Suggested feeds** — Built-in curated list across tech, news, science, and more.
+- **Built for e-ink** — No JavaScript frameworks, no heavy assets. Written in ES3 so it runs in the Kindle's experimental browser.
 
-# Screenshots
+## How to use
 
-![Main](./screenshots/main.png)
+1. Open the reader in any browser — desktop, phone, or Kindle.
+2. Paste any RSS or Atom feed URL and hit **Load**, or pick from the suggested feeds list.
+3. Click an article to read it. Use **Full Article** to extract the complete body from the source.
+4. **Download** or **Email** individual articles, or select multiple from the feed at once.
 
-![Full Article](./screenshots/full_article.png)
+## Export formats
 
-## Usage
+| Format | Notes                                          |
+| ------ | ---------------------------------------------- |
+| MOBI   | Kindle-native. Includes comments if available. |
+| EPUB   | Supports image embedding (backend mode).       |
+| TXT    | Plain text.                                    |
 
-1. Open `index.html` in your Kindle's browser (or any web browser)
-2. Enter an RSS feed URL (e.g., `https://news.ycombinator.com/rss`)
-3. Click **Load Feed** or press Enter
-4. Click any article title to read it
-5. Use **Get Full Article** to extract the complete article from the source
+## Server-side vs local mode
 
-### Reading Controls
+By default, article fetching and file conversion happen on the Inkfeed backend, which saves battery on the Kindle and enables email delivery. You can switch to fully local mode (CORS proxy + in-browser conversion) any time in Settings.
 
-- **A+ / A-** - Increase or decrease font size
-- **Spacing +/-** - Adjust letter and word spacing
-- **Line +/-** - Adjust line height
+To receive files by email on a Kindle, add **export@sender.inkfeed.xyz** to your approved senders list.
 
-### Downloading Articles
+## Running locally
 
-- **Download** - Save article as plain text (.txt)
-- **Download as MOBI** - Save as Kindle-compatible e-book with comments (if available)
+No install required. Open `index.html` directly in a browser. External dependencies (Mozilla Readability, JSZip) load from CDN.
 
-## Technical Details
+## Technical details
 
-- Pure HTML/CSS/JavaScript with no build step required
-- All JavaScript uses ES3 syntax for Kindle browser compatibility
-- Custom MOBI file writer ported from [MobiWriter](https://github.com/cafaxo/MobiWriter) (C++) to [pure JavaScript](https://github.com/adhamsalama/MobiWriterJS)
-- Uses CORS proxy (`cors-anywhere.com`) for cross-origin feed fetching
-- Dependencies loaded from CDN:
-  - Mozilla Readability for article extraction
-  - JSZip for EPUB generation
+- Pure HTML/CSS/JavaScript — no build step, no npm, no transpilation.
+- All JavaScript uses ES3 syntax for Kindle browser compatibility (no `let`/`const`, no arrow functions, no `fetch` — uses `XMLHttpRequest`).
+- Custom MOBI writer ported from [MobiWriter](https://github.com/cafaxo/MobiWriter) (C++) to [pure JavaScript](https://github.com/adhamsalama/MobiWriterJS).
+- CORS proxy is configurable in Settings. You can self-host [this proxy](https://github.com/adhamsalama/cors-proxy).
 
-## Supported Download Formats
+## Acknowledgments
 
-The Kindle browser only supports downloading these file types:
-
-- **MOBI** - Kindle native format (recommended)
-- **TXT** - Plain text
-
-## Installation
-
-No installation required. Simply open `index.html` in a browser or host the file on any web server.
-
-Note: after using free cors proxies for a while I get an auth error now, so I wrote my own [CORS proxy](https://github.com/adhamsalama/cors-proxy) that I deploy on my phone using Termux.
-
-# Acknowledgments
-
-Many thanks to [MobiWriter](https://github.com/cafaxo/MobiWriter) for implementing an HTML to MOBI conversion program in C++, which Claude Code was able to port to pure JavaScript. I tried to make several AI models implement an HTML to MOBI conversion, but they failed, until I pointed Claude Code to the MobiWriter implementation and asked it to port it to JavaScript, so this wasn't doable without your useful repo.
+Many thanks to [MobiWriter](https://github.com/cafaxo/MobiWriter) for implementing an HTML-to-MOBI conversion program in C++, which Claude Code was able to port to pure JavaScript. Several AI models failed to implement this from scratch — pointing Claude Code at the MobiWriter source and asking it to port it to JavaScript is what made it possible.
 
 ## License
 
