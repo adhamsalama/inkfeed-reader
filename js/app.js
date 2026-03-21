@@ -24,6 +24,14 @@
             }
             applyContentStyles();
 
+            // Load read articles from localStorage
+            try {
+                var savedReadArticles = JSON.parse(localStorage.getItem("readArticles") || "[]");
+                for (var ri = 0; ri < savedReadArticles.length; ri++) {
+                    AppState.readArticles.add(savedReadArticles[ri]);
+                }
+            } catch (e) {}
+
             // Render saved feeds from localStorage
             FeedRenderer.renderSavedFeeds();
 

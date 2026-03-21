@@ -6,7 +6,8 @@ var AppState = {
     currentArticles: [],
     currentArticleIndex: -1,
     currentArticleUrl: "",
-    pendingScrollTarget: ""
+    pendingScrollTarget: "",
+    readArticles: new Set()
 };
 
 // Article selection state

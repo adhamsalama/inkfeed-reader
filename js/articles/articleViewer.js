@@ -7,6 +7,16 @@ var ArticleViewer = {
             window.location.hash = "article-" + index;
             var article = AppState.currentArticles[index];
 
+            // Mark article as read
+            if (article.link && !AppState.readArticles.has(article.link)) {
+                AppState.readArticles.add(article.link);
+                var readArr = [];
+                AppState.readArticles.forEach(function(url) { readArr.push(url); });
+                localStorage.setItem("readArticles", JSON.stringify(readArr));
+                var articleEl = document.getElementById("article-" + index);
+                if (articleEl) { addClass(articleEl, "article-read"); }
+            }
+
             // Function to render the article once we have the final URL
             function renderArticle(finalUrl) {
                 AppState.currentArticleUrl = finalUrl;
