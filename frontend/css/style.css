@@ -343,6 +343,10 @@ input[type="text"] {
   font-size: 0.9em;
 }
 
+.article-item.article-read {
+  opacity: 0.5;
+}
+
 .article-item.selected {
   background-color: #e7f3ff;
   border-left: 4px solid #007bff;

@@ -161,7 +161,7 @@ var FeedRenderer = {
                 }
 
                 var li = document.createElement("li");
-                li.className = "article-item";
+                li.className = "article-item" + (article.link && AppState.readArticles.has(article.link) ? " article-read" : "");
                 li.id = "article-" + i;
                 (function (index) {
                     li.onclick = function () {
