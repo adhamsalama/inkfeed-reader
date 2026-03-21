@@ -144,7 +144,7 @@ var FeedRenderer = {
             var total = articles.length;
 
             list.innerHTML = "";
-            setText(progress, "0/" + total);
+            setText(progress, "");
 
             var fragment = document.createDocumentFragment();
             var lastFeedTitle = null;
@@ -207,10 +207,10 @@ var FeedRenderer = {
                 if (getText(desc)) li.appendChild(desc);
                 fragment.appendChild(li);
 
-                setText(progress, i + 1 + "/" + total);
             }
 
             list.appendChild(fragment);
+            setText(progress, "(" + total + ")");
 
             // Scroll to article if returning to feed after page refresh
             var scrollTarget = AppState.pendingScrollTarget;

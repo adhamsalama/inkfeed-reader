@@ -28,7 +28,6 @@
                     <button class="secondary" onclick="toggleSuggestedFeeds()">Suggested</button>
                     <button class="secondary" onclick="openSettings()">Settings</button>
                 </div>
-                <div id="render-progress" style="display: inline" class="loading">0/0</div>
             </div>
             <div id="input-error" class="error hidden"></div>
             <div id="saved-feeds-section" class="saved-feeds-section hidden">
@@ -40,7 +39,10 @@
         </div>
 
         <div id="feed-view">
-            <h2 id="feed-title">Feed Articles</h2>
+            <div class="feed-title-row">
+                <h2 id="feed-title">Feed Articles</h2>
+                <span id="render-progress"></span>
+            </div>
             <div class="article-buttons" id="normal-nav-buttons">
                 <div class="article-action-row">
                     <span class="action-label">Download</span>
