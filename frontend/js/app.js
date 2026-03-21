@@ -22,6 +22,7 @@
             if (savedLineHeight) {
                 AppState.currentLineHeight = savedLineHeight;
             }
+            applyContentStyles();
 
             // Render saved feeds from localStorage
             FeedRenderer.renderSavedFeeds();
