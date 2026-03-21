@@ -119,8 +119,28 @@ input[type="text"] {
 
 .feed-action-row button {
   flex: 1;
-  white-space: nowrap;
   margin-right: 6px;
+}
+
+.feed-row-break {
+  display: none;
+}
+
+@media (max-width: 500px) {
+  .feed-action-row {
+    flex-wrap: wrap;
+  }
+
+  .feed-row-break {
+    display: block;
+    flex-basis: 100%;
+    height: 0;
+  }
+
+  .feed-action-row button {
+    white-space: nowrap;
+    margin-bottom: 6px;
+  }
 }
 
 .feed-action-row button:last-child {
