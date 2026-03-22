@@ -34,17 +34,7 @@ var EpubDownloader = {
                 if (index >= selectedArticles.length) {
                     addClass(progressEl, "hidden");
                     var fakeArticle = { title: feedTitle };
-                    var writer = new EpubWriter();
-                    writer.generateAndGetBlob(fakeArticle, allArticlesHtml.join("\n"), "", function(err, blob, blobFilename) {
-                        if (err) { callback(new Error("EPUB generation failed: " + err.message)); return; }
-                        var reader = new FileReader();
-                        reader.onload = function(e) {
-                            var base64 = e.target.result.split(",")[1];
-                            BackendClient.emailFile(base64, filename, to, feedTitle, "application/epub+zip", callback);
-                        };
-                        reader.onerror = function() { callback(new Error("Failed to read EPUB blob")); };
-                        reader.readAsDataURL(blob);
-                    });
+                    callback(new Error("Email requires backend mode to be enabled."));
                     return;
                 }
 
