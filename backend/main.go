@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -49,7 +50,8 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s %s %s", r.Method, r.URL.RequestURI(), clientIP(r))
+		path, _ := url.PathUnescape(r.URL.RequestURI())
+		log.Printf("%s %s %s", r.Method, path, clientIP(r))
 		next.ServeHTTP(w, r)
 	})
 }

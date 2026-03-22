@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -69,13 +70,14 @@ func cached(next http.HandlerFunc) http.HandlerFunc {
 func persistentCached(next http.HandlerFunc, ttl time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		key := r.URL.String()
+		logKey, _ := url.PathUnescape(key)
 
 		// 1. In-memory cache
 		globalCache.mu.Lock()
 		entry, ok := globalCache.entries[key]
 		if ok && time.Now().Before(entry.expiresAt) {
 			globalCache.mu.Unlock()
-			log.Printf("cache hit (memory): %s", key)
+			log.Printf("cache hit (memory): %s", logKey)
 			w.Header().Set("Content-Type", entry.contentType)
 			w.Header().Set("Cache-Control", "public, max-age=300")
 			w.Write(entry.body)
@@ -86,7 +88,7 @@ func persistentCached(next http.HandlerFunc, ttl time.Duration) http.HandlerFunc
 		// 2. SQLite cache
 		row, err := queries.GetPersistentCache(r.Context(), key)
 		if err == nil {
-			log.Printf("cache hit (sqlite): %s", key)
+			log.Printf("cache hit (sqlite): %s", logKey)
 			body := []byte(row.Body)
 			globalCache.mu.Lock()
 			globalCache.entries[key] = cacheEntry{
@@ -102,7 +104,7 @@ func persistentCached(next http.HandlerFunc, ttl time.Duration) http.HandlerFunc
 		}
 
 		// 3. Fetch from origin
-		log.Printf("cache miss: %s", key)
+		log.Printf("cache miss: %s", logKey)
 		rec := &responseRecorder{header: make(http.Header)}
 		next.ServeHTTP(rec, r)
 
