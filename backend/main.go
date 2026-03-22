@@ -92,6 +92,9 @@ func main() {
 	); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
+	// Add columns introduced after initial table creation (ignored if already present)
+	sqlDB.Exec(`ALTER TABLE user_preferences ADD COLUMN email_to TEXT`)
+
 	queries = db.New(sqlDB)
 
 	mux := http.NewServeMux()
