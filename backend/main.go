@@ -49,7 +49,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s %s %s", r.Method, r.URL.RequestURI(), r.RemoteAddr)
+		log.Printf("%s %s %s", r.Method, r.URL.RequestURI(), clientIP(r))
 		next.ServeHTTP(w, r)
 	})
 }
