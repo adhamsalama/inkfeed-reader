@@ -38,6 +38,9 @@ var PreferencesSync = {
             }
             AppConfig.EPUB_EMBED_IMAGES = prefs.epubEmbedImages;
             localStorage.setItem("epubEmbedImages", prefs.epubEmbedImages ? "true" : "false");
+            if (prefs.emailTo) {
+                localStorage.setItem("lastEmailTo", prefs.emailTo);
+            }
 
             if (prefs.savedFeeds && prefs.savedFeeds.length > 0) {
                 var feedItems = [];
@@ -59,7 +62,8 @@ var PreferencesSync = {
             letterSpacing: AppState.currentLetterSpacing,
             lineHeight: AppState.currentLineHeight,
             corsProxyUrl: AppConfig.CORS_PROXY_URL,
-            epubEmbedImages: AppConfig.EPUB_EMBED_IMAGES
+            epubEmbedImages: AppConfig.EPUB_EMBED_IMAGES,
+            emailTo: localStorage.getItem("lastEmailTo") || ""
         }, null);
     },
 

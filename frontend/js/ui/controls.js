@@ -131,6 +131,7 @@ function saveEmailAddress() {
     var email = input.value.replace(/^\s+|\s+$/g, "");
     if (email) {
         localStorage.setItem("lastEmailTo", email);
+        PreferencesSync.pushPrefs();
     }
     closeSettings();
 }
