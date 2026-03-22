@@ -72,12 +72,7 @@ var MobiDownloader = {
                         callback(new Error(result.error || "MOBI generation failed"));
                         return;
                     }
-                    var binaryString = "";
-                    for (var i = 0; i < result.data.length; i++) {
-                        binaryString += String.fromCharCode(result.data[i]);
-                    }
-                    var base64 = btoa(binaryString);
-                    BackendClient.emailFile(base64, filename, to, feedTitle, "application/x-mobipocket-ebook", callback);
+                    callback(new Error("Email requires backend mode to be enabled."));
                     return;
                 }
 
