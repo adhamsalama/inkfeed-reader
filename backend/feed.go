@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -65,7 +66,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := parseFeed(body)
+	resp := parseFeed(url, body)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "public, max-age=300")
 	json.NewEncoder(w).Encode(resp)
@@ -73,18 +74,21 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 
 // parseFeed tries the RSS parser first (to preserve the <comments> field),
 // then falls back to gofeed's unified parser for Atom and other formats.
-func parseFeed(body []byte) FeedResponse {
+func parseFeed(url string, body []byte) FeedResponse {
 	rssParser := &gofeedrss.Parser{}
-	if rssFeed, err := rssParser.Parse(bytes.NewReader(body)); err == nil {
+	if rssFeed, err := rssParser.Parse(bytes.NewReader(body)); err != nil {
+		log.Printf("rss parser error for %s: %v", url, err)
+	} else {
 		return fromRSS(rssFeed)
 	}
 
 	fp := gofeed.NewParser()
-	if feed, err := fp.Parse(bytes.NewReader(body)); err == nil {
-		return fromGofeed(feed)
+	feed, err := fp.Parse(bytes.NewReader(body))
+	if err != nil {
+		log.Printf("gofeed parser error for %s: %v", url, err)
+		return FeedResponse{}
 	}
-
-	return FeedResponse{}
+	return fromGofeed(feed)
 }
 
 func fromRSS(feed *gofeedrss.Feed) FeedResponse {
