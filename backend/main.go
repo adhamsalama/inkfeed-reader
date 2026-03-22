@@ -17,6 +17,8 @@ var queries *db.Queries
 
 var allowedOrigin = "https://reader.inkfeed.xyz"
 
+var feedProxyURL = "https://throbbing-morning-e187.adhamsalama.workers.dev"
+
 type contextKey string
 
 const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -51,6 +53,9 @@ func main() {
 
 	if os.Getenv("ENV") == "local" {
 		allowedOrigin = "http://localhost:8000"
+	}
+	if v := os.Getenv("FEED_PROXY_URL"); v != "" {
+		feedProxyURL = v
 	}
 
 	port := flag.String("port", "8080", "port to listen on")

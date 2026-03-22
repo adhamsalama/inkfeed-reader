@@ -66,7 +66,33 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := parseFeed(url, body)
+	resp, err := parseFeed(url, body)
+	if err != nil {
+		log.Printf("retrying %s via proxy", url)
+		proxyURL := feedProxyURL + "?url=" + url
+		proxyReq, err := http.NewRequest("GET", proxyURL, nil)
+		if err != nil {
+			jsonError(w, "failed to build proxy request", http.StatusInternalServerError)
+			return
+		}
+		proxyReq.Header.Set("User-Agent", userAgent)
+		proxyResp, err := client.Do(proxyReq)
+		if err != nil {
+			jsonError(w, "proxy fetch failed: "+err.Error(), http.StatusBadGateway)
+			return
+		}
+		defer proxyResp.Body.Close()
+		proxyBody, err := io.ReadAll(proxyResp.Body)
+		if err != nil {
+			jsonError(w, "failed to read proxy response", http.StatusBadGateway)
+			return
+		}
+		resp, err = parseFeed(url, proxyBody)
+		if err != nil {
+			jsonError(w, "failed to parse feed", http.StatusBadGateway)
+			return
+		}
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "public, max-age=300")
 	json.NewEncoder(w).Encode(resp)
@@ -74,21 +100,21 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 
 // parseFeed tries the RSS parser first (to preserve the <comments> field),
 // then falls back to gofeed's unified parser for Atom and other formats.
-func parseFeed(url string, body []byte) FeedResponse {
+func parseFeed(url string, body []byte) (FeedResponse, error) {
 	rssParser := &gofeedrss.Parser{}
 	if rssFeed, err := rssParser.Parse(bytes.NewReader(body)); err != nil {
 		log.Printf("rss parser error for %s: %v", url, err)
 	} else {
-		return fromRSS(rssFeed)
+		return fromRSS(rssFeed), nil
 	}
 
 	fp := gofeed.NewParser()
 	feed, err := fp.Parse(bytes.NewReader(body))
 	if err != nil {
 		log.Printf("gofeed parser error for %s: %v", url, err)
-		return FeedResponse{}
+		return FeedResponse{}, err
 	}
-	return fromGofeed(feed)
+	return fromGofeed(feed), nil
 }
 
 func fromRSS(feed *gofeedrss.Feed) FeedResponse {
