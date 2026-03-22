@@ -17,6 +17,21 @@ body {
   overflow-wrap: break-word;
 }
 
+.backend-banner {
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ccc;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9em;
+  margin-bottom: 8px;
+}
+
+.backend-banner.hidden {
+  display: none;
+}
+
 .container {
   max-width: 100%;
   margin: 0 auto;

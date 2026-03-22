@@ -38,6 +38,8 @@
             // Initialize scroll controls
             initScrollControls();
 
+            showBackendBanner();
+
             // Load preferences from backend (if logged in), then render saved feeds
             PreferencesSync.loadFromBackend(function() {
                 FeedRenderer.renderSavedFeeds();
@@ -61,6 +63,23 @@
             alert("init error: " + e.message);
         }
     }
+
+    function showBackendBanner() {
+        if (localStorage.getItem("backendBannerDismissed") === "true") return;
+        if (AppConfig.USE_BACKEND) return;
+        var banner = document.getElementById("backend-banner");
+        if (banner) {
+            banner.className = "backend-banner";
+        }
+    }
+
+    window.dismissBackendBanner = function() {
+        localStorage.setItem("backendBannerDismissed", "true");
+        var banner = document.getElementById("backend-banner");
+        if (banner) {
+            banner.className = "backend-banner hidden";
+        }
+    };
 
     // Run init when DOM is ready
     try {

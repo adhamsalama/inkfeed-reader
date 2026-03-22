@@ -6,7 +6,7 @@ var AppConfig = {
     CORS_PROXY_URL: "https://throbbing-morning-e187.adhamsalama.workers.dev?url=",
 
     // Backend
-    USE_BACKEND: true,
+    USE_BACKEND: false,
     BACKEND_URL: "https://api.inkfeed.xyz",
 
     // Font size constraints
