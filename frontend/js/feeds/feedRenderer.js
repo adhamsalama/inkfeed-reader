@@ -256,6 +256,68 @@ var FeedRenderer = {
         }
     },
 
+    renderFavorites: function() {
+        var container = document.getElementById("favorites-container");
+        container.innerHTML = "";
+
+        var favs = FavoritesManager.getFavorites();
+
+        if (favs.length === 0) {
+            var emptyMsg = document.createElement("p");
+            setText(emptyMsg, "No favorites yet.");
+            container.appendChild(emptyMsg);
+            return;
+        }
+
+        var ul = document.createElement("ul");
+        ul.className = "saved-feeds-list";
+
+        for (var i = 0; i < favs.length; i++) {
+            var fav = favs[i];
+
+            var li = document.createElement("li");
+            li.className = "saved-feed-item";
+
+            var link = document.createElement("a");
+            link.className = "saved-feed-link";
+            setText(link, fav.title || fav.url);
+            link.href = fav.url;
+            link.target = "_blank";
+
+            if (fav.feedTitle) {
+                var sub = document.createElement("small");
+                setText(sub, fav.feedTitle);
+                sub.style.display = "block";
+                link.appendChild(sub);
+            }
+
+            var deleteBtn = document.createElement("button");
+            deleteBtn.className = "secondary delete-feed-btn";
+            setText(deleteBtn, "X");
+            deleteBtn.title = "Remove from favorites";
+            (function(url) {
+                deleteBtn.onclick = function() {
+                    var favs = FavoritesManager.getFavorites();
+                    for (var j = 0; j < favs.length; j++) {
+                        if (favs[j].url === url) {
+                            favs.splice(j, 1);
+                            break;
+                        }
+                    }
+                    FavoritesManager.saveFavorites(favs);
+                    FavoritesManager.updateFavoriteBtn();
+                    return false;
+                };
+            })(fav.url);
+
+            li.appendChild(link);
+            li.appendChild(deleteBtn);
+            ul.appendChild(li);
+        }
+
+        container.appendChild(ul);
+    },
+
     renderArticleList: function(articles) {
         try {
             var list = document.getElementById("article-list");

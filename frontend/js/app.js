@@ -40,6 +40,13 @@
 
             showBackendBanner();
 
+            if (AppConfig.USE_BACKEND) {
+                var favBtn = document.getElementById("favorite-btn");
+                if (favBtn) { favBtn.style.display = ""; }
+                var favToggleBtn = document.getElementById("favorites-toggle-btn");
+                if (favToggleBtn) { favToggleBtn.style.display = ""; }
+            }
+
             // Load preferences from backend (if logged in), then render saved feeds
             PreferencesSync.loadFromBackend(function() {
                 FeedRenderer.renderSavedFeeds();
@@ -72,6 +79,17 @@
             banner.className = "backend-banner";
         }
     }
+
+    window.toggleFavorites = function() {
+        var section = document.getElementById("favorites-section");
+        if (!section) { return; }
+        if (section.className.indexOf("hidden") >= 0) {
+            removeClass(section, "hidden");
+            FeedRenderer.renderFavorites();
+        } else {
+            addClass(section, "hidden");
+        }
+    };
 
     window.dismissBackendBanner = function() {
         localStorage.setItem("backendBannerDismissed", "true");

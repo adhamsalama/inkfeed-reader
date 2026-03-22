@@ -166,6 +166,7 @@ var ArticleViewer = {
 
                 contentDiv.innerHTML = html;
                 ViewManager.showArticleView();
+                FavoritesManager.updateFavoriteBtn();
             }
 
             // Check if this is a Google News URL and decode it

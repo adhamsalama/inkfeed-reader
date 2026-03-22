@@ -58,6 +58,10 @@ var PreferencesSync = {
                 }
             }
 
+            if (prefs.favorites && prefs.favorites.length > 0) {
+                localStorage.setItem("favorites", JSON.stringify(prefs.favorites));
+            }
+
             applyContentStyles();
             if (callback) { callback(); }
         });
@@ -96,6 +100,17 @@ var PreferencesSync = {
             var data = localStorage.getItem("feedGroups");
             var groups = data ? JSON.parse(data) : [];
             AuthClient.putFeedGroups(groups, null);
+        } catch (e) {
+            // Silently fail
+        }
+    },
+
+    pushFavorites: function() {
+        if (!AppConfig.USE_BACKEND || !AuthState.isLoggedIn()) { return; }
+        try {
+            var data = localStorage.getItem("favorites");
+            var favs = data ? JSON.parse(data) : [];
+            AuthClient.putFavorites(favs, null);
         } catch (e) {
             // Silently fail
         }

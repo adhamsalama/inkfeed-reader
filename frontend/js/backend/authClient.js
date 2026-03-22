@@ -126,5 +126,18 @@ var AuthClient = {
         xhr.withCredentials = true;
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify(groupsArray));
+    },
+
+    putFavorites: function(favoritesArray, callback) {
+        var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (callback) { callback(xhr.status === 204 ? null : new Error("Failed: " + xhr.status)); }
+            }
+        };
+        xhr.open("PUT", AppConfig.BACKEND_URL + "/favorites", true);
+        xhr.withCredentials = true;
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify(favoritesArray));
     }
 };

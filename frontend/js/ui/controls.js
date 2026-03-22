@@ -59,6 +59,10 @@ function toggleUseBackend() {
     localStorage.setItem("backendEnabled", AppConfig.USE_BACKEND ? "true" : "false");
     updateBackendToggleBtn();
     setEmailButtonVisible(AppConfig.USE_BACKEND);
+    var favBtn = document.getElementById("favorite-btn");
+    if (favBtn) { favBtn.style.display = AppConfig.USE_BACKEND ? "" : "none"; }
+    var favToggleBtn = document.getElementById("favorites-toggle-btn");
+    if (favToggleBtn) { favToggleBtn.style.display = AppConfig.USE_BACKEND ? "" : "none"; }
 }
 
 function toggleEpubEmbedImages() {
