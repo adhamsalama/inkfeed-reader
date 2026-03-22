@@ -37,6 +37,7 @@
                     <button class="secondary" onclick="toggleSavedFeeds()">Saved</button>
                     <div class="feed-row-break"></div>
                     <button class="secondary" onclick="toggleSuggestedFeeds()">Suggested</button>
+                    <button class="secondary" onclick="toggleFeedGroups()">Groups</button>
                     <button class="secondary" onclick="openSettings()">Settings</button>
                 </div>
             </div>
@@ -46,6 +47,9 @@
             </div>
             <div id="suggested-feeds-section" class="saved-feeds-section hidden">
                 <div id="suggested-feeds-container"></div>
+            </div>
+            <div id="groups-section" class="saved-feeds-section hidden">
+                <div id="groups-container"></div>
             </div>
         </div>
 
@@ -221,6 +225,7 @@
     <script src="./js/feeds/savedFeeds.js"></script>
     <script src="./js/feeds/feedRenderer.js"></script>
     <script src="./js/feeds/feedLoader.js"></script>
+    <script src="./js/feeds/feedGroups.js"></script>
 
     <!-- Article selection -->
     <script src="./js/articles/articleSelection.js"></script>

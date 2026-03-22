@@ -69,11 +69,115 @@ var FeedRenderer = {
                 };
             })(feed.url);
 
+            var groupBtn = document.createElement("button");
+            groupBtn.className = "secondary delete-feed-btn";
+            setText(groupBtn, "+");
+            groupBtn.title = "Add to group";
+            (function(url, item) {
+                groupBtn.onclick = function() {
+                    FeedGroupsManager.addSavedFeedToGroup(url, item);
+                    return false;
+                };
+            })(feed.url, li);
+
             li.appendChild(link);
             li.appendChild(upBtn);
             li.appendChild(downBtn);
             li.appendChild(deleteBtn);
+            li.appendChild(groupBtn);
             list.appendChild(li);
+        }
+    },
+
+    renderFeedGroups: function() {
+        var container = document.getElementById("groups-container");
+        container.innerHTML = "";
+
+        var groups = FeedGroupsManager.getGroups();
+
+        if (groups.length === 0) {
+            var emptyMsg = document.createElement("p");
+            setText(emptyMsg, "No groups yet. Click \"+\" on a saved feed to add it to a group.");
+            container.appendChild(emptyMsg);
+            return;
+        }
+
+        for (var i = 0; i < groups.length; i++) {
+            var group = groups[i];
+
+            var block = document.createElement("div");
+            block.className = "suggested-feeds-section-block";
+
+            var heading = document.createElement("h4");
+            heading.className = "suggested-feeds-category";
+            setText(heading, group.name);
+
+            var loadAllBtn = document.createElement("button");
+            loadAllBtn.className = "secondary load-all-btn";
+            setText(loadAllBtn, "Load All");
+            (function(feeds, name) {
+                loadAllBtn.onclick = function() {
+                    FeedGroupsManager.loadGroup(feeds, name);
+                    return false;
+                };
+            })(group.feeds, group.name);
+
+            var deleteGroupBtn = document.createElement("button");
+            deleteGroupBtn.className = "secondary delete-feed-btn";
+            setText(deleteGroupBtn, "X");
+            deleteGroupBtn.title = "Delete group";
+            (function(name) {
+                deleteGroupBtn.onclick = function() {
+                    FeedGroupsManager.deleteGroup(name);
+                    return false;
+                };
+            })(group.name);
+
+            heading.appendChild(loadAllBtn);
+            heading.appendChild(deleteGroupBtn);
+            block.appendChild(heading);
+
+            var ul = document.createElement("ul");
+            ul.className = "saved-feeds-list";
+
+            for (var j = 0; j < group.feeds.length; j++) {
+                var feed = group.feeds[j];
+
+                var li = document.createElement("li");
+                li.className = "saved-feed-item";
+
+                var link = document.createElement("a");
+                link.className = "saved-feed-link";
+                setText(link, feed.title || feed.url);
+                link.title = feed.url;
+                (function(url) {
+                    link.onclick = function() {
+                        var feedInput = document.getElementById("feed-url");
+                        feedInput.value = url;
+                        addClass(document.getElementById("groups-section"), "hidden");
+                        loadFeed();
+                        return false;
+                    };
+                })(feed.url);
+
+                var removeFeedBtn = document.createElement("button");
+                removeFeedBtn.className = "secondary delete-feed-btn";
+                setText(removeFeedBtn, "X");
+                removeFeedBtn.title = "Remove from group";
+                (function(groupName, url) {
+                    removeFeedBtn.onclick = function() {
+                        FeedGroupsManager.removeFeedFromGroup(groupName, url);
+                        return false;
+                    };
+                })(group.name, feed.url);
+
+                li.appendChild(link);
+                li.appendChild(removeFeedBtn);
+                ul.appendChild(li);
+            }
+
+            block.appendChild(ul);
+            container.appendChild(block);
         }
     },
 

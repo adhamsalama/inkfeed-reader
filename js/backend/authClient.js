@@ -113,5 +113,18 @@ var AuthClient = {
         xhr.withCredentials = true;
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify(feedsArray));
+    },
+
+    putFeedGroups: function(groupsArray, callback) {
+        var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (callback) { callback(xhr.status === 204 ? null : new Error("Failed: " + xhr.status)); }
+            }
+        };
+        xhr.open("PUT", AppConfig.BACKEND_URL + "/feed-groups", true);
+        xhr.withCredentials = true;
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify(groupsArray));
     }
 };
