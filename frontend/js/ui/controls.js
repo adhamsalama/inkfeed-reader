@@ -69,7 +69,7 @@ function toggleEpubEmbedImages() {
 
 function openSettings(section) {
     document.getElementById("proxy-url-input").value = AppConfig.CORS_PROXY_URL;
-    document.getElementById("email-to-input").value = localStorage.getItem("lastEmailTo") || "";
+    document.getElementById("email-to-input").value = localStorage.getItem("emailTo") || "";
     document.getElementById("epub-embed-images-checkbox").checked = AppConfig.EPUB_EMBED_IMAGES;
     document.getElementById("settings-modal").classList.remove("hidden");
     AccountView.render();
@@ -102,7 +102,7 @@ function saveEmailAddress() {
     var input = document.getElementById("email-to-input");
     var email = input.value.replace(/^\s+|\s+$/g, "");
     if (email) {
-        localStorage.setItem("lastEmailTo", email);
+        localStorage.setItem("emailTo", email);
         PreferencesSync.pushPrefs();
     }
     closeSettings();
@@ -123,7 +123,7 @@ var _pendingEmailFormat = "epub";
 
 function openEmailInput(format) {
     _pendingEmailFormat = format || "epub";
-    var to = localStorage.getItem("lastEmailTo") || "";
+    var to = localStorage.getItem("emailTo") || "";
     if (!to) {
         openSettings("email");
         return;

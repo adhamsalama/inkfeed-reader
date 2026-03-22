@@ -10,7 +10,7 @@ var ArticleSelectionManager = {
             }
 
             if (downloadType === "email-mobi" || downloadType === "email-epub") {
-                var to = localStorage.getItem("lastEmailTo") || "";
+                var to = localStorage.getItem("emailTo") || "";
                 if (!to) {
                     openSettings("email");
                     return;
@@ -146,7 +146,7 @@ var ArticleSelectionManager = {
         } else if (downloadType === "epub") {
             EpubDownloader.downloadSelectedArticles(selectedArticles);
         } else if (downloadType === "email-mobi") {
-            var emailTo = localStorage.getItem("lastEmailTo") || "";
+            var emailTo = localStorage.getItem("emailTo") || "";
             var statusEl = document.getElementById("email-all-status");
             if (statusEl) { statusEl.textContent = "Sending..."; }
             MobiDownloader.emailSelectedArticles(selectedArticles, emailTo, function(error) {
@@ -156,7 +156,7 @@ var ArticleSelectionManager = {
                 }
             });
         } else if (downloadType === "email-epub") {
-            var emailToEpub = localStorage.getItem("lastEmailTo") || "";
+            var emailToEpub = localStorage.getItem("emailTo") || "";
             var statusElEpub = document.getElementById("email-all-status");
             if (statusElEpub) { statusElEpub.textContent = "Sending..."; }
             EpubDownloader.emailSelectedArticles(selectedArticles, emailToEpub, function(error) {
