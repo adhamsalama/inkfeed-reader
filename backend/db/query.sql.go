@@ -184,14 +184,15 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 }
 
 const getUserFavorites = `-- name: GetUserFavorites :many
-SELECT url, title, feed_title, pub_date FROM user_favorites WHERE user_id = ? ORDER BY saved_at DESC
+SELECT url, title, feed_title, pub_date, comments_url FROM user_favorites WHERE user_id = ? ORDER BY saved_at DESC
 `
 
 type GetUserFavoritesRow struct {
-	Url       string
-	Title     string
-	FeedTitle string
-	PubDate   string
+	Url         string
+	Title       string
+	FeedTitle   string
+	PubDate     string
+	CommentsUrl string
 }
 
 func (q *Queries) GetUserFavorites(ctx context.Context, userID int64) ([]GetUserFavoritesRow, error) {
@@ -208,6 +209,7 @@ func (q *Queries) GetUserFavorites(ctx context.Context, userID int64) ([]GetUser
 			&i.Title,
 			&i.FeedTitle,
 			&i.PubDate,
+			&i.CommentsUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -353,15 +355,16 @@ func (q *Queries) InsertFeedGroupItem(ctx context.Context, arg InsertFeedGroupIt
 }
 
 const insertUserFavorite = `-- name: InsertUserFavorite :exec
-INSERT INTO user_favorites (user_id, url, title, feed_title, pub_date) VALUES (?, ?, ?, ?, ?)
+INSERT INTO user_favorites (user_id, url, title, feed_title, pub_date, comments_url) VALUES (?, ?, ?, ?, ?, ?)
 `
 
 type InsertUserFavoriteParams struct {
-	UserID    int64
-	Url       string
-	Title     string
-	FeedTitle string
-	PubDate   string
+	UserID      int64
+	Url         string
+	Title       string
+	FeedTitle   string
+	PubDate     string
+	CommentsUrl string
 }
 
 func (q *Queries) InsertUserFavorite(ctx context.Context, arg InsertUserFavoriteParams) error {
@@ -371,6 +374,7 @@ func (q *Queries) InsertUserFavorite(ctx context.Context, arg InsertUserFavorite
 		arg.Title,
 		arg.FeedTitle,
 		arg.PubDate,
+		arg.CommentsUrl,
 	)
 	return err
 }

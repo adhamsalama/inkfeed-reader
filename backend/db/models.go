@@ -30,13 +30,14 @@ type User struct {
 }
 
 type UserFavorite struct {
-	ID        int64
-	UserID    int64
-	Url       string
-	Title     string
-	FeedTitle string
-	PubDate   string
-	SavedAt   time.Time
+	ID          int64
+	UserID      int64
+	Url         string
+	Title       string
+	FeedTitle   string
+	PubDate     string
+	CommentsUrl string
+	SavedAt     time.Time
 }
 
 type UserFeedGroup struct {

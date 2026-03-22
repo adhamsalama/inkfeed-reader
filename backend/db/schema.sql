@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS user_favorites (
     url        TEXT     NOT NULL,
     title      TEXT     NOT NULL DEFAULT '',
     feed_title TEXT     NOT NULL DEFAULT '',
-    pub_date   TEXT     NOT NULL DEFAULT '',
-    saved_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    pub_date     TEXT     NOT NULL DEFAULT '',
+    comments_url TEXT     NOT NULL DEFAULT '',
+    saved_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

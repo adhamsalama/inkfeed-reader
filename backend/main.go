@@ -144,6 +144,7 @@ func main() {
 	// Add columns introduced after initial table creation (ignored if already present)
 	sqlDB.Exec(`ALTER TABLE user_preferences ADD COLUMN email_to TEXT`)
 	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS persistent_cache (key TEXT PRIMARY KEY, body TEXT NOT NULL, content_type TEXT NOT NULL, expires_at DATETIME NOT NULL)`)
+	sqlDB.Exec(`ALTER TABLE user_favorites ADD COLUMN comments_url TEXT NOT NULL DEFAULT ''`)
 
 	queries = db.New(sqlDB)
 

@@ -67,10 +67,10 @@ INSERT INTO persistent_cache (key, body, content_type, expires_at) VALUES (?, ?,
 ON CONFLICT(key) DO UPDATE SET body = excluded.body, content_type = excluded.content_type, expires_at = excluded.expires_at;
 
 -- name: GetUserFavorites :many
-SELECT url, title, feed_title, pub_date FROM user_favorites WHERE user_id = ? ORDER BY saved_at DESC;
+SELECT url, title, feed_title, pub_date, comments_url FROM user_favorites WHERE user_id = ? ORDER BY saved_at DESC;
 
 -- name: DeleteAllUserFavorites :exec
 DELETE FROM user_favorites WHERE user_id = ?;
 
 -- name: InsertUserFavorite :exec
-INSERT INTO user_favorites (user_id, url, title, feed_title, pub_date) VALUES (?, ?, ?, ?, ?);
+INSERT INTO user_favorites (user_id, url, title, feed_title, pub_date, comments_url) VALUES (?, ?, ?, ?, ?, ?);

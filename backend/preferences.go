@@ -34,10 +34,11 @@ type feedGroupData struct {
 }
 
 type favoriteItem struct {
-	URL       string `json:"url"`
-	Title     string `json:"title"`
-	FeedTitle string `json:"feedTitle"`
-	PubDate   string `json:"pubDate"`
+	URL         string `json:"url"`
+	Title       string `json:"title"`
+	FeedTitle   string `json:"feedTitle"`
+	PubDate     string `json:"pubDate"`
+	CommentsUrl string `json:"commentsUrl"`
 }
 
 type preferencesResponse struct {
@@ -116,7 +117,7 @@ func getPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 	}
 	favItems := make([]favoriteItem, len(favRows))
 	for i, f := range favRows {
-		favItems[i] = favoriteItem{URL: f.Url, Title: f.Title, FeedTitle: f.FeedTitle, PubDate: f.PubDate}
+		favItems[i] = favoriteItem{URL: f.Url, Title: f.Title, FeedTitle: f.FeedTitle, PubDate: f.PubDate, CommentsUrl: f.CommentsUrl}
 	}
 
 	resp := preferencesResponse{
@@ -282,11 +283,12 @@ func favoritesHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, f := range favs {
 		err := queries.InsertUserFavorite(r.Context(), db.InsertUserFavoriteParams{
-			UserID:    userID,
-			Url:       f.URL,
-			Title:     f.Title,
-			FeedTitle: f.FeedTitle,
-			PubDate:   f.PubDate,
+			UserID:      userID,
+			Url:         f.URL,
+			Title:       f.Title,
+			FeedTitle:   f.FeedTitle,
+			PubDate:     f.PubDate,
+			CommentsUrl: f.CommentsUrl,
 		})
 		if err != nil {
 			jsonError(w, "internal error", http.StatusInternalServerError)
