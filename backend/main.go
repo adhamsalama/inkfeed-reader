@@ -47,6 +47,13 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s %s", r.Method, r.URL.RequestURI(), r.RemoteAddr)
+		next.ServeHTTP(w, r)
+	})
+}
+
 func jsonError(w http.ResponseWriter, message string, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -164,5 +171,5 @@ func main() {
 
 	addr := ":" + *port
 	log.Printf("Server listening on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	log.Fatal(http.ListenAndServe(addr, loggingMiddleware(mux)))
 }
