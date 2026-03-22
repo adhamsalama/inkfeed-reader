@@ -7,7 +7,9 @@ var AppState = {
     currentArticleIndex: -1,
     currentArticleUrl: "",
     pendingScrollTarget: "",
-    readArticles: new Set()
+    readArticles: new Set(),
+    lastLoadedFeedUrl: "",
+    lastLoadedFeedTitle: ""
 };
 
 // Article selection state

@@ -136,8 +136,11 @@ function loadFeed() {
                     return;
                 }
                 AppState.currentArticles = data.articles;
+                AppState.lastLoadedFeedUrl = url;
+                AppState.lastLoadedFeedTitle = data.title;
                 setText(document.getElementById("feed-title"), data.title);
                 document.title = data.title;
+                SavedFeedsManager.updateFeedTitle(url, data.title);
                 FeedRenderer.renderArticleList(data.articles);
             });
             return;
@@ -157,8 +160,11 @@ function loadFeed() {
                     throw new Error("No articles found in feed");
                 }
                 AppState.currentArticles = parsed.articles;
+                AppState.lastLoadedFeedUrl = url;
+                AppState.lastLoadedFeedTitle = parsed.title;
                 setText(document.getElementById("feed-title"), parsed.title);
                 document.title = parsed.title;
+                SavedFeedsManager.updateFeedTitle(url, parsed.title);
                 FeedRenderer.renderArticleList(parsed.articles);
             } catch (e) {
                 ViewManager.showInputView();

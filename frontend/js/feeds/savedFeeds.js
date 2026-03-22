@@ -32,13 +32,35 @@ var SavedFeedsManager = {
                     return;
                 }
             }
-            // Add new feed
-            feeds.push({url: url, title: url});
+            // Add new feed — use known title if this URL was already loaded
+            var knownTitle = (AppState.lastLoadedFeedUrl === url && AppState.lastLoadedFeedTitle) ? AppState.lastLoadedFeedTitle : url;
+            feeds.push({url: url, title: knownTitle});
             localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feeds));
             FeedRenderer.renderSavedFeeds();
             PreferencesSync.pushSavedFeeds();
         } catch (e) {
             alert("Error saving feed: " + e.message);
+        }
+    },
+
+    updateFeedTitle: function(url, title) {
+        try {
+            if (!window.localStorage || !title) return;
+            var feeds = this.getSavedFeeds();
+            var changed = false;
+            for (var i = 0; i < feeds.length; i++) {
+                if (feeds[i].url === url && feeds[i].title !== title) {
+                    feeds[i].title = title;
+                    changed = true;
+                    break;
+                }
+            }
+            if (!changed) return;
+            localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feeds));
+            FeedRenderer.renderSavedFeeds();
+            PreferencesSync.pushSavedFeeds();
+        } catch (e) {
+            // Silently fail
         }
     },
 

@@ -104,6 +104,11 @@ var FeedRenderer = {
         container.innerHTML = "";
 
         var groups = FeedGroupsManager.getGroups();
+        var savedFeeds = SavedFeedsManager.getSavedFeeds();
+        var savedTitles = {};
+        for (var s = 0; s < savedFeeds.length; s++) {
+            savedTitles[savedFeeds[s].url] = savedFeeds[s].title;
+        }
 
         if (groups.length === 0) {
             var emptyMsg = document.createElement("p");
@@ -158,7 +163,7 @@ var FeedRenderer = {
 
                 var link = document.createElement("a");
                 link.className = "saved-feed-link";
-                setText(link, feed.title || feed.url);
+                setText(link, savedTitles[feed.url] || feed.title || feed.url);
                 link.title = feed.url;
                 (function(url) {
                     link.onclick = function() {
