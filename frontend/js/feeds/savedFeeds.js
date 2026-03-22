@@ -36,6 +36,7 @@ var SavedFeedsManager = {
             feeds.push({url: url, title: url});
             localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feeds));
             FeedRenderer.renderSavedFeeds();
+            PreferencesSync.pushSavedFeeds();
         } catch (e) {
             alert("Error saving feed: " + e.message);
         }
@@ -53,6 +54,7 @@ var SavedFeedsManager = {
             }
             localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(newFeeds));
             FeedRenderer.renderSavedFeeds();
+            PreferencesSync.pushSavedFeeds();
         } catch (e) {
             // Silently fail
         }
@@ -70,6 +72,7 @@ var SavedFeedsManager = {
             feeds[newIndex] = temp;
             localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feeds));
             FeedRenderer.renderSavedFeeds();
+            PreferencesSync.pushSavedFeeds();
         } catch (e) {
             // Silently fail
         }

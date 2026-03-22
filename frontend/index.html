@@ -34,6 +34,7 @@
                     <div class="feed-row-break"></div>
                     <button class="secondary" onclick="toggleSuggestedFeeds()">Suggested</button>
                     <button class="secondary" onclick="openSettings()">Settings</button>
+                    <button class="secondary" onclick="showAccountView()">Account</button>
                 </div>
             </div>
             <div id="input-error" class="error hidden"></div>
@@ -74,6 +75,14 @@
             <div id="feed-loading" class="loading hidden">Loading feed...</div>
             <div id="download-all-progress" class="loading hidden">Downloading articles...</div>
             <ul id="article-list" class="article-list"></ul>
+        </div>
+
+        <div id="account-view">
+            <div class="account-header">
+                <strong>Account</strong>
+                <button class="secondary" onclick="hideAccountView()">Back</button>
+            </div>
+            <div id="account-view-content"></div>
         </div>
 
         <div id="article-view">
@@ -180,7 +189,6 @@
 
     <!-- Existing lib -->
     <script src="./js/lib/utils.js"></script>
-    <script src="./js/backend/backendClient.js"></script>
     <script src="./js/lib/googleNewsDecoder.js"></script>
     <script src="./js/lib/mobiWriter.js"></script>
     <script src="./js/lib/epubWriter.js"></script>
@@ -188,7 +196,15 @@
     <!-- Core (no dependencies) -->
     <script src="./js/core/config.js"></script>
     <script src="./js/core/state.js"></script>
+    <script src="./js/core/authState.js"></script>
     <script src="./js/core/suggestedFeeds.js"></script>
+
+    <!-- Backend clients -->
+    <script src="./js/backend/backendClient.js"></script>
+    <script src="./js/backend/authClient.js"></script>
+
+    <!-- Preferences sync (depends on core + auth clients) -->
+    <script src="./js/core/preferencesSync.js"></script>
 
     <!-- Utils -->
     <script src="./js/utils/urlHelpers.js"></script>
@@ -197,6 +213,7 @@
     <script src="./js/ui/controls.js"></script>
     <script src="./js/ui/viewManager.js"></script>
     <script src="./js/ui/scrollControls.js"></script>
+    <script src="./js/ui/accountView.js"></script>
 
     <!-- Articles -->
     <script src="./js/articles/articleFetcher.js"></script>
