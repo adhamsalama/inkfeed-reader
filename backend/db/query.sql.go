@@ -124,6 +124,22 @@ func (q *Queries) GetFeedGroupItems(ctx context.Context, groupID int64) ([]GetFe
 	return items, nil
 }
 
+const getPersistentCache = `-- name: GetPersistentCache :one
+SELECT body, content_type FROM persistent_cache WHERE key = ? AND expires_at > CURRENT_TIMESTAMP LIMIT 1
+`
+
+type GetPersistentCacheRow struct {
+	Body        string
+	ContentType string
+}
+
+func (q *Queries) GetPersistentCache(ctx context.Context, key string) (GetPersistentCacheRow, error) {
+	row := q.db.QueryRowContext(ctx, getPersistentCache, key)
+	var i GetPersistentCacheRow
+	err := row.Scan(&i.Body, &i.ContentType)
+	return i, err
+}
+
 const getSession = `-- name: GetSession :one
 SELECT token, user_id, expires_at FROM sessions WHERE token = ? AND expires_at > CURRENT_TIMESTAMP LIMIT 1
 `
@@ -376,6 +392,28 @@ func (q *Queries) InsertUserSavedFeed(ctx context.Context, arg InsertUserSavedFe
 		arg.Url,
 		arg.Title,
 		arg.Position,
+	)
+	return err
+}
+
+const setPersistentCache = `-- name: SetPersistentCache :exec
+INSERT INTO persistent_cache (key, body, content_type, expires_at) VALUES (?, ?, ?, ?)
+ON CONFLICT(key) DO UPDATE SET body = excluded.body, content_type = excluded.content_type, expires_at = excluded.expires_at
+`
+
+type SetPersistentCacheParams struct {
+	Key         string
+	Body        string
+	ContentType string
+	ExpiresAt   time.Time
+}
+
+func (q *Queries) SetPersistentCache(ctx context.Context, arg SetPersistentCacheParams) error {
+	_, err := q.db.ExecContext(ctx, setPersistentCache,
+		arg.Key,
+		arg.Body,
+		arg.ContentType,
+		arg.ExpiresAt,
 	)
 	return err
 }

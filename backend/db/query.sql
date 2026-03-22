@@ -59,6 +59,13 @@ INSERT INTO user_feed_groups (user_id, name, position) VALUES (?, ?, ?) RETURNIN
 -- name: InsertFeedGroupItem :exec
 INSERT INTO user_feed_group_items (group_id, url, title, position) VALUES (?, ?, ?, ?);
 
+-- name: GetPersistentCache :one
+SELECT body, content_type FROM persistent_cache WHERE key = ? AND expires_at > CURRENT_TIMESTAMP LIMIT 1;
+
+-- name: SetPersistentCache :exec
+INSERT INTO persistent_cache (key, body, content_type, expires_at) VALUES (?, ?, ?, ?)
+ON CONFLICT(key) DO UPDATE SET body = excluded.body, content_type = excluded.content_type, expires_at = excluded.expires_at;
+
 -- name: GetUserFavorites :many
 SELECT url, title, feed_title, pub_date FROM user_favorites WHERE user_id = ? ORDER BY saved_at DESC;
 
