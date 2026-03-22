@@ -34,7 +34,6 @@
                     <div class="feed-row-break"></div>
                     <button class="secondary" onclick="toggleSuggestedFeeds()">Suggested</button>
                     <button class="secondary" onclick="openSettings()">Settings</button>
-                    <button class="secondary" onclick="showAccountView()">Account</button>
                 </div>
             </div>
             <div id="input-error" class="error hidden"></div>
@@ -75,14 +74,6 @@
             <div id="feed-loading" class="loading hidden">Loading feed...</div>
             <div id="download-all-progress" class="loading hidden">Downloading articles...</div>
             <ul id="article-list" class="article-list"></ul>
-        </div>
-
-        <div id="account-view">
-            <div class="account-header">
-                <strong>Account</strong>
-                <button class="secondary" onclick="hideAccountView()">Back</button>
-            </div>
-            <div id="account-view-content"></div>
         </div>
 
         <div id="article-view">
@@ -182,6 +173,10 @@
                     <input type="checkbox" id="epub-embed-images-checkbox" onchange="toggleEpubEmbedImages()" />
                     Embed images
                 </label>
+            </div>
+            <div class="settings-section" id="settings-account-section">
+                <div class="settings-section-title">Account</div>
+                <div id="account-view-content"></div>
             </div>
             <a href="https://github.com/adhamsalama/inkfeed-reader" target="_blank">GitHub</a>
         </div>

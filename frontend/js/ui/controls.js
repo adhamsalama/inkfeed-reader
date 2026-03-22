@@ -77,6 +77,7 @@ function openSettings(section) {
     document.getElementById("email-to-input").value = localStorage.getItem("lastEmailTo") || "";
     document.getElementById("epub-embed-images-checkbox").checked = AppConfig.EPUB_EMBED_IMAGES;
     document.getElementById("settings-modal").classList.remove("hidden");
+    AccountView.render();
     if (section) {
         var sectionEl = document.getElementById("settings-" + section + "-section");
         if (sectionEl) {

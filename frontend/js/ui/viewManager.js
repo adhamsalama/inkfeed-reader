@@ -5,14 +5,12 @@ var ViewManager = {
         addClass(document.getElementById("input-view"), "active");
         removeClass(document.getElementById("feed-view"), "active");
         removeClass(document.getElementById("article-view"), "active");
-        removeClass(document.getElementById("account-view"), "active");
     },
 
     showFeedView: function() {
         removeClass(document.getElementById("input-view"), "active");
         addClass(document.getElementById("feed-view"), "active");
         removeClass(document.getElementById("article-view"), "active");
-        removeClass(document.getElementById("account-view"), "active");
         if (AppState.currentArticleIndex >= 0) {
             var articleEl = document.getElementById(
                 "article-" + AppState.currentArticleIndex
@@ -27,15 +25,6 @@ var ViewManager = {
         removeClass(document.getElementById("input-view"), "active");
         removeClass(document.getElementById("feed-view"), "active");
         addClass(document.getElementById("article-view"), "active");
-        removeClass(document.getElementById("account-view"), "active");
-    },
-
-    showAccountView: function() {
-        removeClass(document.getElementById("input-view"), "active");
-        removeClass(document.getElementById("feed-view"), "active");
-        removeClass(document.getElementById("article-view"), "active");
-        addClass(document.getElementById("account-view"), "active");
-        AccountView.render();
     },
 
     showError: function(elementId, message) {
