@@ -47,6 +47,7 @@ var AccountView = {
             PreferencesSync.loadFromBackend(function() {
                 FeedRenderer.renderSavedFeeds();
                 AccountView.render();
+                closeSettings();
             });
         });
     },
@@ -60,10 +61,3 @@ var AccountView = {
     }
 };
 
-function showAccountView() {
-    ViewManager.showAccountView();
-}
-
-function hideAccountView() {
-    ViewManager.showInputView();
-}

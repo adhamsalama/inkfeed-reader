@@ -258,14 +258,12 @@ input[type="text"] {
 }
 
 #feed-view,
-#article-view,
-#account-view {
+#article-view {
   display: none;
 }
 
 #feed-view.active,
-#article-view.active,
-#account-view.active {
+#article-view.active {
   display: block;
 }
 
@@ -273,20 +271,10 @@ input[type="text"] {
   display: block;
 }
 
-.account-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #000;
-}
-
 #account-view-content input[type="text"],
 #account-view-content input[type="email"],
 #account-view-content input[type="password"] {
   width: 100%;
-  max-width: 400px;
   display: block;
   margin-bottom: 10px;
 }
