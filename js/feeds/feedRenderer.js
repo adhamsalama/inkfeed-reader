@@ -5,6 +5,16 @@ var FeedRenderer = {
         var list = document.getElementById("saved-feeds-list");
         var feeds = SavedFeedsManager.getSavedFeeds();
 
+        var groupsBtn = document.getElementById("groups-toggle-btn");
+        if (groupsBtn) {
+            if (feeds.length > 0) {
+                removeClass(groupsBtn, "hidden");
+            } else {
+                addClass(groupsBtn, "hidden");
+                addClass(document.getElementById("groups-section"), "hidden");
+            }
+        }
+
         list.innerHTML = "";
 
         if (feeds.length === 0) {
