@@ -14,6 +14,7 @@ type preferencesRequest struct {
 	LineHeight      float64 `json:"lineHeight"`
 	CorsProxyUrl    string  `json:"corsProxyUrl"`
 	EpubEmbedImages bool    `json:"epubEmbedImages"`
+	EmailTo         string  `json:"emailTo"`
 }
 
 type savedFeedItem struct {
@@ -28,6 +29,7 @@ type preferencesResponse struct {
 	LineHeight      float64         `json:"lineHeight"`
 	CorsProxyUrl    string          `json:"corsProxyUrl"`
 	EpubEmbedImages bool            `json:"epubEmbedImages"`
+	EmailTo         string          `json:"emailTo"`
 	SavedFeeds      []savedFeedItem `json:"savedFeeds"`
 }
 
@@ -88,6 +90,9 @@ func getPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 	} else {
 		resp.EpubEmbedImages = true
 	}
+	if prefs.EmailTo.Valid {
+		resp.EmailTo = prefs.EmailTo.String
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
@@ -112,6 +117,7 @@ func putPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 		LineHeight:      sql.NullFloat64{Float64: req.LineHeight, Valid: true},
 		CorsProxyUrl:    sql.NullString{String: req.CorsProxyUrl, Valid: true},
 		EpubEmbedImages: sql.NullInt64{Int64: embedInt, Valid: true},
+		EmailTo:         sql.NullString{String: req.EmailTo, Valid: true},
 	})
 	if err != nil {
 		jsonError(w, "internal error", http.StatusInternalServerError)

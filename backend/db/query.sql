@@ -17,18 +17,19 @@ DELETE FROM sessions WHERE token = ?;
 SELECT * FROM users WHERE id = ? LIMIT 1;
 
 -- name: GetUserPreferences :one
-SELECT font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images
+SELECT font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, email_to
 FROM user_preferences WHERE user_id = ? LIMIT 1;
 
 -- name: UpsertUserPreferences :exec
-INSERT INTO user_preferences (user_id, font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+INSERT INTO user_preferences (user_id, font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, email_to, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 ON CONFLICT(user_id) DO UPDATE SET
     font_size = excluded.font_size,
     letter_spacing = excluded.letter_spacing,
     line_height = excluded.line_height,
     cors_proxy_url = excluded.cors_proxy_url,
     epub_embed_images = excluded.epub_embed_images,
+    email_to = excluded.email_to,
     updated_at = CURRENT_TIMESTAMP;
 
 -- name: GetUserSavedFeeds :many

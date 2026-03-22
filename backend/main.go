@@ -79,6 +79,7 @@ func main() {
 			line_height       REAL,
 			cors_proxy_url    TEXT,
 			epub_embed_images INTEGER,
+			email_to          TEXT,
 			updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
 		CREATE TABLE IF NOT EXISTS user_saved_feeds (

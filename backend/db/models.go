@@ -29,6 +29,7 @@ type UserPreference struct {
 	LineHeight      sql.NullFloat64
 	CorsProxyUrl    sql.NullString
 	EpubEmbedImages sql.NullInt64
+	EmailTo         sql.NullString
 	UpdatedAt       time.Time
 }
 
