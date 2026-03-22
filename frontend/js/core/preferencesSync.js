@@ -50,6 +50,14 @@ var PreferencesSync = {
                 localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feedItems));
             }
 
+            if (prefs.feedGroups && prefs.feedGroups.length > 0) {
+                localStorage.setItem("feedGroups", JSON.stringify(prefs.feedGroups));
+                var groupsSection = document.getElementById("groups-section");
+                if (groupsSection && groupsSection.className.indexOf("hidden") < 0) {
+                    FeedRenderer.renderFeedGroups();
+                }
+            }
+
             applyContentStyles();
             if (callback) { callback(); }
         });
@@ -77,6 +85,17 @@ var PreferencesSync = {
                 payload.push({ url: feeds[i].url, title: feeds[i].title });
             }
             AuthClient.putSavedFeeds(payload, null);
+        } catch (e) {
+            // Silently fail
+        }
+    },
+
+    pushFeedGroups: function() {
+        if (!AppConfig.USE_BACKEND || !AuthState.isLoggedIn()) { return; }
+        try {
+            var data = localStorage.getItem("feedGroups");
+            var groups = data ? JSON.parse(data) : [];
+            AuthClient.putFeedGroups(groups, null);
         } catch (e) {
             // Silently fail
         }
