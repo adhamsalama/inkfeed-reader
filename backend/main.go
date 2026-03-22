@@ -120,7 +120,6 @@ func main() {
 	mux.Handle("/reddit-post", protected(redditPostHandler))
 	mux.Handle("/decode-google-news", protected(decodeGoogleNewsHandler))
 	mux.Handle("/email", corsMiddleware(authMiddleware(emailRateLimitMiddleware(http.HandlerFunc(emailHandler)))))
-	mux.Handle("/email-file", corsMiddleware(authMiddleware(emailRateLimitMiddleware(http.HandlerFunc(emailFileHandler)))))
 
 	addr := ":" + *port
 	log.Printf("Server listening on %s", addr)
