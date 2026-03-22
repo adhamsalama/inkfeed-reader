@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -55,6 +56,15 @@ func (q *Queries) DeleteSession(ctx context.Context, token string) error {
 	return err
 }
 
+const deleteUserSavedFeeds = `-- name: DeleteUserSavedFeeds :exec
+DELETE FROM user_saved_feeds WHERE user_id = ?
+`
+
+func (q *Queries) DeleteUserSavedFeeds(ctx context.Context, userID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteUserSavedFeeds, userID)
+	return err
+}
+
 const getSession = `-- name: GetSession :one
 SELECT token, user_id, expires_at FROM sessions WHERE token = ? AND expires_at > CURRENT_TIMESTAMP LIMIT 1
 `
@@ -80,4 +90,132 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, email, password_hash, created_at FROM users WHERE id = ? LIMIT 1
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getUserPreferences = `-- name: GetUserPreferences :one
+SELECT font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images
+FROM user_preferences WHERE user_id = ? LIMIT 1
+`
+
+type GetUserPreferencesRow struct {
+	FontSize        sql.NullFloat64
+	LetterSpacing   sql.NullFloat64
+	LineHeight      sql.NullFloat64
+	CorsProxyUrl    sql.NullString
+	EpubEmbedImages sql.NullInt64
+}
+
+func (q *Queries) GetUserPreferences(ctx context.Context, userID int64) (GetUserPreferencesRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserPreferences, userID)
+	var i GetUserPreferencesRow
+	err := row.Scan(
+		&i.FontSize,
+		&i.LetterSpacing,
+		&i.LineHeight,
+		&i.CorsProxyUrl,
+		&i.EpubEmbedImages,
+	)
+	return i, err
+}
+
+const getUserSavedFeeds = `-- name: GetUserSavedFeeds :many
+SELECT url, title FROM user_saved_feeds WHERE user_id = ? ORDER BY position
+`
+
+type GetUserSavedFeedsRow struct {
+	Url   string
+	Title string
+}
+
+func (q *Queries) GetUserSavedFeeds(ctx context.Context, userID int64) ([]GetUserSavedFeedsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserSavedFeeds, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserSavedFeedsRow
+	for rows.Next() {
+		var i GetUserSavedFeedsRow
+		if err := rows.Scan(&i.Url, &i.Title); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const insertUserSavedFeed = `-- name: InsertUserSavedFeed :exec
+INSERT INTO user_saved_feeds (user_id, url, title, position) VALUES (?, ?, ?, ?)
+`
+
+type InsertUserSavedFeedParams struct {
+	UserID   int64
+	Url      string
+	Title    string
+	Position int64
+}
+
+func (q *Queries) InsertUserSavedFeed(ctx context.Context, arg InsertUserSavedFeedParams) error {
+	_, err := q.db.ExecContext(ctx, insertUserSavedFeed,
+		arg.UserID,
+		arg.Url,
+		arg.Title,
+		arg.Position,
+	)
+	return err
+}
+
+const upsertUserPreferences = `-- name: UpsertUserPreferences :exec
+INSERT INTO user_preferences (user_id, font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+ON CONFLICT(user_id) DO UPDATE SET
+    font_size = excluded.font_size,
+    letter_spacing = excluded.letter_spacing,
+    line_height = excluded.line_height,
+    cors_proxy_url = excluded.cors_proxy_url,
+    epub_embed_images = excluded.epub_embed_images,
+    updated_at = CURRENT_TIMESTAMP
+`
+
+type UpsertUserPreferencesParams struct {
+	UserID          int64
+	FontSize        sql.NullFloat64
+	LetterSpacing   sql.NullFloat64
+	LineHeight      sql.NullFloat64
+	CorsProxyUrl    sql.NullString
+	EpubEmbedImages sql.NullInt64
+}
+
+func (q *Queries) UpsertUserPreferences(ctx context.Context, arg UpsertUserPreferencesParams) error {
+	_, err := q.db.ExecContext(ctx, upsertUserPreferences,
+		arg.UserID,
+		arg.FontSize,
+		arg.LetterSpacing,
+		arg.LineHeight,
+		arg.CorsProxyUrl,
+		arg.EpubEmbedImages,
+	)
+	return err
 }

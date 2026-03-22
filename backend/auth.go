@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
@@ -51,7 +52,9 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"email": req.Email})
 }
 
 func signinHandler(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +87,9 @@ func signinHandler(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"email": user.Email})
 }
 
 func issueSession(w http.ResponseWriter, r *http.Request, userID int64) error {
@@ -124,7 +129,7 @@ func authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		_, err = queries.GetSession(r.Context(), cookie.Value)
+		session, err := queries.GetSession(r.Context(), cookie.Value)
 		if err == sql.ErrNoRows {
 			jsonError(w, "unauthorized", http.StatusUnauthorized)
 			return
@@ -133,6 +138,7 @@ func authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		ctx := context.WithValue(r.Context(), contextKey("userID"), session.UserID)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

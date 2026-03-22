@@ -17,6 +17,8 @@ var queries *db.Queries
 
 const allowedOrigin = "https://reader.inkfeed.xyz"
 
+type contextKey string
+
 const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -27,7 +29,8 @@ func corsMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
@@ -68,6 +71,22 @@ func main() {
 			token      TEXT     PRIMARY KEY,
 			user_id    INTEGER  NOT NULL REFERENCES users(id),
 			expires_at DATETIME NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS user_preferences (
+			user_id           INTEGER PRIMARY KEY REFERENCES users(id),
+			font_size         REAL,
+			letter_spacing    REAL,
+			line_height       REAL,
+			cors_proxy_url    TEXT,
+			epub_embed_images INTEGER,
+			updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+		CREATE TABLE IF NOT EXISTS user_saved_feeds (
+			id       INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id  INTEGER NOT NULL REFERENCES users(id),
+			url      TEXT    NOT NULL,
+			title    TEXT    NOT NULL,
+			position INTEGER NOT NULL DEFAULT 0
 		)`,
 	); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
@@ -81,6 +100,9 @@ func main() {
 
 	mux.Handle("/signup", corsMiddleware(http.HandlerFunc(signupHandler)))
 	mux.Handle("/signin", corsMiddleware(http.HandlerFunc(signinHandler)))
+	mux.Handle("/signout", corsMiddleware(http.HandlerFunc(signoutHandler)))
+	mux.Handle("/preferences", protected(preferencesHandler))
+	mux.Handle("/saved-feeds", protected(savedFeedsHandler))
 	mux.Handle("/feed", protected(cached(feedHandler)))
 	mux.Handle("/article", protected(cached(articleHandler)))
 	mux.Handle("/text", protected(textHandler))

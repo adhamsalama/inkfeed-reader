@@ -5,6 +5,7 @@
 package db
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -19,4 +20,22 @@ type User struct {
 	Email        string
 	PasswordHash string
 	CreatedAt    time.Time
+}
+
+type UserPreference struct {
+	UserID          int64
+	FontSize        sql.NullFloat64
+	LetterSpacing   sql.NullFloat64
+	LineHeight      sql.NullFloat64
+	CorsProxyUrl    sql.NullString
+	EpubEmbedImages sql.NullInt64
+	UpdatedAt       time.Time
+}
+
+type UserSavedFeed struct {
+	ID       int64
+	UserID   int64
+	Url      string
+	Title    string
+	Position int64
 }
