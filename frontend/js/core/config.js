@@ -38,10 +38,6 @@ var AppConfig = {
     if (saved) {
         AppConfig.CORS_PROXY_URL = saved;
     }
-    var backendUrl = localStorage.getItem("backendUrl");
-    if (backendUrl) {
-        AppConfig.BACKEND_URL = backendUrl;
-    }
     var backendEnabled = localStorage.getItem("backendEnabled");
     if (backendEnabled !== null) {
         AppConfig.USE_BACKEND = backendEnabled === "true";

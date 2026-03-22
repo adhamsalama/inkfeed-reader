@@ -55,10 +55,6 @@ function updateBackendToggleBtn() {
 }
 
 function toggleUseBackend() {
-    if (!AppConfig.BACKEND_URL) {
-        openSettings("backend");
-        return;
-    }
     AppConfig.USE_BACKEND = !AppConfig.USE_BACKEND;
     localStorage.setItem("backendEnabled", AppConfig.USE_BACKEND ? "true" : "false");
     updateBackendToggleBtn();
@@ -73,7 +69,6 @@ function toggleEpubEmbedImages() {
 
 function openSettings(section) {
     document.getElementById("proxy-url-input").value = AppConfig.CORS_PROXY_URL;
-    document.getElementById("backend-url-input").value = AppConfig.BACKEND_URL;
     document.getElementById("email-to-input").value = localStorage.getItem("lastEmailTo") || "";
     document.getElementById("epub-embed-images-checkbox").checked = AppConfig.EPUB_EMBED_IMAGES;
     document.getElementById("settings-modal").classList.remove("hidden");
@@ -102,30 +97,6 @@ function saveProxyUrl() {
     closeSettings();
 }
 
-function saveBackendUrl() {
-    var input = document.getElementById("backend-url-input");
-    var url = input.value.replace(/^\s+|\s+$/g, "").replace(/\/+$/, "");
-    if (url) {
-        AppConfig.BACKEND_URL = url;
-        AppConfig.USE_BACKEND = true;
-        localStorage.setItem("backendUrl", url);
-        localStorage.setItem("backendEnabled", "true");
-    }
-    closeSettings();
-    updateBackendToggleBtn();
-    setEmailButtonVisible(AppConfig.USE_BACKEND);
-}
-
-function clearBackendUrl() {
-    AppConfig.BACKEND_URL = "";
-    AppConfig.USE_BACKEND = false;
-    localStorage.removeItem("backendUrl");
-    localStorage.removeItem("backendEnabled");
-    document.getElementById("backend-url-input").value = "";
-    closeSettings();
-    updateBackendToggleBtn();
-    setEmailButtonVisible(false);
-}
 
 function saveEmailAddress() {
     var input = document.getElementById("email-to-input");
