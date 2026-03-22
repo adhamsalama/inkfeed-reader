@@ -269,11 +269,14 @@ var FeedRenderer = {
             return;
         }
 
-        var ul = document.createElement("ul");
-        ul.className = "saved-feeds-list";
-
         for (var i = 0; i < favs.length; i++) {
             var fav = favs[i];
+
+            var block = document.createElement("div");
+            block.className = "suggested-feeds-section-block";
+
+            var ul = document.createElement("ul");
+            ul.className = "saved-feeds-list";
 
             var li = document.createElement("li");
             li.className = "saved-feed-item";
@@ -313,9 +316,9 @@ var FeedRenderer = {
             li.appendChild(link);
             li.appendChild(deleteBtn);
             ul.appendChild(li);
+            block.appendChild(ul);
+            container.appendChild(block);
         }
-
-        container.appendChild(ul);
     },
 
     renderArticleList: function(articles) {
