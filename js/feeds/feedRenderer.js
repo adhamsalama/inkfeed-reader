@@ -287,7 +287,7 @@ var FeedRenderer = {
             link.href = "#";
             (function(f) {
                 link.onclick = function() {
-                    AppState.currentArticles = [{ link: f.url, title: f.title, pubDate: f.pubDate, description: "", content: "" }];
+                    AppState.currentArticles = [{ link: f.url, title: f.title, pubDate: f.pubDate, description: "", content: "", comments: f.commentsUrl || "" }];
                     setText(document.getElementById("feed-title"), f.feedTitle || "");
                     ArticleViewer.openArticle(0);
                     return false;
