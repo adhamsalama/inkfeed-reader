@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/adhamsalama/rss-backend/mobi"
+	"github.com/adhamsalama/inkfeed-backend/mobi"
 )
 
 // EmailAttachment is a file to attach to an email.

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/adhamsalama/rss-backend/db"
+	"github.com/adhamsalama/inkfeed-backend/db"
 )
 
 type preferencesRequest struct {

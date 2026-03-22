@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/adhamsalama/rss-backend/mobi"
+	"github.com/adhamsalama/inkfeed-backend/mobi"
 )
 
 type MobiRequest struct {

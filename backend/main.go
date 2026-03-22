@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/adhamsalama/rss-backend/db"
+	"github.com/adhamsalama/inkfeed-backend/db"
 	"github.com/joho/godotenv"
 	_ "modernc.org/sqlite"
 )

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/adhamsalama/rss-backend/db"
+	"github.com/adhamsalama/inkfeed-backend/db"
 	"golang.org/x/crypto/bcrypt"
 )
 

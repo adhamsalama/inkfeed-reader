@@ -1,4 +1,4 @@
-module github.com/adhamsalama/rss-backend
+module github.com/adhamsalama/inkfeed-backend
 
 go 1.25.0
 

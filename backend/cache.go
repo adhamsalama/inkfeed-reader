@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/adhamsalama/rss-backend/db"
+	"github.com/adhamsalama/inkfeed-backend/db"
 )
 
 type cacheEntry struct {
