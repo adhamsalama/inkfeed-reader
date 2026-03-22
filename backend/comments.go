@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -236,7 +237,20 @@ func fetchRedditComments(rawURL string) (string, error) {
 	// Reddit returns [postListing, commentsListing]
 	var listings []redditListing
 	if err := json.NewDecoder(resp.Body).Decode(&listings); err != nil {
-		return "", fmt.Errorf("failed to parse Reddit JSON: %w", err)
+		log.Printf("reddit direct fetch failed for %s: %v, retrying via proxy", rawURL, err)
+		proxyReq, err := http.NewRequest("GET", feedProxyURL+"?url="+rawURL, nil)
+		if err != nil {
+			return "", err
+		}
+		proxyReq.Header.Set("User-Agent", userAgent)
+		proxyResp, err := client.Do(proxyReq)
+		if err != nil {
+			return "", err
+		}
+		defer proxyResp.Body.Close()
+		if err := json.NewDecoder(proxyResp.Body).Decode(&listings); err != nil {
+			return "", fmt.Errorf("failed to parse Reddit JSON: %w", err)
+		}
 	}
 	if len(listings) < 2 {
 		return "", fmt.Errorf("unexpected Reddit response format")
