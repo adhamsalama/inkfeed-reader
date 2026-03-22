@@ -8,42 +8,23 @@ var AccountView = {
                 '<button onclick="AccountView.handleSignOut()">Sign Out</button>';
         } else {
             el.innerHTML =
-                '<div class="account-tabs">' +
-                  '<button id="tab-signin" class="account-tab active-tab" onclick="AccountView.switchTab(\'signin\')">Sign In</button>' +
-                  '<button id="tab-signup" class="account-tab" onclick="AccountView.switchTab(\'signup\')">Sign Up</button>' +
-                '</div>' +
                 '<div id="account-form">' +
                   '<input type="email" id="account-email" placeholder="Email" />' +
                   '<input type="password" id="account-password" placeholder="Password" />' +
-                  '<button onclick="AccountView.handleAuthSubmit()">Sign In</button>' +
+                  '<div class="account-actions">' +
+                    '<button onclick="AccountView.handleAuthSubmit(\'signin\')">Sign In</button>' +
+                    '<button class="secondary" onclick="AccountView.handleAuthSubmit(\'signup\')">Sign Up</button>' +
+                  '</div>' +
                 '</div>' +
                 '<div id="account-status"></div>';
-            AccountView._currentTab = "signin";
         }
     },
 
-    _currentTab: "signin",
     _esc: function(s) {
         return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     },
 
-    switchTab: function(tab) {
-        AccountView._currentTab = tab;
-        var signinTab = document.getElementById("tab-signin");
-        var signupTab = document.getElementById("tab-signup");
-        var btn = document.querySelector("#account-form button");
-        if (tab === "signin") {
-            if (signinTab) { signinTab.className = "account-tab active-tab"; }
-            if (signupTab) { signupTab.className = "account-tab"; }
-            if (btn) { btn.textContent = "Sign In"; }
-        } else {
-            if (signinTab) { signinTab.className = "account-tab"; }
-            if (signupTab) { signupTab.className = "account-tab active-tab"; }
-            if (btn) { btn.textContent = "Sign Up"; }
-        }
-    },
-
-    handleAuthSubmit: function() {
+    handleAuthSubmit: function(action) {
         var emailEl = document.getElementById("account-email");
         var passEl = document.getElementById("account-password");
         var statusEl = document.getElementById("account-status");
@@ -56,7 +37,7 @@ var AccountView = {
         }
         if (statusEl) { statusEl.textContent = "Please wait..."; }
 
-        var fn = AccountView._currentTab === "signup" ? AuthClient.signup : AuthClient.signin;
+        var fn = action === "signup" ? AuthClient.signup : AuthClient.signin;
         fn(email, password, function(err, userEmail) {
             if (err) {
                 if (statusEl) { statusEl.textContent = "Error: " + err.message; }
