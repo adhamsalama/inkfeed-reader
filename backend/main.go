@@ -110,6 +110,15 @@ func main() {
 			url      TEXT NOT NULL,
 			title    TEXT NOT NULL,
 			position INTEGER NOT NULL DEFAULT 0
+		);
+		CREATE TABLE IF NOT EXISTS user_favorites (
+			id         INTEGER  PRIMARY KEY AUTOINCREMENT,
+			user_id    INTEGER  NOT NULL REFERENCES users(id),
+			url        TEXT     NOT NULL,
+			title      TEXT     NOT NULL DEFAULT '',
+			feed_title TEXT     NOT NULL DEFAULT '',
+			pub_date   TEXT     NOT NULL DEFAULT '',
+			saved_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
 	); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
@@ -130,6 +139,7 @@ func main() {
 	mux.Handle("/preferences", protected(preferencesHandler))
 	mux.Handle("/saved-feeds", protected(savedFeedsHandler))
 	mux.Handle("/feed-groups", protected(feedGroupsHandler))
+	mux.Handle("/favorites", protected(favoritesHandler))
 	mux.Handle("/feed", protected(cached(feedHandler)))
 	mux.Handle("/article", protected(cached(articleHandler)))
 	mux.Handle("/text", protected(textHandler))

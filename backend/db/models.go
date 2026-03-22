@@ -22,6 +22,16 @@ type User struct {
 	CreatedAt    time.Time
 }
 
+type UserFavorite struct {
+	ID        int64
+	UserID    int64
+	Url       string
+	Title     string
+	FeedTitle string
+	PubDate   string
+	SavedAt   time.Time
+}
+
 type UserFeedGroup struct {
 	ID       int64
 	UserID   int64

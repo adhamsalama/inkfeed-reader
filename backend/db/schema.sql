@@ -44,3 +44,13 @@ CREATE TABLE IF NOT EXISTS user_feed_group_items (
     title    TEXT NOT NULL,
     position INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS user_favorites (
+    id         INTEGER  PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER  NOT NULL REFERENCES users(id),
+    url        TEXT     NOT NULL,
+    title      TEXT     NOT NULL DEFAULT '',
+    feed_title TEXT     NOT NULL DEFAULT '',
+    pub_date   TEXT     NOT NULL DEFAULT '',
+    saved_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

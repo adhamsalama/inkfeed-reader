@@ -58,3 +58,12 @@ INSERT INTO user_feed_groups (user_id, name, position) VALUES (?, ?, ?) RETURNIN
 
 -- name: InsertFeedGroupItem :exec
 INSERT INTO user_feed_group_items (group_id, url, title, position) VALUES (?, ?, ?, ?);
+
+-- name: GetUserFavorites :many
+SELECT url, title, feed_title, pub_date FROM user_favorites WHERE user_id = ? ORDER BY saved_at DESC;
+
+-- name: DeleteAllUserFavorites :exec
+DELETE FROM user_favorites WHERE user_id = ?;
+
+-- name: InsertUserFavorite :exec
+INSERT INTO user_favorites (user_id, url, title, feed_title, pub_date) VALUES (?, ?, ?, ?, ?);

@@ -47,6 +47,15 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const deleteAllUserFavorites = `-- name: DeleteAllUserFavorites :exec
+DELETE FROM user_favorites WHERE user_id = ?
+`
+
+func (q *Queries) DeleteAllUserFavorites(ctx context.Context, userID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteAllUserFavorites, userID)
+	return err
+}
+
 const deleteSession = `-- name: DeleteSession :exec
 DELETE FROM sessions WHERE token = ?
 `
@@ -156,6 +165,45 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getUserFavorites = `-- name: GetUserFavorites :many
+SELECT url, title, feed_title, pub_date FROM user_favorites WHERE user_id = ? ORDER BY saved_at DESC
+`
+
+type GetUserFavoritesRow struct {
+	Url       string
+	Title     string
+	FeedTitle string
+	PubDate   string
+}
+
+func (q *Queries) GetUserFavorites(ctx context.Context, userID int64) ([]GetUserFavoritesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserFavorites, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserFavoritesRow
+	for rows.Next() {
+		var i GetUserFavoritesRow
+		if err := rows.Scan(
+			&i.Url,
+			&i.Title,
+			&i.FeedTitle,
+			&i.PubDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUserFeedGroups = `-- name: GetUserFeedGroups :many
@@ -284,6 +332,29 @@ func (q *Queries) InsertFeedGroupItem(ctx context.Context, arg InsertFeedGroupIt
 		arg.Url,
 		arg.Title,
 		arg.Position,
+	)
+	return err
+}
+
+const insertUserFavorite = `-- name: InsertUserFavorite :exec
+INSERT INTO user_favorites (user_id, url, title, feed_title, pub_date) VALUES (?, ?, ?, ?, ?)
+`
+
+type InsertUserFavoriteParams struct {
+	UserID    int64
+	Url       string
+	Title     string
+	FeedTitle string
+	PubDate   string
+}
+
+func (q *Queries) InsertUserFavorite(ctx context.Context, arg InsertUserFavoriteParams) error {
+	_, err := q.db.ExecContext(ctx, insertUserFavorite,
+		arg.UserID,
+		arg.Url,
+		arg.Title,
+		arg.FeedTitle,
+		arg.PubDate,
 	)
 	return err
 }

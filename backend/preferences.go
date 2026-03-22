@@ -33,6 +33,13 @@ type feedGroupData struct {
 	Feeds []feedGroupItem `json:"feeds"`
 }
 
+type favoriteItem struct {
+	URL       string `json:"url"`
+	Title     string `json:"title"`
+	FeedTitle string `json:"feedTitle"`
+	PubDate   string `json:"pubDate"`
+}
+
 type preferencesResponse struct {
 	Email           string          `json:"email"`
 	FontSize        float64         `json:"fontSize"`
@@ -43,6 +50,7 @@ type preferencesResponse struct {
 	EmailTo         string          `json:"emailTo"`
 	SavedFeeds      []savedFeedItem `json:"savedFeeds"`
 	FeedGroups      []feedGroupData `json:"feedGroups"`
+	Favorites       []favoriteItem  `json:"favorites"`
 }
 
 func preferencesHandler(w http.ResponseWriter, r *http.Request) {
@@ -101,10 +109,21 @@ func getPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 		groupDataList = append(groupDataList, feedGroupData{Name: g.Name, Feeds: feedGroupItems})
 	}
 
+	favRows, err := queries.GetUserFavorites(r.Context(), userID)
+	if err != nil {
+		jsonError(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	favItems := make([]favoriteItem, len(favRows))
+	for i, f := range favRows {
+		favItems[i] = favoriteItem{URL: f.Url, Title: f.Title, FeedTitle: f.FeedTitle, PubDate: f.PubDate}
+	}
+
 	resp := preferencesResponse{
 		Email:      user.Email,
 		SavedFeeds: feedItems,
 		FeedGroups: groupDataList,
+		Favorites:  favItems,
 	}
 	if prefs.FontSize.Valid {
 		resp.FontSize = prefs.FontSize.Float64
@@ -237,6 +256,41 @@ func feedGroupsHandler(w http.ResponseWriter, r *http.Request) {
 				jsonError(w, "internal error", http.StatusInternalServerError)
 				return
 			}
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func favoritesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		jsonError(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	userID := r.Context().Value(contextKey("userID")).(int64)
+
+	var favs []favoriteItem
+	if err := json.NewDecoder(r.Body).Decode(&favs); err != nil {
+		jsonError(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	if err := queries.DeleteAllUserFavorites(r.Context(), userID); err != nil {
+		jsonError(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	for _, f := range favs {
+		err := queries.InsertUserFavorite(r.Context(), db.InsertUserFavoriteParams{
+			UserID:    userID,
+			Url:       f.URL,
+			Title:     f.Title,
+			FeedTitle: f.FeedTitle,
+			PubDate:   f.PubDate,
+		})
+		if err != nil {
+			jsonError(w, "internal error", http.StatusInternalServerError)
+			return
 		}
 	}
 
