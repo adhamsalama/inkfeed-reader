@@ -28,7 +28,7 @@ var FavoritesManager = (function() {
         return false;
     }
 
-    function toggleFavorite(url, title, feedTitle, pubDate) {
+    function toggleFavorite(url, title, feedTitle, pubDate, commentsUrl) {
         var favs = getFavorites();
         for (var i = 0; i < favs.length; i++) {
             if (favs[i].url === url) {
@@ -37,7 +37,7 @@ var FavoritesManager = (function() {
                 return;
             }
         }
-        favs.unshift({ url: url, title: title, feedTitle: feedTitle, pubDate: pubDate });
+        favs.unshift({ url: url, title: title, feedTitle: feedTitle, pubDate: pubDate, commentsUrl: commentsUrl || "" });
         saveFavorites(favs);
     }
 
@@ -70,6 +70,7 @@ window.toggleFavorite = function() {
     var feedTitleEl = document.getElementById("feed-title");
     if (feedTitleEl) { feedTitle = getText(feedTitleEl) || ""; }
     var pubDate = article ? (article.pubDate || "") : "";
-    FavoritesManager.toggleFavorite(url, title, feedTitle, pubDate);
+    var commentsUrl = article ? (article.comments || "") : "";
+    FavoritesManager.toggleFavorite(url, title, feedTitle, pubDate, commentsUrl);
     FavoritesManager.updateFavoriteBtn();
 };
