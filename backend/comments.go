@@ -138,7 +138,12 @@ func fetchHNComments(rawURL string) (string, error) {
 
 	algoliaURL := "https://hn.algolia.com/api/v1/items/" + itemID
 	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Get(algoliaURL)
+	hnReq, err := http.NewRequest("GET", algoliaURL, nil)
+	if err != nil {
+		return "", err
+	}
+	hnReq.Header.Set("User-Agent", userAgent)
+	resp, err := client.Do(hnReq)
 	if err != nil {
 		return "", err
 	}
@@ -220,7 +225,7 @@ func fetchRedditComments(rawURL string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; RSSReader/1.0)")
+	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := client.Do(req)
 	if err != nil {

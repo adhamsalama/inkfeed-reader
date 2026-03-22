@@ -242,7 +242,13 @@ func downloadAndEmbedImages(bodyHTML string) (string, []embeddedImage) {
 			return strings.Replace(match, `src="`+srcURL+`"`, `src="`+images[idx].path+`"`, 1)
 		}
 
-		resp, err := http.Get(srcURL)
+		imgReq, err := http.NewRequest("GET", srcURL, nil)
+		if err != nil {
+			log.Printf("epub: failed to create image request %s: %v", srcURL, err)
+			return match
+		}
+		imgReq.Header.Set("User-Agent", userAgent)
+		resp, err := http.DefaultClient.Do(imgReq)
 		if err != nil {
 			log.Printf("epub: failed to download image %s: %v", srcURL, err)
 			return match

@@ -112,7 +112,7 @@ func fetchReadable(rawURL string) (readability.Article, error) {
 	if err != nil {
 		return readability.Article{}, err
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; RSSReader/1.0)")
+	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := client.Do(req)
 	if err != nil {
