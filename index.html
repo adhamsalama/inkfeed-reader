@@ -143,16 +143,9 @@
                     <button onclick="saveProxyUrl()">Save</button>
                 </div>
             </div>
-            <div class="settings-section hidden" id="settings-backend-section">
-                <div class="settings-section-title">Backend URL</div>
-                <div class="proxy-input-row">
-                    <input type="text" id="backend-url-input" placeholder="https://api.inkfeed.xyz" />
-                    <button onclick="saveBackendUrl()">Save</button>
-                    <button class="secondary" onclick="clearBackendUrl()">Clear</button>
-                </div>
-                <div style="margin-top: 8px;">
-                    <button id="use-backend-btn" class="secondary" onclick="toggleUseBackend()">Backend: OFF</button>
-                </div>
+            <div class="settings-section" id="settings-backend-section">
+                <div class="settings-section-title">Backend</div>
+                <button id="use-backend-btn" class="secondary" onclick="toggleUseBackend()">Backend: OFF</button>
                 <div style="margin-top: 8px; font-size: 0.85em; color: #555;">
                     Backend-only features: send to email, embed images in EPUB.<br/>Using the backend for article fetches and downloads saves battery.
                 </div>
