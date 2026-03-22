@@ -284,8 +284,15 @@ var FeedRenderer = {
             var link = document.createElement("a");
             link.className = "saved-feed-link";
             setText(link, fav.title || fav.url);
-            link.href = fav.url;
-            link.target = "_blank";
+            link.href = "#";
+            (function(f) {
+                link.onclick = function() {
+                    AppState.currentArticles = [{ link: f.url, title: f.title, pubDate: f.pubDate, description: "", content: "" }];
+                    setText(document.getElementById("feed-title"), f.feedTitle || "");
+                    ArticleViewer.openArticle(0);
+                    return false;
+                };
+            })(fav);
 
             if (fav.feedTitle) {
                 var sub = document.createElement("small");
