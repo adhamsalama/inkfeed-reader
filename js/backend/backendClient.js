@@ -23,6 +23,7 @@ var BackendClient = {
             }
         };
         xhr.open("GET", AppConfig.BACKEND_URL + path, true);
+        xhr.withCredentials = true;
         xhr.send(null);
     },
 
@@ -55,6 +56,7 @@ var BackendClient = {
             }
         };
         xhr.open("POST", AppConfig.BACKEND_URL + "/email", true);
+        xhr.withCredentials = true;
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify({ url: articleUrl, to: to, format: format, author: author, commentsUrl: commentsUrl || "", embedImages: AppConfig.EPUB_EMBED_IMAGES }));
     },
@@ -76,6 +78,7 @@ var BackendClient = {
             }
         };
         xhr.open("POST", AppConfig.BACKEND_URL + "/email", true);
+        xhr.withCredentials = true;
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify({ urls: articleUrls, to: to, format: format, author: author, embedImages: AppConfig.EPUB_EMBED_IMAGES }));
     },
@@ -97,6 +100,7 @@ var BackendClient = {
             }
         };
         xhr.open("POST", AppConfig.BACKEND_URL + "/email-file", true);
+        xhr.withCredentials = true;
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify({ content: base64Content, filename: filename, to: to, subject: subject, mimeType: mimeType }));
     },
@@ -123,6 +127,7 @@ var BackendClient = {
             }
         };
         xhr.open("GET", AppConfig.BACKEND_URL + "/text?url=" + encodeURIComponent(articleUrl), true);
+        xhr.withCredentials = true;
         xhr.send(null);
     },
 
@@ -164,6 +169,7 @@ var BackendClient = {
             }
         };
         xhr.open("POST", AppConfig.BACKEND_URL + "/epub", true);
+        xhr.withCredentials = true;
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify(body));
     },
@@ -188,6 +194,7 @@ var BackendClient = {
             }
         };
         xhr.open("POST", AppConfig.BACKEND_URL + "/mobi", true);
+        xhr.withCredentials = true;
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify(body));
     }

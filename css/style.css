@@ -258,17 +258,60 @@ input[type="text"] {
 }
 
 #feed-view,
-#article-view {
+#article-view,
+#account-view {
   display: none;
 }
 
 #feed-view.active,
-#article-view.active {
+#article-view.active,
+#account-view.active {
   display: block;
 }
 
 #input-view.active {
   display: block;
+}
+
+.account-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #000;
+}
+
+#account-view-content input[type="text"],
+#account-view-content input[type="email"],
+#account-view-content input[type="password"] {
+  width: 100%;
+  max-width: 400px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+#account-view-content button {
+  margin-bottom: 10px;
+}
+
+.account-tabs {
+  display: flex;
+  margin-bottom: 12px;
+}
+
+.account-tabs > * + * {
+  margin-left: 6px;
+}
+
+.account-tab.active-tab {
+  background-color: #000;
+  color: #fff;
+}
+
+#account-status {
+  margin-top: 8px;
+  font-size: 0.9em;
 }
 
 .nav-buttons {

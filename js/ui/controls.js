@@ -19,6 +19,7 @@ function adjustFontSize(delta) {
     );
     applyContentStyles();
     localStorage.setItem("fontSize", AppState.currentFontSize);
+    PreferencesSync.pushPrefs();
 }
 
 function adjustSpacing(delta) {
@@ -28,6 +29,7 @@ function adjustSpacing(delta) {
     );
     applyContentStyles();
     localStorage.setItem("letterSpacing", AppState.currentLetterSpacing);
+    PreferencesSync.pushPrefs();
 }
 
 function adjustLineHeight(delta) {
@@ -37,6 +39,7 @@ function adjustLineHeight(delta) {
     );
     applyContentStyles();
     localStorage.setItem("lineHeight", AppState.currentLineHeight);
+    PreferencesSync.pushPrefs();
 }
 
 function updateBackendToggleBtn() {
@@ -65,6 +68,7 @@ function toggleUseBackend() {
 function toggleEpubEmbedImages() {
     AppConfig.EPUB_EMBED_IMAGES = document.getElementById("epub-embed-images-checkbox").checked;
     localStorage.setItem("epubEmbedImages", AppConfig.EPUB_EMBED_IMAGES ? "true" : "false");
+    PreferencesSync.pushPrefs();
 }
 
 function openSettings(section) {
@@ -92,6 +96,7 @@ function saveProxyUrl() {
     if (url) {
         AppConfig.CORS_PROXY_URL = url;
         localStorage.setItem("corsProxyUrl", url);
+        PreferencesSync.pushPrefs();
     }
     closeSettings();
 }

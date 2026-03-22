@@ -32,29 +32,31 @@
                 }
             } catch (e) {}
 
-            // Render saved feeds from localStorage
-            FeedRenderer.renderSavedFeeds();
-
             // Initialize event handlers
             initEventHandlers();
 
             // Initialize scroll controls
             initScrollControls();
 
-            // Populate input from URL parameter if present (check query string first, then hash)
-            var feedInput = document.getElementById("feed-url");
-            var feedParam = getUrlParam("feed") || getHashParam("feed");
-            if (feedParam) {
-                feedInput.value = feedParam;
-                // Capture article hash before replaceState strips it
-                var initialHash = window.location.hash;
-                if (initialHash && initialHash.indexOf("#article-") === 0) {
-                    AppState.pendingScrollTarget = initialHash.substring(1);
+            // Load preferences from backend (if logged in), then render saved feeds
+            PreferencesSync.loadFromBackend(function() {
+                FeedRenderer.renderSavedFeeds();
+
+                // Populate input from URL parameter if present (check query string first, then hash)
+                var feedInput = document.getElementById("feed-url");
+                var feedParam = getUrlParam("feed") || getHashParam("feed");
+                if (feedParam) {
+                    feedInput.value = feedParam;
+                    // Capture article hash before replaceState strips it
+                    var initialHash = window.location.hash;
+                    if (initialHash && initialHash.indexOf("#article-") === 0) {
+                        AppState.pendingScrollTarget = initialHash.substring(1);
+                    }
+                    loadFeed(); // Auto-load the feed
+                } else if (!feedInput.value) {
+                    toggleSuggestedFeeds();
                 }
-                loadFeed(); // Auto-load the feed
-            } else if (!feedInput.value) {
-                toggleSuggestedFeeds();
-            }
+            });
         } catch (e) {
             alert("init error: " + e.message);
         }
