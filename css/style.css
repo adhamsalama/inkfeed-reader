@@ -425,7 +425,8 @@ input[type="text"] {
 }
 
 #suggested-feeds-container,
-#groups-container {
+#groups-container,
+#favorites-container {
   column-count: 2;
   column-gap: 20px;
 }
