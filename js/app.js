@@ -41,8 +41,6 @@
             showBackendBanner();
 
             if (AppConfig.USE_BACKEND) {
-                var favBtn = document.getElementById("favorite-btn");
-                if (favBtn) { favBtn.style.display = ""; }
                 var favToggleBtn = document.getElementById("favorites-toggle-btn");
                 if (favToggleBtn) { favToggleBtn.style.display = ""; }
             }
