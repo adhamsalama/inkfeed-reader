@@ -15,7 +15,7 @@ import (
 
 var queries *db.Queries
 
-const allowedOrigin = "https://reader.inkfeed.xyz"
+var allowedOrigin = "https://reader.inkfeed.xyz"
 
 type contextKey string
 
@@ -48,6 +48,10 @@ func jsonError(w http.ResponseWriter, message string, code int) {
 
 func main() {
 	godotenv.Load()
+
+	if os.Getenv("ENV") == "local" {
+		allowedOrigin = "http://localhost:8000"
+	}
 
 	port := flag.String("port", "8080", "port to listen on")
 	flag.Parse()

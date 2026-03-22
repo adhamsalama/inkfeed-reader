@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/adhamsalama/rss-backend/db"
 )
@@ -172,12 +173,13 @@ func signoutHandler(w http.ResponseWriter, r *http.Request) {
 		queries.DeleteSession(r.Context(), cookie.Value)
 	}
 
+	secure := strings.HasPrefix(allowedOrigin, "https://")
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   secure,
 		SameSite: http.SameSiteStrictMode,
 		MaxAge:   -1,
 	})

@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/adhamsalama/rss-backend/db"
@@ -108,12 +109,13 @@ func issueSession(w http.ResponseWriter, r *http.Request, userID int64) error {
 		return err
 	}
 
+	secure := strings.HasPrefix(allowedOrigin, "https://")
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   secure,
 		SameSite: http.SameSiteStrictMode,
 		Expires:  expires,
 	})
