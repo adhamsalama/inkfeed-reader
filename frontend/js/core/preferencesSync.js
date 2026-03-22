@@ -1,21 +1,26 @@
 // Preferences sync between localStorage and backend
 var PreferencesSync = {
     loadFromBackend: function(callback) {
-        if (!AppConfig.USE_BACKEND) {
-            if (callback) { callback(); }
-            return;
-        }
         AuthClient.getPreferences(function(err, prefs) {
             if (err) {
-                // Error — fall back to localStorage
+                // Network error — fall back to localStorage
                 if (callback) { callback(); }
                 return;
             }
             if (prefs === null) {
-                // 401 — not logged in
+                // 401 — not logged in, leave USE_BACKEND as-is
                 AuthState.setLoggedOut();
                 if (callback) { callback(); }
                 return;
+            }
+            // Valid session — ensure backend mode is on
+            if (!AppConfig.USE_BACKEND) {
+                AppConfig.USE_BACKEND = true;
+                localStorage.setItem("backendEnabled", "true");
+                updateBackendToggleBtn();
+                setEmailButtonVisible(true);
+                var favToggleBtn = document.getElementById("favorites-toggle-btn");
+                if (favToggleBtn) { favToggleBtn.style.display = ""; }
             }
             // Logged in — apply preferences
             AuthState.setLoggedIn(prefs.email);

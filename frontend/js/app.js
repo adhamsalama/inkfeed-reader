@@ -89,11 +89,26 @@
         }
     };
 
-    window.dismissBackendBanner = function() {
-        localStorage.setItem("backendBannerDismissed", "true");
+    var _bannerTemporary = false;
+    var _bannerDefaultMessage = "Sign up / Sign in and enable backend mode to email articles to yourself and save battery.";
+
+    window.showBannerMessage = function(msg) {
+        _bannerTemporary = true;
+        var msgEl = document.getElementById("backend-banner-message");
+        if (msgEl) { setText(msgEl, msg); }
         var banner = document.getElementById("backend-banner");
-        if (banner) {
-            banner.className = "backend-banner hidden";
+        if (banner) { banner.className = "backend-banner"; }
+    };
+
+    window.dismissBackendBanner = function() {
+        var banner = document.getElementById("backend-banner");
+        if (banner) { banner.className = "backend-banner hidden"; }
+        if (_bannerTemporary) {
+            _bannerTemporary = false;
+            var msgEl = document.getElementById("backend-banner-message");
+            if (msgEl) { setText(msgEl, _bannerDefaultMessage); }
+        } else {
+            localStorage.setItem("backendBannerDismissed", "true");
         }
     };
 

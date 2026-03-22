@@ -45,7 +45,7 @@ var FavoritesManager = (function() {
         var btn = document.getElementById("favorite-btn");
         if (!btn) { return; }
         var url = AppState.currentArticleUrl;
-        setText(btn, url && isFavorited(url) ? "\u2605" : "\u2606");
+        setText(btn, url && AuthState.isLoggedIn() && isFavorited(url) ? "\u2605" : "\u2606");
     }
 
     return {
@@ -58,6 +58,10 @@ var FavoritesManager = (function() {
 })();
 
 window.toggleFavorite = function() {
+    if (!AuthState.isLoggedIn()) {
+        showBannerMessage("Backend mode is on but you are not logged in. Please log in.");
+        return;
+    }
     var url = AppState.currentArticleUrl;
     if (!url) { return; }
     var article = AppState.currentArticles[AppState.currentArticleIndex];
