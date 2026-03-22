@@ -295,18 +295,13 @@ input[type="text"] {
   margin-bottom: 10px;
 }
 
-.account-tabs {
+.account-actions {
   display: flex;
-  margin-bottom: 12px;
+  margin-top: 4px;
 }
 
-.account-tabs > * + * {
+.account-actions > * + * {
   margin-left: 6px;
-}
-
-.account-tab.active-tab {
-  background-color: #000;
-  color: #fff;
 }
 
 #account-status {
