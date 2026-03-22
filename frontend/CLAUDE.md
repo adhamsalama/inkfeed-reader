@@ -38,17 +38,42 @@ lib/ → core/ → utils/ → ui/ → articles/ → downloads/ → feeds/ → ap
 
 - **`js/core/config.js`** — Constants: CORS proxy URL, font size bounds, retry config, comment limits
 - **`js/core/state.js`** — Runtime state: `AppState` (font/spacing/lineHeight/currentArticles), `ArticleSelectionState` (bulk download selection)
+- **`js/core/suggestedFeeds.js`** — Curated feed directory (Tech, News, Science, Linux categories) shown in the input view
+
+### lib/ Directory
+
+Low-level format implementations loaded before all other modules:
+- `mobiWriter.js` / `epubWriter.js` — Binary format assembly
+- `googleNewsDecoder.js` — Google News redirect URL decoding
+- `utils.js` — Shared utility functions
+
+### Module Pattern
+
+Each module exports a single named object (e.g., `FeedRenderer`, `ArticleViewer`). Event handler callbacks used in inline HTML `onclick=` attributes are exposed as globals via `window.functionName = ...` in `app.js` or `eventHandlers.js`.
+
+### Backend Integration
+
+`js/backend/backendClient.js` provides an optional backend abstraction. `AppConfig.USE_BACKEND` (from `localStorage`) switches between:
+- **Client-side**: Direct CORS proxy fetches, client-side Readability extraction, no email
+- **Backend mode**: Delegates to backend API (`/feed`, `/article`, `/email`, `/comments` endpoints), enables email delivery and EPUB image embedding
+
+Backend URL is configurable via settings modal, stored in `localStorage` as `backendUrl`.
+
+### Bulk Download / Article Selection
+
+`js/articles/articleSelection.js` manages a multi-select mode activated by download buttons. `ArticleSelectionState` tracks selected indices via a `Set`. Bulk processing uses a recursive `processNextArticle(index)` pattern to avoid blocking the UI.
 
 ### Special Handling
 
-- **Reddit**: Detects Reddit feed URLs, uses `.json` API endpoint directly
+- **Reddit**: Detects Reddit feed URLs, uses `.json` API endpoint directly; parses comment threads with depth indentation
 - **Google News**: `googleNewsDecoder.js` decodes redirect URLs to actual article links
-- **Comments**: Fetches Hacker News comments and includes them in MOBI downloads
+- **Comments**: Fetches Reddit/Hacker News comments; included in MOBI downloads
 - **CORS Proxy**: All external fetches go through a configurable proxy (default in `config.js`, overridable via UI)
+- **Auto-load**: Feed URL can be passed via `?feed=URL` query param or `#feed=URL` hash on page load
 
 ### Persistence
 
-All persistence is `localStorage`: saved feed URLs, display settings (font size, spacing, line height).
+`localStorage` keys: `savedFeeds`, `fontSize`, `letterSpacing`, `lineHeight`, `corsProxyUrl`, `backendUrl`, `backendEnabled`, `epubEmbedImages`, `lastEmailTo`.
 
 ## ES3 Compatibility Constraint
 
