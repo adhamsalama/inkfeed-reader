@@ -23,6 +23,16 @@ type savedFeedItem struct {
 	Title string `json:"title"`
 }
 
+type feedGroupItem struct {
+	URL   string `json:"url"`
+	Title string `json:"title"`
+}
+
+type feedGroupData struct {
+	Name  string          `json:"name"`
+	Feeds []feedGroupItem `json:"feeds"`
+}
+
 type preferencesResponse struct {
 	Email           string          `json:"email"`
 	FontSize        float64         `json:"fontSize"`
@@ -32,6 +42,7 @@ type preferencesResponse struct {
 	EpubEmbedImages bool            `json:"epubEmbedImages"`
 	EmailTo         string          `json:"emailTo"`
 	SavedFeeds      []savedFeedItem `json:"savedFeeds"`
+	FeedGroups      []feedGroupData `json:"feedGroups"`
 }
 
 func preferencesHandler(w http.ResponseWriter, r *http.Request) {
@@ -70,9 +81,30 @@ func getPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 		feedItems[i] = savedFeedItem{URL: f.Url, Title: f.Title}
 	}
 
+	groups, err := queries.GetUserFeedGroups(r.Context(), userID)
+	if err != nil {
+		jsonError(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	groupDataList := make([]feedGroupData, 0, len(groups))
+	for _, g := range groups {
+		items, err := queries.GetFeedGroupItems(r.Context(), g.ID)
+		if err != nil {
+			jsonError(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		feedGroupItems := make([]feedGroupItem, len(items))
+		for j, item := range items {
+			feedGroupItems[j] = feedGroupItem{URL: item.Url, Title: item.Title}
+		}
+		groupDataList = append(groupDataList, feedGroupData{Name: g.Name, Feeds: feedGroupItems})
+	}
+
 	resp := preferencesResponse{
 		Email:      user.Email,
 		SavedFeeds: feedItems,
+		FeedGroups: groupDataList,
 	}
 	if prefs.FontSize.Valid {
 		resp.FontSize = prefs.FontSize.Float64
@@ -156,6 +188,55 @@ func savedFeedsHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			jsonError(w, "internal error", http.StatusInternalServerError)
 			return
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func feedGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		jsonError(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	userID := r.Context().Value(contextKey("userID")).(int64)
+
+	var groups []feedGroupData
+	if err := json.NewDecoder(r.Body).Decode(&groups); err != nil {
+		jsonError(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	if err := queries.DeleteUserFeedGroupItems(r.Context(), userID); err != nil {
+		jsonError(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	if err := queries.DeleteUserFeedGroups(r.Context(), userID); err != nil {
+		jsonError(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	for i, g := range groups {
+		groupID, err := queries.InsertFeedGroup(r.Context(), db.InsertFeedGroupParams{
+			UserID:   userID,
+			Name:     g.Name,
+			Position: int64(i),
+		})
+		if err != nil {
+			jsonError(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		for j, item := range g.Feeds {
+			err := queries.InsertFeedGroupItem(r.Context(), db.InsertFeedGroupItemParams{
+				GroupID:  groupID,
+				Url:      item.URL,
+				Title:    item.Title,
+				Position: int64(j),
+			})
+			if err != nil {
+				jsonError(w, "internal error", http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 

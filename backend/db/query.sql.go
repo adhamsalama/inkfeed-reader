@@ -56,6 +56,24 @@ func (q *Queries) DeleteSession(ctx context.Context, token string) error {
 	return err
 }
 
+const deleteUserFeedGroupItems = `-- name: DeleteUserFeedGroupItems :exec
+DELETE FROM user_feed_group_items WHERE group_id IN (SELECT id FROM user_feed_groups WHERE user_id = ?)
+`
+
+func (q *Queries) DeleteUserFeedGroupItems(ctx context.Context, userID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteUserFeedGroupItems, userID)
+	return err
+}
+
+const deleteUserFeedGroups = `-- name: DeleteUserFeedGroups :exec
+DELETE FROM user_feed_groups WHERE user_id = ?
+`
+
+func (q *Queries) DeleteUserFeedGroups(ctx context.Context, userID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteUserFeedGroups, userID)
+	return err
+}
+
 const deleteUserSavedFeeds = `-- name: DeleteUserSavedFeeds :exec
 DELETE FROM user_saved_feeds WHERE user_id = ?
 `
@@ -63,6 +81,38 @@ DELETE FROM user_saved_feeds WHERE user_id = ?
 func (q *Queries) DeleteUserSavedFeeds(ctx context.Context, userID int64) error {
 	_, err := q.db.ExecContext(ctx, deleteUserSavedFeeds, userID)
 	return err
+}
+
+const getFeedGroupItems = `-- name: GetFeedGroupItems :many
+SELECT url, title FROM user_feed_group_items WHERE group_id = ? ORDER BY position
+`
+
+type GetFeedGroupItemsRow struct {
+	Url   string
+	Title string
+}
+
+func (q *Queries) GetFeedGroupItems(ctx context.Context, groupID int64) ([]GetFeedGroupItemsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFeedGroupItems, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFeedGroupItemsRow
+	for rows.Next() {
+		var i GetFeedGroupItemsRow
+		if err := rows.Scan(&i.Url, &i.Title); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getSession = `-- name: GetSession :one
@@ -106,6 +156,38 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getUserFeedGroups = `-- name: GetUserFeedGroups :many
+SELECT id, name FROM user_feed_groups WHERE user_id = ? ORDER BY position
+`
+
+type GetUserFeedGroupsRow struct {
+	ID   int64
+	Name string
+}
+
+func (q *Queries) GetUserFeedGroups(ctx context.Context, userID int64) ([]GetUserFeedGroupsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserFeedGroups, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserFeedGroupsRow
+	for rows.Next() {
+		var i GetUserFeedGroupsRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUserPreferences = `-- name: GetUserPreferences :one
@@ -166,6 +248,44 @@ func (q *Queries) GetUserSavedFeeds(ctx context.Context, userID int64) ([]GetUse
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertFeedGroup = `-- name: InsertFeedGroup :one
+INSERT INTO user_feed_groups (user_id, name, position) VALUES (?, ?, ?) RETURNING id
+`
+
+type InsertFeedGroupParams struct {
+	UserID   int64
+	Name     string
+	Position int64
+}
+
+func (q *Queries) InsertFeedGroup(ctx context.Context, arg InsertFeedGroupParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, insertFeedGroup, arg.UserID, arg.Name, arg.Position)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const insertFeedGroupItem = `-- name: InsertFeedGroupItem :exec
+INSERT INTO user_feed_group_items (group_id, url, title, position) VALUES (?, ?, ?, ?)
+`
+
+type InsertFeedGroupItemParams struct {
+	GroupID  int64
+	Url      string
+	Title    string
+	Position int64
+}
+
+func (q *Queries) InsertFeedGroupItem(ctx context.Context, arg InsertFeedGroupItemParams) error {
+	_, err := q.db.ExecContext(ctx, insertFeedGroupItem,
+		arg.GroupID,
+		arg.Url,
+		arg.Title,
+		arg.Position,
+	)
+	return err
 }
 
 const insertUserSavedFeed = `-- name: InsertUserSavedFeed :exec

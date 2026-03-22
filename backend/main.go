@@ -92,6 +92,19 @@ func main() {
 			url      TEXT    NOT NULL,
 			title    TEXT    NOT NULL,
 			position INTEGER NOT NULL DEFAULT 0
+		);
+		CREATE TABLE IF NOT EXISTS user_feed_groups (
+			id       INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id  INTEGER NOT NULL REFERENCES users(id),
+			name     TEXT NOT NULL,
+			position INTEGER NOT NULL DEFAULT 0
+		);
+		CREATE TABLE IF NOT EXISTS user_feed_group_items (
+			id       INTEGER PRIMARY KEY AUTOINCREMENT,
+			group_id INTEGER NOT NULL REFERENCES user_feed_groups(id),
+			url      TEXT NOT NULL,
+			title    TEXT NOT NULL,
+			position INTEGER NOT NULL DEFAULT 0
 		)`,
 	); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
@@ -111,6 +124,7 @@ func main() {
 	mux.Handle("/signout", corsMiddleware(http.HandlerFunc(signoutHandler)))
 	mux.Handle("/preferences", protected(preferencesHandler))
 	mux.Handle("/saved-feeds", protected(savedFeedsHandler))
+	mux.Handle("/feed-groups", protected(feedGroupsHandler))
 	mux.Handle("/feed", protected(cached(feedHandler)))
 	mux.Handle("/article", protected(cached(articleHandler)))
 	mux.Handle("/text", protected(textHandler))

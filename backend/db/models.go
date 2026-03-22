@@ -22,6 +22,21 @@ type User struct {
 	CreatedAt    time.Time
 }
 
+type UserFeedGroup struct {
+	ID       int64
+	UserID   int64
+	Name     string
+	Position int64
+}
+
+type UserFeedGroupItem struct {
+	ID       int64
+	GroupID  int64
+	Url      string
+	Title    string
+	Position int64
+}
+
 type UserPreference struct {
 	UserID          int64
 	FontSize        sql.NullFloat64

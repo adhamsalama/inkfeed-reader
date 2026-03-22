@@ -40,3 +40,21 @@ DELETE FROM user_saved_feeds WHERE user_id = ?;
 
 -- name: InsertUserSavedFeed :exec
 INSERT INTO user_saved_feeds (user_id, url, title, position) VALUES (?, ?, ?, ?);
+
+-- name: GetUserFeedGroups :many
+SELECT id, name FROM user_feed_groups WHERE user_id = ? ORDER BY position;
+
+-- name: GetFeedGroupItems :many
+SELECT url, title FROM user_feed_group_items WHERE group_id = ? ORDER BY position;
+
+-- name: DeleteUserFeedGroupItems :exec
+DELETE FROM user_feed_group_items WHERE group_id IN (SELECT id FROM user_feed_groups WHERE user_id = ?);
+
+-- name: DeleteUserFeedGroups :exec
+DELETE FROM user_feed_groups WHERE user_id = ?;
+
+-- name: InsertFeedGroup :one
+INSERT INTO user_feed_groups (user_id, name, position) VALUES (?, ?, ?) RETURNING id;
+
+-- name: InsertFeedGroupItem :exec
+INSERT INTO user_feed_group_items (group_id, url, title, position) VALUES (?, ?, ?, ?);
