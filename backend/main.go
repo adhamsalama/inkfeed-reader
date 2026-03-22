@@ -1,14 +1,19 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/adhamsalama/rss-backend/db"
 	"github.com/joho/godotenv"
+	_ "modernc.org/sqlite"
 )
+
+var queries *db.Queries
 
 const allowedOrigin = "https://reader.inkfeed.xyz"
 
@@ -48,12 +53,34 @@ func main() {
 		*port = envPort
 	}
 
+	sqlDB, err := sql.Open("sqlite", "inkfeed.db")
+	if err != nil {
+		log.Fatalf("failed to open database: %v", err)
+	}
+	if _, err := sqlDB.Exec(
+		`CREATE TABLE IF NOT EXISTS users (
+			id            INTEGER  PRIMARY KEY AUTOINCREMENT,
+			email         TEXT     NOT NULL UNIQUE,
+			password_hash TEXT     NOT NULL,
+			created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+		CREATE TABLE IF NOT EXISTS sessions (
+			token      TEXT     PRIMARY KEY,
+			user_id    INTEGER  NOT NULL REFERENCES users(id),
+			expires_at DATETIME NOT NULL
+		)`,
+	); err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
+	}
+	queries = db.New(sqlDB)
+
 	mux := http.NewServeMux()
 	protected := func(h http.HandlerFunc) http.Handler {
 		return corsMiddleware(authMiddleware(rateLimitMiddleware(http.HandlerFunc(h))))
 	}
 
-	mux.Handle("/login", corsMiddleware(http.HandlerFunc(loginHandler)))
+	mux.Handle("/signup", corsMiddleware(http.HandlerFunc(signupHandler)))
+	mux.Handle("/signin", corsMiddleware(http.HandlerFunc(signinHandler)))
 	mux.Handle("/feed", protected(cached(feedHandler)))
 	mux.Handle("/article", protected(cached(articleHandler)))
 	mux.Handle("/text", protected(textHandler))

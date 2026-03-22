@@ -1,93 +1,135 @@
 package main
 
 import (
+	"crypto/rand"
+	"database/sql"
+	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"os"
-	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/adhamsalama/rss-backend/db"
+	"golang.org/x/crypto/bcrypt"
 )
 
-type LoginRequest struct {
-	Username string `json:"username"`
+
+const sessionDuration = 15 * 24 * time.Hour
+
+type authRequest struct {
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-type LoginResponse struct {
-	Token string `json:"token"`
-}
-
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func signupHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		jsonError(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		jsonError(w, "invalid request body", http.StatusBadRequest)
+	var req authRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Email == "" || req.Password == "" {
+		jsonError(w, "email and password are required", http.StatusBadRequest)
 		return
 	}
 
-	expectedUser := os.Getenv("AUTH_USERNAME")
-	expectedPass := os.Getenv("AUTH_PASSWORD")
-	secret := os.Getenv("JWT_SECRET")
-
-	if expectedUser == "" || expectedPass == "" || secret == "" {
-		jsonError(w, "authentication not configured on server", http.StatusInternalServerError)
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		jsonError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
-	if req.Username != expectedUser || req.Password != expectedPass {
+	user, err := queries.CreateUser(r.Context(), db.CreateUserParams{
+		Email:        req.Email,
+		PasswordHash: string(hash),
+	})
+	if err != nil {
+		jsonError(w, "email already registered", http.StatusConflict)
+		return
+	}
+
+	if err := issueSession(w, r, user.ID); err != nil {
+		jsonError(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
+func signinHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		jsonError(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req authRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Email == "" || req.Password == "" {
+		jsonError(w, "email and password are required", http.StatusBadRequest)
+		return
+	}
+
+	user, err := queries.GetUserByEmail(r.Context(), req.Email)
+	if err == sql.ErrNoRows {
+		jsonError(w, "invalid credentials", http.StatusUnauthorized)
+		return
+	} else if err != nil {
+		jsonError(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		jsonError(w, "invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * 24 * time.Hour)),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-	})
-
-	tokenStr, err := token.SignedString([]byte(secret))
-	if err != nil {
-		jsonError(w, "failed to generate token", http.StatusInternalServerError)
+	if err := issueSession(w, r, user.ID); err != nil {
+		jsonError(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(LoginResponse{Token: tokenStr})
+	w.WriteHeader(http.StatusOK)
 }
 
-// authMiddleware validates the Bearer JWT on every request.
-// If AUTH_USERNAME is not set, auth is disabled and all requests pass through.
+func issueSession(w http.ResponseWriter, r *http.Request, userID int64) error {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return err
+	}
+	token := hex.EncodeToString(b)
+	expires := time.Now().Add(sessionDuration)
+
+	if err := queries.CreateSession(r.Context(), db.CreateSessionParams{
+		Token:     token,
+		UserID:    userID,
+		ExpiresAt: expires,
+	}); err != nil {
+		return err
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Expires:  expires,
+	})
+	return nil
+}
+
+// authMiddleware validates the session cookie on every request.
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if os.Getenv("AUTH_USERNAME") == "" {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		authHeader := r.Header.Get("Authorization")
-		if !strings.HasPrefix(authHeader, "Bearer ") {
+		cookie, err := r.Cookie("session")
+		if err != nil {
 			jsonError(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-		secret := os.Getenv("JWT_SECRET")
-
-		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method")
-			}
-			return []byte(secret), nil
-		})
-
-		if err != nil || !token.Valid {
+		_, err = queries.GetSession(r.Context(), cookie.Value)
+		if err == sql.ErrNoRows {
 			jsonError(w, "unauthorized", http.StatusUnauthorized)
+			return
+		} else if err != nil {
+			jsonError(w, "internal error", http.StatusInternalServerError)
 			return
 		}
 
