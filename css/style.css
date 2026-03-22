@@ -424,7 +424,8 @@ input[type="text"] {
   background-color: #ddd;
 }
 
-#suggested-feeds-container {
+#suggested-feeds-container,
+#groups-container {
   column-count: 2;
   column-gap: 20px;
 }
