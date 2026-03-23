@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adhamsalama/inkfeed-backend/db"
 	readability "github.com/go-shiori/go-readability"
 )
 
@@ -66,20 +68,54 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "public, max-age=300")
 	publishedTime := ""
 	if article.PublishedTime != nil {
 		publishedTime = article.PublishedTime.Format("2 January 2006")
 	}
-	json.NewEncoder(w).Encode(ArticleResponse{
+	resp := ArticleResponse{
 		Title:         article.Title,
 		Content:       article.Content,
 		Byline:        article.Byline,
 		SiteName:      article.SiteName,
 		PublishedTime: publishedTime,
 		WordCount:     len(strings.Fields(article.TextContent)),
-	})
+	}
+	body, err := json.Marshal(resp)
+	if err != nil {
+		jsonError(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	go archiveArticle(rawURL, string(body), article.Title, article.Byline, article.SiteName, publishedTime, article.Content, article.TextContent)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "public, max-age=300")
+	w.Write(body)
+}
+
+func archiveArticle(key, body, title, author, siteName, createdAt, htmlContent, textContent string) {
+	ctx := context.Background()
+	existing, err := queries.GetArticleArchive(ctx, key)
+	if err == nil && existing == body {
+		return
+	}
+	if err == nil {
+		log.Printf("article updated in archive: %s", key)
+	} else {
+		log.Printf("article archived: %s", key)
+	}
+	if err := queries.UpsertArticleArchive(ctx, db.UpsertArticleArchiveParams{
+		Key:         key,
+		Body:        body,
+		Title:       title,
+		Author:      author,
+		SiteName:    siteName,
+		CreatedAt:   createdAt,
+		HtmlContent: htmlContent,
+		TextContent: textContent,
+	}); err != nil {
+		log.Printf("article archive write error: %v", err)
+	}
 }
 
 // articleMetaHTML returns an HTML snippet with article metadata.

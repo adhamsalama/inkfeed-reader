@@ -400,6 +400,47 @@ func (q *Queries) InsertUserSavedFeed(ctx context.Context, arg InsertUserSavedFe
 	return err
 }
 
+const getArticleArchive = `-- name: GetArticleArchive :one
+SELECT body FROM article_archive WHERE key = ? LIMIT 1
+`
+
+func (q *Queries) GetArticleArchive(ctx context.Context, key string) (string, error) {
+	row := q.db.QueryRowContext(ctx, getArticleArchive, key)
+	var body string
+	err := row.Scan(&body)
+	return body, err
+}
+
+const upsertArticleArchive = `-- name: UpsertArticleArchive :exec
+INSERT INTO article_archive (key, body, title, author, site_name, created_at, html_content, text_content) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(key) DO UPDATE SET body = excluded.body, title = excluded.title, author = excluded.author, site_name = excluded.site_name, created_at = excluded.created_at, html_content = excluded.html_content, text_content = excluded.text_content, updated_at = CURRENT_TIMESTAMP
+`
+
+type UpsertArticleArchiveParams struct {
+	Key         string
+	Body        string
+	Title       string
+	Author      string
+	SiteName    string
+	CreatedAt   string
+	HtmlContent string
+	TextContent string
+}
+
+func (q *Queries) UpsertArticleArchive(ctx context.Context, arg UpsertArticleArchiveParams) error {
+	_, err := q.db.ExecContext(ctx, upsertArticleArchive,
+		arg.Key,
+		arg.Body,
+		arg.Title,
+		arg.Author,
+		arg.SiteName,
+		arg.CreatedAt,
+		arg.HtmlContent,
+		arg.TextContent,
+	)
+	return err
+}
+
 const setPersistentCache = `-- name: SetPersistentCache :exec
 INSERT INTO persistent_cache (key, body, content_type, expires_at) VALUES (?, ?, ?, ?)
 ON CONFLICT(key) DO UPDATE SET body = excluded.body, content_type = excluded.content_type, expires_at = excluded.expires_at

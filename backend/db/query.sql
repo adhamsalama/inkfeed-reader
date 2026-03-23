@@ -74,3 +74,10 @@ DELETE FROM user_favorites WHERE user_id = ?;
 
 -- name: InsertUserFavorite :exec
 INSERT INTO user_favorites (user_id, url, title, feed_title, pub_date, comments_url) VALUES (?, ?, ?, ?, ?, ?);
+
+-- name: GetArticleArchive :one
+SELECT body FROM article_archive WHERE key = ? LIMIT 1;
+
+-- name: UpsertArticleArchive :exec
+INSERT INTO article_archive (key, body, title, author, site_name, created_at, html_content, text_content) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(key) DO UPDATE SET body = excluded.body, title = excluded.title, author = excluded.author, site_name = excluded.site_name, created_at = excluded.created_at, html_content = excluded.html_content, text_content = excluded.text_content, updated_at = CURRENT_TIMESTAMP;

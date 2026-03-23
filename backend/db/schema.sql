@@ -62,3 +62,16 @@ CREATE TABLE IF NOT EXISTS user_favorites (
     comments_url TEXT     NOT NULL DEFAULT '',
     saved_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS article_archive (
+    key          TEXT     PRIMARY KEY,
+    body         TEXT     NOT NULL,
+    title        TEXT     NOT NULL DEFAULT '',
+    author       TEXT     NOT NULL DEFAULT '',
+    site_name    TEXT     NOT NULL DEFAULT '',
+    created_at   TEXT     NOT NULL DEFAULT '',
+    html_content TEXT     NOT NULL DEFAULT '',
+    text_content TEXT     NOT NULL DEFAULT '',
+    archived_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
