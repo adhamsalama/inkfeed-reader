@@ -85,7 +85,7 @@ func main() {
 		*port = envPort
 	}
 
-	sqlDB, err := sql.Open("sqlite", "inkfeed.db")
+	sqlDB, err := sql.Open("sqlite", "inkfeed.db?_busy_timeout=5000")
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
 	}
