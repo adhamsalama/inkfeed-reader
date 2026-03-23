@@ -85,9 +85,13 @@ func main() {
 		*port = envPort
 	}
 
-	sqlDB, err := sql.Open("sqlite", "inkfeed.db?_busy_timeout=5000")
+	sqlDB, err := sql.Open("sqlite", "inkfeed.db")
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+	if _, err := sqlDB.Exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000`); err != nil {
+		log.Fatalf("failed to configure database: %v", err)
 	}
 	if _, err := sqlDB.Exec(
 		`CREATE TABLE IF NOT EXISTS users (
