@@ -463,6 +463,126 @@ func (q *Queries) SetPersistentCache(ctx context.Context, arg SetPersistentCache
 	return err
 }
 
+const insertFeedItem = `-- name: InsertFeedItem :exec
+INSERT OR IGNORE INTO feed_items (feed_url, item_url, title, description, pub_date)
+VALUES (?, ?, ?, ?, ?)
+`
+
+type InsertFeedItemParams struct {
+	FeedUrl     string
+	ItemUrl     string
+	Title       string
+	Description string
+	PubDate     string
+}
+
+func (q *Queries) InsertFeedItem(ctx context.Context, arg InsertFeedItemParams) error {
+	_, err := q.db.ExecContext(ctx, insertFeedItem,
+		arg.FeedUrl,
+		arg.ItemUrl,
+		arg.Title,
+		arg.Description,
+		arg.PubDate,
+	)
+	return err
+}
+
+const getDistinctSavedFeedURLs = `-- name: GetDistinctSavedFeedURLs :many
+SELECT DISTINCT url FROM user_saved_feeds
+`
+
+func (q *Queries) GetDistinctSavedFeedURLs(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getDistinctSavedFeedURLs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var url string
+		if err := rows.Scan(&url); err != nil {
+			return nil, err
+		}
+		items = append(items, url)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getNextFeedItemWithoutArchive = `-- name: GetNextFeedItemWithoutArchive :one
+SELECT item_url FROM feed_items
+WHERE item_url NOT IN (SELECT key FROM article_archive)
+LIMIT 1
+`
+
+func (q *Queries) GetNextFeedItemWithoutArchive(ctx context.Context) (string, error) {
+	row := q.db.QueryRowContext(ctx, getNextFeedItemWithoutArchive)
+	var itemUrl string
+	err := row.Scan(&itemUrl)
+	return itemUrl, err
+}
+
+const getFeedArchiveItems = `-- name: GetFeedArchiveItems :many
+SELECT item_url, title, description, pub_date, scraped_at
+FROM feed_items
+WHERE feed_url = ?
+ORDER BY scraped_at DESC
+LIMIT ? OFFSET ?
+`
+
+type GetFeedArchiveItemsParams struct {
+	FeedUrl string
+	Limit   int64
+	Offset  int64
+}
+
+type GetFeedArchiveItemsRow struct {
+	ItemUrl     string
+	Title       string
+	Description string
+	PubDate     string
+	ScrapedAt   time.Time
+}
+
+func (q *Queries) GetFeedArchiveItems(ctx context.Context, arg GetFeedArchiveItemsParams) ([]GetFeedArchiveItemsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFeedArchiveItems, arg.FeedUrl, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFeedArchiveItemsRow
+	for rows.Next() {
+		var i GetFeedArchiveItemsRow
+		if err := rows.Scan(&i.ItemUrl, &i.Title, &i.Description, &i.PubDate, &i.ScrapedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const countFeedArchiveItems = `-- name: CountFeedArchiveItems :one
+SELECT COUNT(*) FROM feed_items WHERE feed_url = ?
+`
+
+func (q *Queries) CountFeedArchiveItems(ctx context.Context, feedUrl string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countFeedArchiveItems, feedUrl)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const upsertUserPreferences = `-- name: UpsertUserPreferences :exec
 INSERT INTO user_preferences (user_id, font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, email_to, updated_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)

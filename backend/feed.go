@@ -29,70 +29,73 @@ type FeedResponse struct {
 	Articles []Article `json:"articles"`
 }
 
-func feedHandler(w http.ResponseWriter, r *http.Request) {
-	url := r.URL.Query().Get("url")
-	if url == "" {
-		jsonError(w, "url parameter required", http.StatusBadRequest)
-		return
-	}
-
-	// Include legacy cipher suites for compatibility with older servers (e.g. fsf.org)
+// fetchAndParseFeed fetches and parses a feed URL, falling back to the proxy on failure.
+func fetchAndParseFeed(feedURL string) (FeedResponse, error) {
 	allSuites := append(tls.CipherSuites(), tls.InsecureCipherSuites()...)
 	cipherIDs := make([]uint16, len(allSuites))
 	for i, s := range allSuites {
 		cipherIDs[i] = s.ID
 	}
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{CipherSuites: cipherIDs},
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{CipherSuites: cipherIDs},
+		},
 	}
-	client := &http.Client{Timeout: 30 * time.Second, Transport: transport}
-	req, err := http.NewRequest("GET", url, nil)
+
+	req, err := http.NewRequest("GET", feedURL, nil)
 	if err != nil {
-		jsonError(w, err.Error(), http.StatusBadRequest)
-		return
+		return FeedResponse{}, err
 	}
 	req.Header.Set("User-Agent", userAgent)
 
 	httpResp, err := client.Do(req)
 	if err != nil {
-		jsonError(w, err.Error(), http.StatusBadGateway)
-		return
+		return FeedResponse{}, err
 	}
 	defer httpResp.Body.Close()
-
 	body, err := io.ReadAll(httpResp.Body)
 	if err != nil {
-		jsonError(w, err.Error(), http.StatusBadGateway)
+		return FeedResponse{}, err
+	}
+
+	resp, err := parseFeed(feedURL, body)
+	if err == nil {
+		return resp, nil
+	}
+
+	log.Printf("retrying %s via proxy", feedURL)
+	proxyURL := feedProxyURL + "?url=" + feedURL
+	proxyReq, err := http.NewRequest("GET", proxyURL, nil)
+	if err != nil {
+		return FeedResponse{}, err
+	}
+	proxyReq.Header.Set("User-Agent", userAgent)
+	proxyResp, err := client.Do(proxyReq)
+	if err != nil {
+		return FeedResponse{}, err
+	}
+	defer proxyResp.Body.Close()
+	proxyBody, err := io.ReadAll(proxyResp.Body)
+	if err != nil {
+		return FeedResponse{}, err
+	}
+	return parseFeed(feedURL, proxyBody)
+}
+
+func feedHandler(w http.ResponseWriter, r *http.Request) {
+	feedURL := r.URL.Query().Get("url")
+	if feedURL == "" {
+		jsonError(w, "url parameter required", http.StatusBadRequest)
 		return
 	}
 
-	resp, err := parseFeed(url, body)
+	resp, err := fetchAndParseFeed(feedURL)
 	if err != nil {
-		log.Printf("retrying %s via proxy", url)
-		proxyURL := feedProxyURL + "?url=" + url
-		proxyReq, err := http.NewRequest("GET", proxyURL, nil)
-		if err != nil {
-			jsonError(w, "failed to build proxy request", http.StatusInternalServerError)
-			return
-		}
-		proxyReq.Header.Set("User-Agent", userAgent)
-		proxyResp, err := client.Do(proxyReq)
-		if err != nil {
-			jsonError(w, "proxy fetch failed: "+err.Error(), http.StatusBadGateway)
-			return
-		}
-		defer proxyResp.Body.Close()
-		proxyBody, err := io.ReadAll(proxyResp.Body)
-		if err != nil {
-			jsonError(w, "failed to read proxy response", http.StatusBadGateway)
-			return
-		}
-		resp, err = parseFeed(url, proxyBody)
-		if err != nil {
-			jsonError(w, "failed to parse feed", http.StatusBadGateway)
-			return
-		}
+		jsonError(w, "failed to parse feed", http.StatusBadGateway)
+		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "public, max-age=300")
 	json.NewEncoder(w).Encode(resp)

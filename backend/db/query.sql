@@ -78,6 +78,30 @@ INSERT INTO user_favorites (user_id, url, title, feed_title, pub_date, comments_
 -- name: GetArticleArchive :one
 SELECT body FROM article_archive WHERE key = ? LIMIT 1;
 
+
+-- name: InsertFeedItem :exec
+INSERT OR IGNORE INTO feed_items (feed_url, item_url, title, description, pub_date)
+VALUES (?, ?, ?, ?, ?);
+
+-- name: GetDistinctSavedFeedURLs :many
+SELECT DISTINCT url FROM user_saved_feeds;
+
+-- name: GetNextFeedItemWithoutArchive :one
+SELECT item_url FROM feed_items
+WHERE item_url NOT IN (SELECT key FROM article_archive)
+LIMIT 1;
+
+-- name: GetFeedArchiveItems :many
+SELECT item_url, title, description, pub_date, scraped_at
+FROM feed_items
+WHERE feed_url = ?
+ORDER BY scraped_at DESC
+LIMIT ? OFFSET ?;
+
+-- name: CountFeedArchiveItems :one
+SELECT COUNT(*) FROM feed_items WHERE feed_url = ?;
+
+
 -- name: UpsertArticleArchive :exec
 INSERT INTO article_archive (key, body, title, author, site_name, created_at, html_content, text_content) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(key) DO UPDATE SET body = excluded.body, title = excluded.title, author = excluded.author, site_name = excluded.site_name, created_at = excluded.created_at, html_content = excluded.html_content, text_content = excluded.text_content, updated_at = CURRENT_TIMESTAMP;
