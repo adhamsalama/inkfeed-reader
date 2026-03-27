@@ -1,5 +1,125 @@
 // RSS/Atom Feed Loader
 
+var archiveOffset = 0;
+var archivePageSize = 50;
+var archiveHasMore = false;
+
+function resetArchiveState() {
+    archiveOffset = 0;
+    archiveHasMore = false;
+    document.getElementById("archive-article-list").innerHTML = "";
+    addClass(document.getElementById("archive-load-more"), "hidden");
+    addClass(document.getElementById("show-archive-btn-row"), "hidden");
+    addClass(document.getElementById("archive-loading"), "hidden");
+}
+
+function showFeedArchive() {
+    if (!AppConfig.USE_BACKEND) return;
+    archiveOffset = 0;
+    document.getElementById("archive-article-list").innerHTML = "";
+    addClass(document.getElementById("archive-load-more"), "hidden");
+    addClass(document.getElementById("show-archive-btn-row"), "hidden");
+    loadArchivePage();
+}
+
+function loadMoreArchive() {
+    if (!AppConfig.USE_BACKEND) return;
+    loadArchivePage();
+}
+
+function loadArchivePage() {
+    var feedUrl = AppState.lastLoadedFeedUrl;
+    if (!feedUrl) return;
+
+    removeClass(document.getElementById("archive-loading"), "hidden");
+    addClass(document.getElementById("archive-load-more"), "hidden");
+
+    BackendClient.fetchFeedArchive(feedUrl, archivePageSize, archiveOffset, function(error, data) {
+        addClass(document.getElementById("archive-loading"), "hidden");
+        if (error || !data || !data.articles) return;
+
+        var baseIndex = AppState.currentArticles.length + archiveOffset;
+        var newArticles = data.articles;
+
+        // Append to currentArticles so ArticleViewer.openArticle works by index
+        for (var i = 0; i < newArticles.length; i++) {
+            newArticles[i].index = baseIndex + i;
+            AppState.currentArticles.push(newArticles[i]);
+        }
+
+        archiveOffset += newArticles.length;
+        archiveHasMore = data.hasMore;
+
+        renderArchiveArticles(newArticles, baseIndex);
+
+        if (archiveHasMore) {
+            removeClass(document.getElementById("archive-load-more"), "hidden");
+        }
+    });
+}
+
+function renderArchiveArticles(articles, baseIndex) {
+    var list = document.getElementById("archive-article-list");
+    var fragment = document.createDocumentFragment();
+
+    if (baseIndex === AppState.currentArticles.length - articles.length) {
+        // First batch: add a separator
+        var sep = document.createElement("li");
+        sep.className = "feed-separator";
+        setText(sep, "Archived articles");
+        fragment.appendChild(sep);
+    }
+
+    for (var i = 0; i < articles.length; i++) {
+        var article = articles[i];
+        var li = document.createElement("li");
+        li.className = "article-item" + (article.link && AppState.readArticles.has(article.link) ? " article-read" : "");
+        li.id = "article-" + article.index;
+        (function(index) {
+            li.onclick = function() {
+                ArticleViewer.openArticle(index);
+                return false;
+            };
+        })(article.index);
+
+        var titleRow = document.createElement("div");
+        titleRow.className = "article-title-row";
+
+        var title = document.createElement("span");
+        title.className = "article-title";
+        setText(title, article.title);
+        titleRow.appendChild(title);
+
+        if (article.pubDate) {
+            var date = new Date(article.pubDate);
+            var dateText = isNaN(date.getTime())
+                ? article.pubDate
+                : (date.getDate() < 10 ? "0" + date.getDate() : "" + date.getDate()) + "-" +
+                  (date.getMonth() + 1 < 10 ? "0" + (date.getMonth() + 1) : "" + (date.getMonth() + 1)) + "-" +
+                  ("" + date.getFullYear()).slice(2);
+            var meta = document.createElement("span");
+            meta.className = "article-meta";
+            setText(meta, dateText);
+            titleRow.appendChild(meta);
+        }
+
+        var desc = document.createElement("div");
+        desc.className = "article-description";
+        var tempDiv = document.createElement("div");
+        tempDiv.innerHTML = article.description;
+        var plainText = getText(tempDiv);
+        var truncated = plainText.substring(0, 200);
+        if (plainText.length > 200) truncated += "...";
+        setText(desc, truncated);
+
+        li.appendChild(titleRow);
+        if (getText(desc)) li.appendChild(desc);
+        fragment.appendChild(li);
+    }
+
+    list.appendChild(fragment);
+}
+
 function parseFeedXml(xmlText) {
     var xml;
     if (window.DOMParser) {
@@ -120,6 +240,7 @@ function loadFeed() {
         ViewManager.hideError("input-error");
         removeClass(document.getElementById("feed-loading"), "hidden");
         document.getElementById("article-list").innerHTML = "";
+        resetArchiveState();
         ViewManager.showFeedView();
 
         if (AppConfig.USE_BACKEND) {
@@ -142,6 +263,7 @@ function loadFeed() {
                 document.title = data.title;
                 SavedFeedsManager.updateFeedTitle(url, data.title);
                 FeedRenderer.renderArticleList(data.articles);
+                removeClass(document.getElementById("show-archive-btn-row"), "hidden");
             });
             return;
         }
@@ -166,6 +288,9 @@ function loadFeed() {
                 document.title = parsed.title;
                 SavedFeedsManager.updateFeedTitle(url, parsed.title);
                 FeedRenderer.renderArticleList(parsed.articles);
+                if (AppConfig.USE_BACKEND) {
+                    removeClass(document.getElementById("show-archive-btn-row"), "hidden");
+                }
             } catch (e) {
                 ViewManager.showInputView();
                 ViewManager.showError("input-error", "Error loading feed: " + e.message);
