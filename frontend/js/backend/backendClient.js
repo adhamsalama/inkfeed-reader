@@ -83,6 +83,10 @@ var BackendClient = {
         xhr.send(JSON.stringify({ urls: articleUrls, to: to, format: format, author: author, embedImages: AppConfig.EPUB_EMBED_IMAGES }));
     },
 
+    fetchFeedArchive: function(feedUrl, limit, offset, callback) {
+        BackendClient._get("/feed-archive?url=" + encodeURIComponent(feedUrl) + "&limit=" + limit + "&offset=" + offset, callback);
+    },
+
     fetchRedditPost: function(redditJsonUrl, callback) {
         BackendClient._get("/reddit-post?url=" + encodeURIComponent(redditJsonUrl), callback);
     },
