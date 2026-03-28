@@ -61,6 +61,7 @@
             <div class="feed-title-row">
                 <h2 id="feed-title">Feed Articles</h2>
                 <span id="render-progress"></span>
+                <button id="show-archive-btn" class="secondary hidden" style="margin-left:8px" onclick="showFeedArchive()">Archived</button>
             </div>
             <div class="article-buttons" id="normal-nav-buttons">
                 <div class="article-action-row">
@@ -86,15 +87,12 @@
             <div id="feed-loading" class="loading hidden">Loading feed...</div>
             <div id="download-all-progress" class="loading hidden">Downloading articles...</div>
             <ul id="article-list" class="article-list"></ul>
-            <div id="feed-archive-section">
+            <div id="feed-archive-section" class="hidden">
                 <div id="archive-loading" class="loading hidden">Loading archived articles...</div>
                 <ul id="archive-article-list" class="article-list"></ul>
                 <div id="archive-load-more" class="hidden" style="text-align:center; padding:8px;">
                     <button class="secondary" onclick="loadMoreArchive()">Load more</button>
                 </div>
-            </div>
-            <div id="show-archive-btn-row" class="hidden" style="text-align:center; padding:8px;">
-                <button class="secondary" onclick="showFeedArchive()">Show archived articles</button>
             </div>
         </div>
 

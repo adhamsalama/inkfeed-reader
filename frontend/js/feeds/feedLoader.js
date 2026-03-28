@@ -2,23 +2,29 @@
 
 var archiveOffset = 0;
 var archivePageSize = 50;
-var archiveHasMore = false;
+var archiveArticles = [];
 
 function resetArchiveState() {
     archiveOffset = 0;
-    archiveHasMore = false;
+    archiveArticles = [];
     document.getElementById("archive-article-list").innerHTML = "";
     addClass(document.getElementById("archive-load-more"), "hidden");
-    addClass(document.getElementById("show-archive-btn-row"), "hidden");
+    addClass(document.getElementById("show-archive-btn"), "hidden");
     addClass(document.getElementById("archive-loading"), "hidden");
+    addClass(document.getElementById("feed-archive-section"), "hidden");
+    removeClass(document.getElementById("article-list"), "hidden");
 }
 
 function showFeedArchive() {
-    if (!AppConfig.USE_BACKEND) return;
+    if (!AuthState.isLoggedIn()) return;
     archiveOffset = 0;
+    archiveArticles = [];
     document.getElementById("archive-article-list").innerHTML = "";
     addClass(document.getElementById("archive-load-more"), "hidden");
-    addClass(document.getElementById("show-archive-btn-row"), "hidden");
+    addClass(document.getElementById("show-archive-btn"), "hidden");
+    // Hide live feed, show archive section
+    addClass(document.getElementById("article-list"), "hidden");
+    removeClass(document.getElementById("feed-archive-section"), "hidden");
     loadArchivePage();
 }
 
@@ -38,46 +44,35 @@ function loadArchivePage() {
         addClass(document.getElementById("archive-loading"), "hidden");
         if (error || !data || !data.articles) return;
 
-        var baseIndex = AppState.currentArticles.length + archiveOffset;
         var newArticles = data.articles;
-
-        // Append to currentArticles so ArticleViewer.openArticle works by index
         for (var i = 0; i < newArticles.length; i++) {
-            newArticles[i].index = baseIndex + i;
-            AppState.currentArticles.push(newArticles[i]);
+            newArticles[i].index = archiveArticles.length;
+            archiveArticles.push(newArticles[i]);
         }
 
         archiveOffset += newArticles.length;
-        archiveHasMore = data.hasMore;
 
-        renderArchiveArticles(newArticles, baseIndex);
+        renderArchiveArticles(newArticles);
 
-        if (archiveHasMore) {
+        if (data.hasMore) {
             removeClass(document.getElementById("archive-load-more"), "hidden");
         }
     });
 }
 
-function renderArchiveArticles(articles, baseIndex) {
+function renderArchiveArticles(articles) {
     var list = document.getElementById("archive-article-list");
     var fragment = document.createDocumentFragment();
-
-    if (baseIndex === AppState.currentArticles.length - articles.length) {
-        // First batch: add a separator
-        var sep = document.createElement("li");
-        sep.className = "feed-separator";
-        setText(sep, "Archived articles");
-        fragment.appendChild(sep);
-    }
 
     for (var i = 0; i < articles.length; i++) {
         var article = articles[i];
         var li = document.createElement("li");
         li.className = "article-item" + (article.link && AppState.readArticles.has(article.link) ? " article-read" : "");
-        li.id = "article-" + article.index;
-        (function(index) {
+        li.id = "archive-article-" + article.index;
+        (function(idx) {
             li.onclick = function() {
-                ArticleViewer.openArticle(index);
+                AppState.currentArticles = [archiveArticles[idx]];
+                ArticleViewer.openArticle(0);
                 return false;
             };
         })(article.index);
@@ -263,7 +258,9 @@ function loadFeed() {
                 document.title = data.title;
                 SavedFeedsManager.updateFeedTitle(url, data.title);
                 FeedRenderer.renderArticleList(data.articles);
-                removeClass(document.getElementById("show-archive-btn-row"), "hidden");
+                if (AuthState.isLoggedIn() && SavedFeedsManager.isSavedFeed(url)) {
+                    removeClass(document.getElementById("show-archive-btn"), "hidden");
+                }
             });
             return;
         }
@@ -288,8 +285,8 @@ function loadFeed() {
                 document.title = parsed.title;
                 SavedFeedsManager.updateFeedTitle(url, parsed.title);
                 FeedRenderer.renderArticleList(parsed.articles);
-                if (AppConfig.USE_BACKEND) {
-                    removeClass(document.getElementById("show-archive-btn-row"), "hidden");
+                if (AuthState.isLoggedIn() && SavedFeedsManager.isSavedFeed(url)) {
+                    removeClass(document.getElementById("show-archive-btn"), "hidden");
                 }
             } catch (e) {
                 ViewManager.showInputView();
