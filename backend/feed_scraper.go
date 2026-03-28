@@ -26,9 +26,12 @@ func feedScrapeInterval() time.Duration {
 
 func startFeedScraper() {
 	go func() {
+		interval := feedScrapeInterval()
 		scrapeAllFeeds()
-		for range time.Tick(feedScrapeInterval()) {
+		log.Printf("feed scraper: next run in %s", interval)
+		for range time.Tick(interval) {
 			scrapeAllFeeds()
+			log.Printf("feed scraper: next run in %s", interval)
 		}
 	}()
 }
