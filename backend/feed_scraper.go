@@ -66,7 +66,7 @@ func scrapeFeed(feedURL string) {
 		if desc == "" {
 			desc = article.Content
 		}
-		inserted, err := queries.InsertFeedItem(ctx, db.InsertFeedItemParams{
+		res, err := queries.InsertFeedItem(ctx, db.InsertFeedItemParams{
 			FeedUrl:     feedURL,
 			ItemUrl:     article.Link,
 			Title:       article.Title,
@@ -75,7 +75,7 @@ func scrapeFeed(feedURL string) {
 		})
 		if err != nil {
 			log.Printf("feed scraper: insert error for %s: %v", article.Link, err)
-		} else if inserted {
+		} else if n, _ := res.RowsAffected(); n > 0 {
 			newCount++
 		}
 	}

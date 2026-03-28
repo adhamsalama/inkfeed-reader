@@ -79,7 +79,7 @@ INSERT INTO user_favorites (user_id, url, title, feed_title, pub_date, comments_
 SELECT body FROM article_archive WHERE key = ? LIMIT 1;
 
 
--- name: InsertFeedItem :exec
+-- name: InsertFeedItem :execresult
 INSERT OR IGNORE INTO feed_items (feed_url, item_url, title, description, pub_date)
 VALUES (?, ?, ?, ?, ?);
 
@@ -99,7 +99,7 @@ UPDATE feed_items SET archive_failed = 1 WHERE item_url = ?;
 SELECT item_url, title, description, pub_date, scraped_at
 FROM feed_items
 WHERE feed_url = ?
-ORDER BY scraped_at DESC
+ORDER BY datetime(pub_date) DESC, scraped_at DESC
 LIMIT ? OFFSET ?;
 
 -- name: CountFeedArchiveItems :one

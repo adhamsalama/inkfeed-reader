@@ -9,6 +9,30 @@ import (
 	"time"
 )
 
+type ArticleArchive struct {
+	Key         string
+	Body        string
+	Title       string
+	Author      string
+	SiteName    string
+	CreatedAt   string
+	HtmlContent string
+	TextContent string
+	ArchivedAt  time.Time
+	UpdatedAt   time.Time
+}
+
+type FeedItem struct {
+	ID            int64
+	FeedUrl       string
+	ItemUrl       string
+	Title         string
+	Description   string
+	PubDate       string
+	ScrapedAt     time.Time
+	ArchiveFailed int64
+}
+
 type PersistentCache struct {
 	Key         string
 	Body        string
