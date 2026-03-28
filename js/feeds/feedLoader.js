@@ -9,10 +9,21 @@ function resetArchiveState() {
     archiveArticles = [];
     document.getElementById("archive-article-list").innerHTML = "";
     addClass(document.getElementById("archive-load-more"), "hidden");
-    addClass(document.getElementById("show-archive-btn"), "hidden");
+    var btn = document.getElementById("show-archive-btn");
+    addClass(btn, "hidden");
+    btn.onclick = showFeedArchive;
+    setText(btn, "Archived");
     addClass(document.getElementById("archive-loading"), "hidden");
     addClass(document.getElementById("feed-archive-section"), "hidden");
     removeClass(document.getElementById("article-list"), "hidden");
+}
+
+function showLiveFeed() {
+    addClass(document.getElementById("feed-archive-section"), "hidden");
+    removeClass(document.getElementById("article-list"), "hidden");
+    var btn = document.getElementById("show-archive-btn");
+    btn.onclick = showFeedArchive;
+    setText(btn, "Archived");
 }
 
 function showFeedArchive() {
@@ -21,10 +32,12 @@ function showFeedArchive() {
     archiveArticles = [];
     document.getElementById("archive-article-list").innerHTML = "";
     addClass(document.getElementById("archive-load-more"), "hidden");
-    addClass(document.getElementById("show-archive-btn"), "hidden");
     // Hide live feed, show archive section
     addClass(document.getElementById("article-list"), "hidden");
     removeClass(document.getElementById("feed-archive-section"), "hidden");
+    var btn = document.getElementById("show-archive-btn");
+    btn.onclick = showLiveFeed;
+    setText(btn, "Live");
     loadArchivePage();
 }
 
