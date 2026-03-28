@@ -56,6 +56,12 @@ func scrapeFeed(feedURL string) {
 		return
 	}
 
+	feedTitle := resp.Title
+	if feedTitle == "" {
+		feedTitle = feedURL
+	}
+	log.Printf("feed scraper: scraping %q (%d items)", feedTitle, len(resp.Articles))
+
 	ctx := context.Background()
 	newCount := 0
 	for _, article := range resp.Articles {
@@ -82,12 +88,11 @@ func scrapeFeed(feedURL string) {
 		if err != nil {
 			log.Printf("feed scraper: insert error for %s: %v", article.Link, err)
 		} else if n, _ := res.RowsAffected(); n > 0 {
+			log.Printf("feed scraper: new item %q", article.Title)
 			newCount++
 		}
 	}
-	if newCount > 0 {
-		log.Printf("feed scraper: %d new items from %s", newCount, feedURL)
-	}
+	log.Printf("feed scraper: done %q — %d new, %d already seen", feedTitle, newCount, len(resp.Articles)-newCount)
 }
 
 // startContentArchiver polls for feed items that haven't been fully archived yet
