@@ -89,7 +89,11 @@ SELECT DISTINCT url FROM user_saved_feeds;
 -- name: GetNextFeedItemWithoutArchive :one
 SELECT item_url FROM feed_items
 WHERE item_url NOT IN (SELECT key FROM article_archive)
+AND archive_failed = 0
 LIMIT 1;
+
+-- name: MarkFeedItemArchiveFailed :exec
+UPDATE feed_items SET archive_failed = 1 WHERE item_url = ?;
 
 -- name: GetFeedArchiveItems :many
 SELECT item_url, title, description, pub_date, scraped_at

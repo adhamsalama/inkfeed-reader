@@ -476,15 +476,19 @@ type InsertFeedItemParams struct {
 	PubDate     string
 }
 
-func (q *Queries) InsertFeedItem(ctx context.Context, arg InsertFeedItemParams) error {
-	_, err := q.db.ExecContext(ctx, insertFeedItem,
+func (q *Queries) InsertFeedItem(ctx context.Context, arg InsertFeedItemParams) (bool, error) {
+	res, err := q.db.ExecContext(ctx, insertFeedItem,
 		arg.FeedUrl,
 		arg.ItemUrl,
 		arg.Title,
 		arg.Description,
 		arg.PubDate,
 	)
-	return err
+	if err != nil {
+		return false, err
+	}
+	rows, _ := res.RowsAffected()
+	return rows > 0, nil
 }
 
 const getDistinctSavedFeedURLs = `-- name: GetDistinctSavedFeedURLs :many
@@ -517,6 +521,7 @@ func (q *Queries) GetDistinctSavedFeedURLs(ctx context.Context) ([]string, error
 const getNextFeedItemWithoutArchive = `-- name: GetNextFeedItemWithoutArchive :one
 SELECT item_url FROM feed_items
 WHERE item_url NOT IN (SELECT key FROM article_archive)
+AND archive_failed = 0
 LIMIT 1
 `
 
@@ -525,6 +530,15 @@ func (q *Queries) GetNextFeedItemWithoutArchive(ctx context.Context) (string, er
 	var itemUrl string
 	err := row.Scan(&itemUrl)
 	return itemUrl, err
+}
+
+const markFeedItemArchiveFailed = `-- name: MarkFeedItemArchiveFailed :exec
+UPDATE feed_items SET archive_failed = 1 WHERE item_url = ?
+`
+
+func (q *Queries) MarkFeedItemArchiveFailed(ctx context.Context, itemUrl string) error {
+	_, err := q.db.ExecContext(ctx, markFeedItemArchiveFailed, itemUrl)
+	return err
 }
 
 const getFeedArchiveItems = `-- name: GetFeedArchiveItems :many

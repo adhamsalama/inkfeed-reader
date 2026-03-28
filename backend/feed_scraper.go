@@ -7,13 +7,14 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"net/url"
+	neturl "net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/adhamsalama/inkfeed-backend/db"
+	readability "github.com/go-shiori/go-readability"
 )
 
 func feedScrapeInterval() time.Duration {
@@ -65,7 +66,7 @@ func scrapeFeed(feedURL string) {
 		if desc == "" {
 			desc = article.Content
 		}
-		err := queries.InsertFeedItem(ctx, db.InsertFeedItemParams{
+		inserted, err := queries.InsertFeedItem(ctx, db.InsertFeedItemParams{
 			FeedUrl:     feedURL,
 			ItemUrl:     article.Link,
 			Title:       article.Title,
@@ -74,12 +75,12 @@ func scrapeFeed(feedURL string) {
 		})
 		if err != nil {
 			log.Printf("feed scraper: insert error for %s: %v", article.Link, err)
-		} else {
+		} else if inserted {
 			newCount++
 		}
 	}
 	if newCount > 0 {
-		log.Printf("feed scraper: saved %d items from %s", newCount, feedURL)
+		log.Printf("feed scraper: %d new items from %s", newCount, feedURL)
 	}
 }
 
@@ -91,10 +92,35 @@ func startContentArchiver() {
 			if pollContentArchive() {
 				time.Sleep(2 * time.Second)
 			} else {
-				time.Sleep(60 * time.Second)
+				time.Sleep(5 * time.Second)
 			}
 		}
 	}()
+}
+
+func contentArchiverTimeout() time.Duration {
+	if v, err := strconv.Atoi(os.Getenv("CONTENT_ARCHIVER_TIMEOUT_SECONDS")); err == nil && v > 0 {
+		return time.Duration(v) * time.Second
+	}
+	return 5 * time.Second
+}
+
+// fetchReadableBackground fetches an article with a short timeout and no proxy
+// fallback — suitable for best-effort background archiving.
+func fetchReadableBackground(rawURL string) (readability.Article, error) {
+	client := &http.Client{Timeout: contentArchiverTimeout()}
+	req, err := http.NewRequest("GET", rawURL, nil)
+	if err != nil {
+		return readability.Article{}, err
+	}
+	req.Header.Set("User-Agent", userAgent)
+	resp, err := client.Do(req)
+	if err != nil {
+		return readability.Article{}, err
+	}
+	defer resp.Body.Close()
+	parsedURL, _ := neturl.Parse(rawURL)
+	return readability.FromReader(resp.Body, parsedURL)
 }
 
 func pollContentArchive() bool {
@@ -107,11 +133,12 @@ func pollContentArchive() bool {
 		return false
 	}
 
-	article, err := fetchReadableWithFallback(itemURL)
+	article, err := fetchReadableBackground(itemURL)
 	if err != nil {
-		log.Printf("content archiver: failed to fetch %s: %v", itemURL, err)
-		// Insert a stub so we don't keep retrying unreachable URLs
-		archiveArticle(itemURL, "{}", "", "", "", "", "", "")
+		log.Printf("content archiver: skipping %s: %v", itemURL, err)
+		if err := queries.MarkFeedItemArchiveFailed(ctx, itemURL); err != nil {
+			log.Printf("content archiver: failed to mark %s as failed: %v", itemURL, err)
+		}
 		return true
 	}
 
@@ -137,7 +164,7 @@ func pollContentArchive() bool {
 
 	// Populate persistent_cache with the same key the /article endpoint uses,
 	// so the next request is a cache hit instead of a re-fetch.
-	cacheKey := "/article?url=" + url.QueryEscape(itemURL)
+	cacheKey := "/article?url=" + neturl.QueryEscape(itemURL)
 	if err := queries.SetPersistentCache(ctx, db.SetPersistentCacheParams{
 		Key:         cacheKey,
 		Body:        string(body),

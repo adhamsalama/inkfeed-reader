@@ -43,6 +43,8 @@ Copy `.env` and configure:
 | `FEED_PROXY_URL` | (Cloudflare Worker URL) | Proxy for fetching feeds |
 | `ARTICLE_CACHE_TTL_MINUTES` | `60` | Article persistent cache TTL |
 | `COMMENTS_CACHE_TTL_MINUTES` | `30` | Comments persistent cache TTL |
+| `FEED_SCRAPE_INTERVAL_HOURS` | `1` | How often to scrape saved feeds |
+| `CONTENT_ARCHIVER_TIMEOUT_SECONDS` | `5` | HTTP timeout for background article archiving |
 
 ## Architecture
 

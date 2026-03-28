@@ -77,12 +77,13 @@ CREATE TABLE IF NOT EXISTS article_archive (
 );
 
 CREATE TABLE IF NOT EXISTS feed_items (
-    id          INTEGER  PRIMARY KEY AUTOINCREMENT,
-    feed_url    TEXT     NOT NULL,
-    item_url    TEXT     NOT NULL,
-    title       TEXT     NOT NULL DEFAULT '',
-    description TEXT     NOT NULL DEFAULT '',
-    pub_date    TEXT     NOT NULL DEFAULT '',
-    scraped_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id             INTEGER  PRIMARY KEY AUTOINCREMENT,
+    feed_url       TEXT     NOT NULL,
+    item_url       TEXT     NOT NULL,
+    title          TEXT     NOT NULL DEFAULT '',
+    description    TEXT     NOT NULL DEFAULT '',
+    pub_date       TEXT     NOT NULL DEFAULT '',
+    scraped_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    archive_failed INTEGER  NOT NULL DEFAULT 0,
     UNIQUE(feed_url, item_url)
 );
