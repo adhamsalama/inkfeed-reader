@@ -66,12 +66,18 @@ func scrapeFeed(feedURL string) {
 		if desc == "" {
 			desc = article.Content
 		}
+		pubDate := article.PubDate
+		if t, err := time.Parse(time.RFC1123, pubDate); err == nil {
+			pubDate = t.UTC().Format(time.RFC3339)
+		} else if t, err := time.Parse(time.RFC1123Z, pubDate); err == nil {
+			pubDate = t.UTC().Format(time.RFC3339)
+		}
 		res, err := queries.InsertFeedItem(ctx, db.InsertFeedItemParams{
 			FeedUrl:     feedURL,
 			ItemUrl:     article.Link,
 			Title:       article.Title,
 			Description: desc,
-			PubDate:     article.PubDate,
+			PubDate:     pubDate,
 		})
 		if err != nil {
 			log.Printf("feed scraper: insert error for %s: %v", article.Link, err)
