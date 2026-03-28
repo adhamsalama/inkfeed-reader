@@ -154,6 +154,7 @@ func main() {
 	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS article_archive (key TEXT PRIMARY KEY, body TEXT NOT NULL, title TEXT NOT NULL DEFAULT '', author TEXT NOT NULL DEFAULT '', site_name TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT '', html_content TEXT NOT NULL DEFAULT '', text_content TEXT NOT NULL DEFAULT '', archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`)
 
 	sqlDB.Exec(`ALTER TABLE feed_items ADD COLUMN archive_failed INTEGER NOT NULL DEFAULT 0`)
+	sqlDB.Exec(`ALTER TABLE feed_items ADD COLUMN comments_url TEXT`)
 	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS feed_items (
 		id             INTEGER  PRIMARY KEY AUTOINCREMENT,
 		feed_url       TEXT     NOT NULL,

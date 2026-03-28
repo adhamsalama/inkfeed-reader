@@ -81,12 +81,14 @@ func scrapeFeed(feedURL string) {
 		} else if t, err := time.Parse(time.RFC1123Z, pubDate); err == nil {
 			pubDate = t.UTC().Format(time.RFC3339)
 		}
+		commentsUrl := sql.NullString{String: article.Comments, Valid: article.Comments != ""}
 		res, err := queries.InsertFeedItem(ctx, db.InsertFeedItemParams{
 			FeedUrl:     feedURL,
 			ItemUrl:     article.Link,
 			Title:       article.Title,
 			Description: desc,
 			PubDate:     pubDate,
+			CommentsUrl: commentsUrl,
 		})
 		if err != nil {
 			log.Printf("feed scraper: insert error for %s: %v", article.Link, err)
@@ -231,15 +233,11 @@ func feedArchiveHandler(w http.ResponseWriter, r *http.Request) {
 		Description string `json:"description"`
 		PubDate     string `json:"pubDate"`
 		Comments    string `json:"comments"`
-		Content     string `json:"content"`
 	}
 
 	articles := make([]archiveArticle, len(rows))
 	for i, row := range rows {
-		comments := ""
-		if strings.Contains(row.ItemUrl, "reddit.com") {
-			comments = row.ItemUrl + "/.json"
-		}
+		comments := row.CommentsUrl.String
 		articles[i] = archiveArticle{
 			Index:       int(offset) + i,
 			Title:       row.Title,

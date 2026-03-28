@@ -142,7 +142,7 @@ func (q *Queries) GetDistinctSavedFeedURLs(ctx context.Context) ([]string, error
 }
 
 const getFeedArchiveItems = `-- name: GetFeedArchiveItems :many
-SELECT item_url, title, description, pub_date, scraped_at
+SELECT item_url, title, description, pub_date, scraped_at, comments_url
 FROM feed_items
 WHERE feed_url = ?
 ORDER BY datetime(pub_date) DESC, scraped_at DESC
@@ -161,6 +161,7 @@ type GetFeedArchiveItemsRow struct {
 	Description string
 	PubDate     string
 	ScrapedAt   time.Time
+	CommentsUrl sql.NullString
 }
 
 func (q *Queries) GetFeedArchiveItems(ctx context.Context, arg GetFeedArchiveItemsParams) ([]GetFeedArchiveItemsRow, error) {
@@ -178,6 +179,7 @@ func (q *Queries) GetFeedArchiveItems(ctx context.Context, arg GetFeedArchiveIte
 			&i.Description,
 			&i.PubDate,
 			&i.ScrapedAt,
+			&i.CommentsUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -469,8 +471,8 @@ func (q *Queries) InsertFeedGroupItem(ctx context.Context, arg InsertFeedGroupIt
 }
 
 const insertFeedItem = `-- name: InsertFeedItem :execresult
-INSERT OR IGNORE INTO feed_items (feed_url, item_url, title, description, pub_date)
-VALUES (?, ?, ?, ?, ?)
+INSERT OR IGNORE INTO feed_items (feed_url, item_url, title, description, pub_date, comments_url)
+VALUES (?, ?, ?, ?, ?, ?)
 `
 
 type InsertFeedItemParams struct {
@@ -479,6 +481,7 @@ type InsertFeedItemParams struct {
 	Title       string
 	Description string
 	PubDate     string
+	CommentsUrl sql.NullString
 }
 
 func (q *Queries) InsertFeedItem(ctx context.Context, arg InsertFeedItemParams) (sql.Result, error) {
@@ -488,6 +491,7 @@ func (q *Queries) InsertFeedItem(ctx context.Context, arg InsertFeedItemParams) 
 		arg.Title,
 		arg.Description,
 		arg.PubDate,
+		arg.CommentsUrl,
 	)
 }
 

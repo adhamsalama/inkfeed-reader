@@ -85,5 +85,6 @@ CREATE TABLE IF NOT EXISTS feed_items (
     pub_date       TEXT     NOT NULL DEFAULT '',
     scraped_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     archive_failed INTEGER  NOT NULL DEFAULT 0,
+    comments_url   TEXT,
     UNIQUE(feed_url, item_url)
 );

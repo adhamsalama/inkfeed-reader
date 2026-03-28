@@ -31,6 +31,7 @@ type FeedItem struct {
 	PubDate       string
 	ScrapedAt     time.Time
 	ArchiveFailed int64
+	CommentsUrl   sql.NullString
 }
 
 type PersistentCache struct {

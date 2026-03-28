@@ -80,8 +80,8 @@ SELECT body FROM article_archive WHERE key = ? LIMIT 1;
 
 
 -- name: InsertFeedItem :execresult
-INSERT OR IGNORE INTO feed_items (feed_url, item_url, title, description, pub_date)
-VALUES (?, ?, ?, ?, ?);
+INSERT OR IGNORE INTO feed_items (feed_url, item_url, title, description, pub_date, comments_url)
+VALUES (?, ?, ?, ?, ?, ?);
 
 -- name: GetDistinctSavedFeedURLs :many
 SELECT DISTINCT url FROM user_saved_feeds;
@@ -96,7 +96,7 @@ LIMIT 1;
 UPDATE feed_items SET archive_failed = 1 WHERE item_url = ?;
 
 -- name: GetFeedArchiveItems :many
-SELECT item_url, title, description, pub_date, scraped_at
+SELECT item_url, title, description, pub_date, scraped_at, comments_url
 FROM feed_items
 WHERE feed_url = ?
 ORDER BY datetime(pub_date) DESC, scraped_at DESC
