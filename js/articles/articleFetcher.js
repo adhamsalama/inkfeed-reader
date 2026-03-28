@@ -129,7 +129,10 @@ function fetchFullArticle() {
                 var feedTitle = getText(document.getElementById("feed-title"));
                 var titleBarText = feedTitle ? feedTitle + " \u2014 " + resolvedTitle : resolvedTitle;
                 setText(document.getElementById("article-title-bar"), titleBarText);
-                var html = "<h2>" + escapeHtml(resolvedTitle) + "</h2>";
+                var favBtnHtml = AppConfig.USE_BACKEND
+                    ? ' <button id="favorite-btn" class="secondary" onclick="toggleFavorite()" style="font-size:1em; vertical-align:middle">\u2606</button>'
+                    : '';
+                var html = "<h2>" + escapeHtml(resolvedTitle) + favBtnHtml + "</h2>";
                 if (article.pubDate) {
                     html += '<p class="article-meta">' + escapeHtml(article.pubDate) + "</p>";
                 }
@@ -140,6 +143,7 @@ function fetchFullArticle() {
                 html += buildArticleMetaHtml(data.byline, data.siteName, data.wordCount, data.publishedTime, AppState.currentArticleUrl);
                 html += '<div class="article-body">' + data.content + "</div>";
                 contentDiv.innerHTML = html;
+                FavoritesManager.updateFavoriteBtn();
             });
             return;
         }
@@ -180,9 +184,13 @@ function fetchFullArticle() {
                             publishedTime = d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
                         }
                     }
+                    var favBtnHtml = AppConfig.USE_BACKEND
+                        ? ' <button id="favorite-btn" class="secondary" onclick="toggleFavorite()" style="font-size:1em; vertical-align:middle">\u2606</button>'
+                        : '';
                     var html =
                         "<h2>" +
                         escapeHtml(extractedArticle.title || article.title) +
+                        favBtnHtml +
                         "</h2>";
                     if (article.pubDate) {
                         html +=
@@ -208,6 +216,7 @@ function fetchFullArticle() {
                         extractedArticle.content +
                         "</div>";
                     contentDiv.innerHTML = html;
+                    FavoritesManager.updateFavoriteBtn();
                 } else {
                     contentDiv.innerHTML +=
                         '<p class="error">Readability could not parse this article.</p>';
