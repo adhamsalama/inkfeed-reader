@@ -12,6 +12,14 @@ var SavedFeedsManager = {
         }
     },
 
+    isSavedFeed: function(url) {
+        var feeds = SavedFeedsManager.getSavedFeeds();
+        for (var i = 0; i < feeds.length; i++) {
+            if (feeds[i].url === url) return true;
+        }
+        return false;
+    },
+
     saveCurrentFeed: function() {
         try {
             if (!window.localStorage) {
