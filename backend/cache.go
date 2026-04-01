@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -45,6 +46,7 @@ func cached(next http.HandlerFunc) http.HandlerFunc {
 		globalCache.mu.Lock()
 		entry, ok := globalCache.entries[key]
 		if ok && time.Now().Before(entry.expiresAt) {
+			fmt.Println("cache hit (in-memory) for key:", key)
 			globalCache.mu.Unlock()
 			w.Header().Set("Content-Type", entry.contentType)
 			w.Header().Set("Cache-Control", "public, max-age=300")
