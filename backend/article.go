@@ -62,6 +62,14 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if cached, err := queries.GetArticleArchive(r.Context(), rawURL); err == nil {
+		log.Printf("cache hit (archive): %s", rawURL)
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "public, max-age=300")
+		w.Write([]byte(cached))
+		return
+	}
+
 	article, err := fetchReadableWithFallback(rawURL)
 	if err != nil {
 		jsonError(w, err.Error(), http.StatusBadGateway)

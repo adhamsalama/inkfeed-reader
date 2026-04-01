@@ -45,13 +45,6 @@ CREATE TABLE IF NOT EXISTS user_feed_group_items (
     position INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS persistent_cache (
-    key          TEXT     PRIMARY KEY,
-    body         TEXT     NOT NULL,
-    content_type TEXT     NOT NULL,
-    expires_at   DATETIME NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS user_favorites (
     id         INTEGER  PRIMARY KEY AUTOINCREMENT,
     user_id    INTEGER  NOT NULL REFERENCES users(id),

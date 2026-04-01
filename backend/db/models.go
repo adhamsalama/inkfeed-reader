@@ -34,13 +34,6 @@ type FeedItem struct {
 	CommentsUrl   sql.NullString
 }
 
-type PersistentCache struct {
-	Key         string
-	Body        string
-	ContentType string
-	ExpiresAt   time.Time
-}
-
 type Session struct {
 	Token     string
 	UserID    int64

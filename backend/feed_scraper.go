@@ -178,18 +178,6 @@ func pollContentArchive() bool {
 
 	archiveArticle(itemURL, string(body), article.Title, article.Byline, article.SiteName, publishedTime, article.Content, article.TextContent)
 
-	// Populate persistent_cache with the same key the /article endpoint uses,
-	// so the next request is a cache hit instead of a re-fetch.
-	cacheKey := "/article?url=" + neturl.QueryEscape(itemURL)
-	if err := queries.SetPersistentCache(ctx, db.SetPersistentCacheParams{
-		Key:         cacheKey,
-		Body:        string(body),
-		ContentType: "application/json",
-		ExpiresAt:   time.Now().Add(articleCacheTTL),
-	}); err != nil {
-		log.Printf("content archiver: cache write error for %s: %v", itemURL, err)
-	}
-
 	log.Printf("content archiver: archived %s", itemURL)
 	return true
 }

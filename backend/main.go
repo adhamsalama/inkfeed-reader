@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
-	"time"
 
 	"github.com/adhamsalama/inkfeed-backend/db"
 	"github.com/joho/godotenv"
@@ -22,8 +20,6 @@ var allowedOrigin = "https://reader.inkfeed.xyz"
 
 var feedProxyURL = "https://throbbing-morning-e187.adhamsalama.workers.dev"
 
-var articleCacheTTL = time.Hour
-var commentsCacheTTL = 30 * time.Minute
 
 type contextKey string
 
@@ -71,13 +67,6 @@ func main() {
 	if v := os.Getenv("FEED_PROXY_URL"); v != "" {
 		feedProxyURL = v
 	}
-	if v, err := strconv.Atoi(os.Getenv("ARTICLE_CACHE_TTL_MINUTES")); err == nil {
-		articleCacheTTL = time.Duration(v) * time.Minute
-	}
-	if v, err := strconv.Atoi(os.Getenv("COMMENTS_CACHE_TTL_MINUTES")); err == nil {
-		commentsCacheTTL = time.Duration(v) * time.Minute
-	}
-
 	port := flag.String("port", "8080", "port to listen on")
 	flag.Parse()
 
@@ -149,7 +138,7 @@ func main() {
 	}
 	// Add columns introduced after initial table creation (ignored if already present)
 	sqlDB.Exec(`ALTER TABLE user_preferences ADD COLUMN email_to TEXT`)
-	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS persistent_cache (key TEXT PRIMARY KEY, body TEXT NOT NULL, content_type TEXT NOT NULL, expires_at DATETIME NOT NULL)`)
+	sqlDB.Exec(`DROP TABLE IF EXISTS persistent_cache`)
 	sqlDB.Exec(`ALTER TABLE user_favorites ADD COLUMN comments_url TEXT NOT NULL DEFAULT ''`)
 	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS article_archive (key TEXT PRIMARY KEY, body TEXT NOT NULL, title TEXT NOT NULL DEFAULT '', author TEXT NOT NULL DEFAULT '', site_name TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT '', html_content TEXT NOT NULL DEFAULT '', text_content TEXT NOT NULL DEFAULT '', archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`)
 
@@ -171,6 +160,7 @@ func main() {
 
 	startFeedScraper()
 	startContentArchiver()
+	startCacheCleanup()
 
 
 	mux := http.NewServeMux()
@@ -186,9 +176,9 @@ func main() {
 	mux.Handle("/feed-groups", protected(feedGroupsHandler))
 	mux.Handle("/favorites", protected(favoritesHandler))
 	mux.Handle("/feed", protected(cached(feedHandler)))
-	mux.Handle("/article", protected(persistentCached(articleHandler, articleCacheTTL)))
+	mux.Handle("/article", protected(cached(articleHandler)))
 	mux.Handle("/text", protected(textHandler))
-	mux.Handle("/comments", protected(persistentCached(commentsHandler, commentsCacheTTL)))
+	mux.Handle("/comments", protected(cached(commentsHandler)))
 	mux.Handle("/mobi", protected(mobiHandler))
 	mux.Handle("/epub", protected(epubHandler))
 	mux.Handle("/reddit-post", protected(redditPostHandler))
