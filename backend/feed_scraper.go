@@ -10,7 +10,6 @@ import (
 	neturl "net/url"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/adhamsalama/inkfeed-backend/db"
@@ -162,21 +161,7 @@ func pollContentArchive() bool {
 	if article.PublishedTime != nil {
 		publishedTime = article.PublishedTime.Format("2 January 2006")
 	}
-	resp := ArticleResponse{
-		Title:         article.Title,
-		Content:       article.Content,
-		Byline:        article.Byline,
-		SiteName:      article.SiteName,
-		PublishedTime: publishedTime,
-		WordCount:     len(strings.Fields(article.TextContent)),
-	}
-	body, err := json.Marshal(resp)
-	if err != nil {
-		log.Printf("content archiver: marshal error for %s: %v", itemURL, err)
-		return false
-	}
-
-	archiveArticle(itemURL, string(body), article.Title, article.Byline, article.SiteName, publishedTime, article.Content, article.TextContent)
+	archiveArticle(itemURL, article.Title, article.Byline, article.SiteName, publishedTime, article.Content, article.TextContent)
 
 	log.Printf("content archiver: archived %s", itemURL)
 	return true
@@ -243,4 +228,3 @@ func feedArchiveHandler(w http.ResponseWriter, r *http.Request) {
 		"hasMore":  offset+int64(len(rows)) < total,
 	})
 }
-

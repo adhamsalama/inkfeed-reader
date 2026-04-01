@@ -58,7 +58,6 @@ CREATE TABLE IF NOT EXISTS user_favorites (
 
 CREATE TABLE IF NOT EXISTS article_archive (
     key          TEXT     PRIMARY KEY,
-    body         TEXT     NOT NULL,
     title        TEXT     NOT NULL DEFAULT '',
     author       TEXT     NOT NULL DEFAULT '',
     site_name    TEXT     NOT NULL DEFAULT '',

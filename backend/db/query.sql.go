@@ -104,14 +104,30 @@ func (q *Queries) DeleteUserSavedFeeds(ctx context.Context, userID int64) error 
 }
 
 const getArticleArchive = `-- name: GetArticleArchive :one
-SELECT body FROM article_archive WHERE key = ? LIMIT 1
+SELECT title, author, site_name, created_at, html_content, text_content FROM article_archive WHERE key = ? LIMIT 1
 `
 
-func (q *Queries) GetArticleArchive(ctx context.Context, key string) (string, error) {
+type GetArticleArchiveRow struct {
+	Title       string
+	Author      string
+	SiteName    string
+	CreatedAt   string
+	HtmlContent string
+	TextContent string
+}
+
+func (q *Queries) GetArticleArchive(ctx context.Context, key string) (GetArticleArchiveRow, error) {
 	row := q.db.QueryRowContext(ctx, getArticleArchive, key)
-	var body string
-	err := row.Scan(&body)
-	return body, err
+	var i GetArticleArchiveRow
+	err := row.Scan(
+		&i.Title,
+		&i.Author,
+		&i.SiteName,
+		&i.CreatedAt,
+		&i.HtmlContent,
+		&i.TextContent,
+	)
+	return i, err
 }
 
 const getDistinctSavedFeedURLs = `-- name: GetDistinctSavedFeedURLs :many
@@ -535,13 +551,12 @@ func (q *Queries) MarkFeedItemArchiveFailed(ctx context.Context, itemUrl string)
 }
 
 const upsertArticleArchive = `-- name: UpsertArticleArchive :exec
-INSERT INTO article_archive (key, body, title, author, site_name, created_at, html_content, text_content) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT(key) DO UPDATE SET body = excluded.body, title = excluded.title, author = excluded.author, site_name = excluded.site_name, created_at = excluded.created_at, html_content = excluded.html_content, text_content = excluded.text_content, updated_at = CURRENT_TIMESTAMP
+INSERT INTO article_archive (key, title, author, site_name, created_at, html_content, text_content) VALUES (?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(key) DO UPDATE SET title = excluded.title, author = excluded.author, site_name = excluded.site_name, created_at = excluded.created_at, html_content = excluded.html_content, text_content = excluded.text_content, updated_at = CURRENT_TIMESTAMP
 `
 
 type UpsertArticleArchiveParams struct {
 	Key         string
-	Body        string
 	Title       string
 	Author      string
 	SiteName    string
@@ -553,7 +568,6 @@ type UpsertArticleArchiveParams struct {
 func (q *Queries) UpsertArticleArchive(ctx context.Context, arg UpsertArticleArchiveParams) error {
 	_, err := q.db.ExecContext(ctx, upsertArticleArchive,
 		arg.Key,
-		arg.Body,
 		arg.Title,
 		arg.Author,
 		arg.SiteName,

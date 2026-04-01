@@ -20,7 +20,6 @@ var allowedOrigin = "https://reader.inkfeed.xyz"
 
 var feedProxyURL = "https://throbbing-morning-e187.adhamsalama.workers.dev"
 
-
 type contextKey string
 
 const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -140,7 +139,8 @@ func main() {
 	sqlDB.Exec(`ALTER TABLE user_preferences ADD COLUMN email_to TEXT`)
 	sqlDB.Exec(`DROP TABLE IF EXISTS persistent_cache`)
 	sqlDB.Exec(`ALTER TABLE user_favorites ADD COLUMN comments_url TEXT NOT NULL DEFAULT ''`)
-	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS article_archive (key TEXT PRIMARY KEY, body TEXT NOT NULL, title TEXT NOT NULL DEFAULT '', author TEXT NOT NULL DEFAULT '', site_name TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT '', html_content TEXT NOT NULL DEFAULT '', text_content TEXT NOT NULL DEFAULT '', archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`)
+	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS article_archive (key TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', author TEXT NOT NULL DEFAULT '', site_name TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT '', html_content TEXT NOT NULL DEFAULT '', text_content TEXT NOT NULL DEFAULT '', archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`)
+	sqlDB.Exec(`ALTER TABLE article_archive DROP COLUMN body`)
 
 	sqlDB.Exec(`ALTER TABLE feed_items ADD COLUMN archive_failed INTEGER NOT NULL DEFAULT 0`)
 	sqlDB.Exec(`ALTER TABLE feed_items ADD COLUMN comments_url TEXT`)
@@ -161,7 +161,6 @@ func main() {
 	startFeedScraper()
 	startContentArchiver()
 	startCacheCleanup()
-
 
 	mux := http.NewServeMux()
 	protected := func(h http.HandlerFunc) http.Handler {

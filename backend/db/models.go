@@ -11,7 +11,6 @@ import (
 
 type ArticleArchive struct {
 	Key         string
-	Body        string
 	Title       string
 	Author      string
 	SiteName    string

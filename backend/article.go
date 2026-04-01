@@ -62,11 +62,20 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if cached, err := queries.GetArticleArchive(r.Context(), rawURL); err == nil {
+	if row, err := queries.GetArticleArchive(r.Context(), rawURL); err == nil {
 		log.Printf("cache hit (archive): %s", rawURL)
+		resp := ArticleResponse{
+			Title:         row.Title,
+			Content:       row.HtmlContent,
+			Byline:        row.Author,
+			SiteName:      row.SiteName,
+			PublishedTime: row.CreatedAt,
+			WordCount:     len(strings.Fields(row.TextContent)),
+		}
+		body, _ := json.Marshal(resp)
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "public, max-age=300")
-		w.Write([]byte(cached))
+		w.Write(body)
 		return
 	}
 
@@ -94,27 +103,18 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go archiveArticle(rawURL, string(body), article.Title, article.Byline, article.SiteName, publishedTime, article.Content, article.TextContent)
+	go archiveArticle(rawURL, article.Title, article.Byline, article.SiteName, publishedTime, article.Content, article.TextContent)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "public, max-age=300")
 	w.Write(body)
 }
 
-func archiveArticle(key, body, title, author, siteName, createdAt, htmlContent, textContent string) {
+func archiveArticle(key, title, author, siteName, createdAt, htmlContent, textContent string) {
 	ctx := context.Background()
-	existing, err := queries.GetArticleArchive(ctx, key)
-	if err == nil && existing == body {
-		return
-	}
-	if err == nil {
-		log.Printf("article updated in archive: %s", key)
-	} else {
-		log.Printf("article archived: %s", key)
-	}
+	log.Printf("article archived: %s", key)
 	if err := queries.UpsertArticleArchive(ctx, db.UpsertArticleArchiveParams{
 		Key:         key,
-		Body:        body,
 		Title:       title,
 		Author:      author,
 		SiteName:    siteName,
