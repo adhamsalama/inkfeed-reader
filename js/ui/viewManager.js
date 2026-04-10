@@ -2,39 +2,57 @@
 
 var ViewManager = {
     showInputView: function() {
-        addClass(document.getElementById("input-view"), "active");
-        removeClass(document.getElementById("feed-view"), "active");
-        removeClass(document.getElementById("article-view"), "active");
+        var inputView = document.getElementById("input-view");
+        var feedView = document.getElementById("feed-view");
+        var articleView = document.getElementById("article-view");
+        if (inputView) addClass(inputView, "active");
+        if (feedView) removeClass(feedView, "active");
+        if (articleView) removeClass(articleView, "active");
     },
 
     showFeedView: function() {
-        removeClass(document.getElementById("input-view"), "active");
-        addClass(document.getElementById("feed-view"), "active");
-        removeClass(document.getElementById("article-view"), "active");
-        if (AppState.currentArticleIndex >= 0) {
+        var inputView = document.getElementById("input-view");
+        var feedView = document.getElementById("feed-view");
+        var articleView = document.getElementById("article-view");
+        if (inputView) removeClass(inputView, "active");
+        if (feedView) addClass(feedView, "active");
+        if (articleView) removeClass(articleView, "active");
+        if (typeof AppState !== "undefined" && AppState.currentArticleIndex >= 0) {
             var articleEl = document.getElementById(
                 "article-" + AppState.currentArticleIndex
             );
-            if (articleEl) {
-                articleEl.scrollIntoView();
+            if (articleEl && typeof articleEl.scrollIntoView === "function") {
+                try {
+                    articleEl.scrollIntoView();
+                } catch (e) {
+                    // Ignore scrollIntoView errors on older browsers
+                }
             }
         }
     },
 
     showArticleView: function() {
-        removeClass(document.getElementById("input-view"), "active");
-        removeClass(document.getElementById("feed-view"), "active");
-        addClass(document.getElementById("article-view"), "active");
+        var inputView = document.getElementById("input-view");
+        var feedView = document.getElementById("feed-view");
+        var articleView = document.getElementById("article-view");
+        if (inputView) removeClass(inputView, "active");
+        if (feedView) removeClass(feedView, "active");
+        if (articleView) addClass(articleView, "active");
     },
 
     showError: function(elementId, message) {
+        if (!elementId) return;
         var el = document.getElementById(elementId);
+        if (!el) return;
         setText(el, message);
         removeClass(el, "hidden");
     },
 
     hideError: function(elementId) {
-        addClass(document.getElementById(elementId), "hidden");
+        if (!elementId) return;
+        var el = document.getElementById(elementId);
+        if (!el) return;
+        addClass(el, "hidden");
     }
 };
 

@@ -23,8 +23,9 @@ function downloadBlob(blob, filename) {
 
 // Helper: add class to element
 function addClass(el, className) {
-  if (!el) return;
-  var classes = el.className.split(" ");
+  if (!el || typeof el.className !== "string") return;
+  var current = el.className || "";
+  var classes = current.split(" ");
   var found = false;
   for (var i = 0; i < classes.length; i++) {
     if (classes[i] === className) {
@@ -35,13 +36,14 @@ function addClass(el, className) {
   if (!found) {
     classes.push(className);
   }
-  el.className = classes.join(" ").replace(/^\s+|\s+$/g, "");
+  el.className = classes.join(" ").replace(/^\\s+|\\s+$/g, "");
 }
 
 // Helper: remove class from element
 function removeClass(el, className) {
-  if (!el) return;
-  var classes = el.className.split(" ");
+  if (!el || typeof el.className !== "string") return;
+  var current = el.className || "";
+  var classes = current.split(" ");
   var newClasses = [];
   for (var i = 0; i < classes.length; i++) {
     if (classes[i] !== className && classes[i] !== "") {
@@ -54,15 +56,18 @@ function removeClass(el, className) {
 // Helper: get text content safely
 function getText(el) {
   if (!el) return "";
-  return el.textContent || el.innerText || "";
+  if (typeof el.textContent !== "undefined") return el.textContent;
+  if (typeof el.innerText !== "undefined") return el.innerText;
+  return "";
 }
 
 // Helper: set text content safely
 function setText(el, text) {
   if (!el) return;
+  if (typeof text !== "string") text = String(text);
   if (typeof el.textContent !== "undefined") {
     el.textContent = text;
-  } else {
+  } else if (typeof el.innerText !== "undefined") {
     el.innerText = text;
   }
 }

@@ -4,7 +4,7 @@ var SavedFeedsManager = {
     getSavedFeeds: function() {
         try {
             if (!window.localStorage) return [];
-            var data = localStorage.getItem(AppConfig.SAVED_FEEDS_KEY);
+            var data = safeGet(AppConfig.SAVED_FEEDS_KEY);
             if (!data) return [];
             return JSON.parse(data);
         } catch (e) {

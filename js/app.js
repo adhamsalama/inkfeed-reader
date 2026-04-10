@@ -1,4 +1,12 @@
 // Application Initialization (IIFE)
+window.safeGet = function(key) {
+    try {
+        if (window.localStorage) {
+            return localStorage.getItem(key);
+        }
+    } catch (e) {}
+    return null;
+};
 (function() {
     // Global error handler
     window.onerror = function (message, source, lineno, colno, error) {
@@ -10,15 +18,15 @@
     function init() {
         try {
             // Restore persisted display settings
-            var savedFontSize = parseFloat(localStorage.getItem("fontSize"));
+            var savedFontSize = parseFloat(safeGet("fontSize"));
             if (savedFontSize) {
                 AppState.currentFontSize = savedFontSize;
             }
-            var savedLetterSpacing = parseFloat(localStorage.getItem("letterSpacing"));
-            if (!isNaN(savedLetterSpacing) && localStorage.getItem("letterSpacing") !== null) {
+            var savedLetterSpacing = parseFloat(safeGet("letterSpacing"));
+            if (!isNaN(savedLetterSpacing) && safeGet("letterSpacing") !== null) {
                 AppState.currentLetterSpacing = savedLetterSpacing;
             }
-            var savedLineHeight = parseFloat(localStorage.getItem("lineHeight"));
+            var savedLineHeight = parseFloat(safeGet("lineHeight"));
             if (savedLineHeight) {
                 AppState.currentLineHeight = savedLineHeight;
             }
@@ -26,7 +34,7 @@
 
             // Load read articles from localStorage
             try {
-                var savedReadArticles = JSON.parse(localStorage.getItem("readArticles") || "[]");
+                var savedReadArticles = JSON.parse(safeGet("readArticles") || "[]");
                 for (var ri = 0; ri < savedReadArticles.length; ri++) {
                     AppState.readArticles.add(savedReadArticles[ri]);
                 }
@@ -70,7 +78,7 @@
     }
 
     function showBackendBanner() {
-        if (localStorage.getItem("backendBannerDismissed") === "true") return;
+        if (safeGet("backendBannerDismissed") === "true") return;
         if (AppConfig.USE_BACKEND) return;
         var banner = document.getElementById("backend-banner");
         if (banner) {

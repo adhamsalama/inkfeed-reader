@@ -4,7 +4,7 @@ var FavoritesManager = (function() {
 
     function getFavorites() {
         try {
-            var data = localStorage.getItem(FAVORITES_KEY);
+            var data = safeGet(FAVORITES_KEY);
             return data ? JSON.parse(data) : [];
         } catch (e) {
             return [];

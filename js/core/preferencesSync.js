@@ -80,14 +80,14 @@ var PreferencesSync = {
             lineHeight: AppState.currentLineHeight,
             corsProxyUrl: AppConfig.CORS_PROXY_URL,
             epubEmbedImages: AppConfig.EPUB_EMBED_IMAGES,
-            emailTo: localStorage.getItem("emailTo") || ""
+            emailTo: safeGet("emailTo") || ""
         }, null);
     },
 
     pushSavedFeeds: function() {
         if (!AppConfig.USE_BACKEND || !AuthState.isLoggedIn()) { return; }
         try {
-            var data = localStorage.getItem(AppConfig.SAVED_FEEDS_KEY);
+            var data = safeGet(AppConfig.SAVED_FEEDS_KEY);
             var feeds = data ? JSON.parse(data) : [];
             var payload = [];
             for (var i = 0; i < feeds.length; i++) {
@@ -102,7 +102,7 @@ var PreferencesSync = {
     pushFeedGroups: function() {
         if (!AppConfig.USE_BACKEND || !AuthState.isLoggedIn()) { return; }
         try {
-            var data = localStorage.getItem("feedGroups");
+            var data = safeGet("feedGroups");
             var groups = data ? JSON.parse(data) : [];
             AuthClient.putFeedGroups(groups, null);
         } catch (e) {
@@ -113,7 +113,7 @@ var PreferencesSync = {
     pushFavorites: function() {
         if (!AppConfig.USE_BACKEND || !AuthState.isLoggedIn()) { return; }
         try {
-            var data = localStorage.getItem("favorites");
+            var data = safeGet("favorites");
             var favs = data ? JSON.parse(data) : [];
             AuthClient.putFavorites(favs, null);
         } catch (e) {
@@ -122,17 +122,17 @@ var PreferencesSync = {
     },
 
     revertToLocalStorage: function() {
-        var savedFontSize = parseFloat(localStorage.getItem("fontSize"));
+        var savedFontSize = parseFloat(safeGet("fontSize"));
         if (savedFontSize) { AppState.currentFontSize = savedFontSize; }
-        var savedLetterSpacing = parseFloat(localStorage.getItem("letterSpacing"));
-        if (!isNaN(savedLetterSpacing) && localStorage.getItem("letterSpacing") !== null) {
+        var savedLetterSpacing = parseFloat(safeGet("letterSpacing"));
+        if (!isNaN(savedLetterSpacing) && safeGet("letterSpacing") !== null) {
             AppState.currentLetterSpacing = savedLetterSpacing;
         }
-        var savedLineHeight = parseFloat(localStorage.getItem("lineHeight"));
+        var savedLineHeight = parseFloat(safeGet("lineHeight"));
         if (savedLineHeight) { AppState.currentLineHeight = savedLineHeight; }
-        var savedProxy = localStorage.getItem("corsProxyUrl");
+        var savedProxy = safeGet("corsProxyUrl");
         if (savedProxy) { AppConfig.CORS_PROXY_URL = savedProxy; }
-        var embedImages = localStorage.getItem("epubEmbedImages");
+        var embedImages = safeGet("epubEmbedImages");
         if (embedImages !== null) { AppConfig.EPUB_EMBED_IMAGES = embedImages !== "false"; }
         applyContentStyles();
         FeedRenderer.renderSavedFeeds();

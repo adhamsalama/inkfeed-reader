@@ -34,15 +34,15 @@ var AppConfig = {
 };
 
 (function() {
-    var saved = localStorage.getItem("corsProxyUrl");
+    var saved = safeGet("corsProxyUrl");
     if (saved) {
         AppConfig.CORS_PROXY_URL = saved;
     }
-    var backendEnabled = localStorage.getItem("backendEnabled");
+    var backendEnabled = safeGet("backendEnabled");
     if (backendEnabled !== null) {
         AppConfig.USE_BACKEND = backendEnabled === "true";
     }
-    var embedImages = localStorage.getItem("epubEmbedImages");
+    var embedImages = safeGet("epubEmbedImages");
     if (embedImages !== null) {
         AppConfig.EPUB_EMBED_IMAGES = embedImages !== "false";
     }

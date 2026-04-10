@@ -5,7 +5,7 @@
     var FeedGroupsManager = {
         getGroups: function() {
             try {
-                var data = localStorage.getItem(GROUPS_KEY);
+                var data = safeGet(GROUPS_KEY);
                 return data ? JSON.parse(data) : [];
             } catch (e) {
                 return [];

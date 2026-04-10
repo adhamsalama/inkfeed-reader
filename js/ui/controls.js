@@ -71,7 +71,7 @@ function toggleEpubEmbedImages() {
 
 function openSettings(section) {
     document.getElementById("proxy-url-input").value = AppConfig.CORS_PROXY_URL;
-    document.getElementById("email-to-input").value = localStorage.getItem("emailTo") || "";
+    document.getElementById("email-to-input").value = safeGet("emailTo") || "";
     document.getElementById("epub-embed-images-checkbox").checked = AppConfig.EPUB_EMBED_IMAGES;
     document.getElementById("settings-modal").classList.remove("hidden");
     AccountView.render();
@@ -125,7 +125,7 @@ var _pendingEmailFormat = "epub";
 
 function openEmailInput(format) {
     _pendingEmailFormat = format || "epub";
-    var to = localStorage.getItem("emailTo") || "";
+    var to = safeGet("emailTo") || "";
     if (!to) {
         openSettings("email");
         return;

@@ -287,9 +287,14 @@ var FeedRenderer = {
             link.href = "#";
             (function(f) {
                 link.onclick = function() {
-                    AppState.currentArticles = [{ link: f.url, title: f.title, pubDate: f.pubDate, description: "", content: "", comments: f.commentsUrl || "" }];
-                    setText(document.getElementById("feed-title"), f.feedTitle || "");
-                    ArticleViewer.openArticle(0);
+                    if (typeof AppState !== "undefined") {
+                        AppState.currentArticles = [{ link: f.url, title: f.title, pubDate: f.pubDate, description: "", content: "", comments: f.commentsUrl || "" }];
+                    }
+                    var titleEl = document.getElementById("feed-title");
+                    if (titleEl) setText(titleEl, f.feedTitle || "");
+                    if (typeof ArticleViewer !== "undefined" && typeof ArticleViewer.openArticle === "function") {
+                        ArticleViewer.openArticle(0);
+                    }
                     return false;
                 };
             })(fav);
@@ -330,89 +335,148 @@ var FeedRenderer = {
 
     renderArticleList: function(articles) {
         try {
+            if (!articles || typeof articles.length !== "number") {
+                if (typeof console !== "undefined" && console.error) {
+                    console.error("renderArticleList: invalid articles array");
+                }
+                return;
+            }
+
             var list = document.getElementById("article-list");
+            if (!list) {
+                if (typeof console !== "undefined" && console.error) {
+                    console.error("renderArticleList: article-list element not found");
+                }
+                return;
+            }
+            
             var progress = document.getElementById("render-progress");
             var total = articles.length;
 
             list.innerHTML = "";
-            setText(progress, "");
+            if (progress) setText(progress, "");
 
             var fragment = document.createDocumentFragment();
             var lastFeedTitle = null;
 
             for (var i = 0; i < articles.length; i++) {
                 var article = articles[i];
+                if (!article) continue;
 
                 if (article.feedTitle && article.feedTitle !== lastFeedTitle) {
                     var separator = document.createElement("li");
-                    separator.className = "feed-separator";
-                    setText(separator, article.feedTitle);
-                    fragment.appendChild(separator);
-                    lastFeedTitle = article.feedTitle;
+                    if (separator && typeof separator.className === "string") {
+                        separator.className = "feed-separator";
+                        setText(separator, article.feedTitle);
+                        fragment.appendChild(separator);
+                        lastFeedTitle = article.feedTitle;
+                    }
                 }
 
                 var li = document.createElement("li");
-                li.className = "article-item" + (article.link && AppState.readArticles.has(article.link) ? " article-read" : "");
+                if (!li || typeof li.className !== "string") continue;
+                
+                // Safe check for readArticles Set
+                var isRead = false;
+                try {
+                    if (article && article.link && typeof AppState !== "undefined" && 
+                        AppState.readArticles && typeof AppState.readArticles.has === "function") {
+                        isRead = AppState.readArticles.has(article.link);
+                    }
+                } catch (e) {
+                    // Ignore all readArticles errors on older browsers
+                }
+                
+                li.className = "article-item" + (isRead ? " article-read" : "");
                 li.id = "article-" + i;
-                (function (index) {
-                    li.onclick = function () {
-                        ArticleViewer.openArticle(index);
+                
+                (function(idx) {
+                    li.onclick = function() {
+                        if (typeof ArticleViewer !== "undefined" && typeof ArticleViewer.openArticle === "function") {
+                            ArticleViewer.openArticle(idx);
+                        }
                         return false;
                     };
                 })(i);
 
                 var titleRow = document.createElement("div");
+                if (!titleRow || typeof titleRow.className !== "string") continue;
                 titleRow.className = "article-title-row";
 
                 var title = document.createElement("span");
+                if (!title || typeof title.className !== "string") continue;
                 title.className = "article-title";
-                setText(title, article.title);
-
+                setText(title, article.title || "Untitled");
                 titleRow.appendChild(title);
 
                 if (article.pubDate) {
-                    var date = new Date(article.pubDate);
-                    var dateText = isNaN(date.getTime())
-                        ? article.pubDate
-                        : (date.getDate() < 10 ? "0" + date.getDate() : "" + date.getDate()) + "-" +
-                          (date.getMonth() + 1 < 10 ? "0" + (date.getMonth() + 1) : "" + (date.getMonth() + 1)) + "-" +
-                          ("" + date.getFullYear()).slice(2);
-                    var meta = document.createElement("span");
-                    meta.className = "article-meta";
-                    setText(meta, dateText);
-                    titleRow.appendChild(meta);
+                    try {
+                        var date = new Date(article.pubDate);
+                        var dateText = isNaN(date.getTime())
+                            ? article.pubDate
+                            : (date.getDate() < 10 ? "0" + date.getDate() : "" + date.getDate()) + "-" +
+                              (date.getMonth() + 1 < 10 ? "0" + (date.getMonth() + 1) : "" + (date.getMonth() + 1)) + "-" +
+                              ("" + date.getFullYear()).slice(2);
+                        var meta = document.createElement("span");
+                        if (meta && typeof meta.className === "string") {
+                            meta.className = "article-meta";
+                            setText(meta, dateText);
+                            titleRow.appendChild(meta);
+                        }
+                    } catch (e) {
+                        // Ignore date parsing errors
+                    }
                 }
 
                 var desc = document.createElement("div");
-                desc.className = "article-description";
-                // Strip HTML and truncate
-                var tempDiv = document.createElement("div");
-                tempDiv.innerHTML = article.description;
-                var plainText = getText(tempDiv);
-                var truncated = plainText.substring(0, 200);
-                if (plainText.length > 200) truncated += "...";
-                setText(desc, truncated);
+                if (desc && typeof desc.className === "string") {
+                    desc.className = "article-description";
+                    if (article.description) {
+                        try {
+                            var tempDiv = document.createElement("div");
+                            if (tempDiv) {
+                                tempDiv.innerHTML = article.description;
+                                var plainText = getText(tempDiv);
+                                if (plainText) {
+                                    var truncated = plainText.substring(0, 200);
+                                    if (plainText.length > 200) truncated += "...";
+                                    setText(desc, truncated);
+                                }
+                            }
+                        } catch (e) {
+                            // Ignore description parsing errors
+                        }
+                    }
+                }
 
                 li.appendChild(titleRow);
-                if (getText(desc)) li.appendChild(desc);
+                if (desc && getText(desc)) li.appendChild(desc);
                 fragment.appendChild(li);
-
             }
 
             list.appendChild(fragment);
-            setText(progress, "(" + total + ")");
+            if (progress) setText(progress, "(" + total + ")");
 
             // Scroll to article if returning to feed after page refresh
-            var scrollTarget = AppState.pendingScrollTarget;
-            if (scrollTarget) {
+            if (typeof AppState !== "undefined" && AppState.pendingScrollTarget) {
+                var scrollTarget = AppState.pendingScrollTarget;
                 AppState.pendingScrollTarget = "";
                 var targetEl = document.getElementById(scrollTarget);
-                if (targetEl && targetEl.scrollIntoView) {
-                    targetEl.scrollIntoView();
+                if (targetEl && typeof targetEl.scrollIntoView === "function") {
+                    try {
+                        targetEl.scrollIntoView();
+                    } catch (e) {
+                        // Ignore scrollIntoView errors
+                    }
                 }
             }
         } catch (e) {
-            alert("renderArticleList error: " + e.message);
+            if (typeof console !== "undefined" && console.error) {
+                console.error("renderArticleList error:", e && e.message ? e.message : e);
+            }
+            if (typeof ViewManager !== "undefined" && typeof ViewManager.showError === "function") {
+                ViewManager.showError("input-error", "Error displaying articles");
+            }
         }
     }
 };
