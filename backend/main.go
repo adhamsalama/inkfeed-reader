@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 
 	"github.com/adhamsalama/inkfeed-backend/db"
 	"github.com/joho/godotenv"
@@ -37,18 +36,6 @@ func isAllowedOrigin(origin string) bool {
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		if r.Method == http.MethodOptions || !isAllowedOrigin(origin) {
-			log.Printf("CORS debug: method=%s path=%s origin=%q ua=%q acr-method=%q acr-headers=%q ip=%s allowed=%q match=%v",
-				r.Method, r.URL.Path,
-				origin,
-				r.Header.Get("User-Agent"),
-				r.Header.Get("Access-Control-Request-Method"),
-				r.Header.Get("Access-Control-Request-Headers"),
-				clientIP(r),
-				strings.Join(allowedOrigins, "|"),
-				isAllowedOrigin(origin),
-			)
-		}
 		if !isAllowedOrigin(origin) {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
