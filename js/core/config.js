@@ -7,7 +7,8 @@ var AppConfig = {
 
     // Backend
     USE_BACKEND: false,
-    BACKEND_URL: "https://api.inkfeed.xyz",
+    // BACKEND_URL: "https://api.inkfeed.xyz",
+    BACKEND_URL: "http://localhost:8080",
 
     // Font size constraints
     MIN_FONT_SIZE: 12,
@@ -31,6 +32,9 @@ var AppConfig = {
 
     // EPUB options
     EPUB_EMBED_IMAGES: true,
+
+    // MOBI options
+    MOBI_EMBED_IMAGES: true,
 };
 
 (function() {
@@ -45,5 +49,9 @@ var AppConfig = {
     var embedImages = localStorage.getItem("epubEmbedImages");
     if (embedImages !== null) {
         AppConfig.EPUB_EMBED_IMAGES = embedImages !== "false";
+    }
+    var mobiEmbedImages = localStorage.getItem("mobiEmbedImages");
+    if (mobiEmbedImages !== null) {
+        AppConfig.MOBI_EMBED_IMAGES = mobiEmbedImages !== "false";
     }
 })();

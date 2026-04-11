@@ -69,10 +69,16 @@ function toggleEpubEmbedImages() {
     PreferencesSync.pushPrefs();
 }
 
+function toggleMobiEmbedImages() {
+    AppConfig.MOBI_EMBED_IMAGES = document.getElementById("mobi-embed-images-checkbox").checked;
+    localStorage.setItem("mobiEmbedImages", AppConfig.MOBI_EMBED_IMAGES ? "true" : "false");
+}
+
 function openSettings(section) {
     document.getElementById("proxy-url-input").value = AppConfig.CORS_PROXY_URL;
     document.getElementById("email-to-input").value = localStorage.getItem("emailTo") || "";
     document.getElementById("epub-embed-images-checkbox").checked = AppConfig.EPUB_EMBED_IMAGES;
+    document.getElementById("mobi-embed-images-checkbox").checked = AppConfig.MOBI_EMBED_IMAGES;
     document.getElementById("settings-modal").classList.remove("hidden");
     AccountView.render();
     if (section) {
