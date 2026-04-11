@@ -248,7 +248,9 @@
     bookTitleLength,
     locale,
     textRecordsCount,
+    imageRecordsCount,
   ) {
+    imageRecordsCount = imageRecordsCount || 0;
     var header = Utils.createByteArray(MOBI_HEADER_SIZE);
     var offset = 0;
 
@@ -298,7 +300,7 @@
       offset += 4;
     }
 
-    // first_non_book_index (4 bytes)
+    // first_non_book_index (4 bytes) - first non-text record (i.e. first image record)
     Utils.uintToBytes(textRecordsCount + 1, header, offset);
     offset += 4;
 
@@ -328,7 +330,7 @@
     Utils.uintToBytes(6, header, offset);
     offset += 4;
 
-    // first_image_index (4 bytes)
+    // first_image_index (4 bytes) - first record after text records
     Utils.uintToBytes(textRecordsCount + 1, header, offset);
     offset += 4;
 
@@ -378,8 +380,8 @@
     Utils.ushortToBytes(1, header, offset);
     offset += 2;
 
-    // last_content_record_number (2 bytes)
-    Utils.ushortToBytes(textRecordsCount, header, offset);
+    // last_content_record_number (2 bytes) - includes image records
+    Utils.ushortToBytes(textRecordsCount + imageRecordsCount, header, offset);
     offset += 2;
 
     // unknown_bytes_2 (4 bytes) - 0x00000001
@@ -658,8 +660,9 @@
     this.textRecords_ = [];
   }
 
-  MobiWriter.prototype.write = function(mobiBook, filename, skipDownload) {
+  MobiWriter.prototype.write = function(mobiBook, filename, skipDownload, imageRecords) {
     this.textRecords_ = [];
+    imageRecords = imageRecords || [];
 
     // Convert HTML content to UTF-8 bytes and chunk into 4096-byte records
     var htmlBytes = Utils.utf8Encode(mobiBook.htmlContent());
@@ -677,7 +680,7 @@
     }
 
     var palmDatabaseHeader = new PalmDatabaseHeader(
-      this.textRecords_.length + 2,
+      this.textRecords_.length + imageRecords.length + 2,
     );
     var palmDocHeader = new PalmDocHeader();
     var mobiHeader = new MobiHeader();
@@ -708,6 +711,7 @@
         titleBytes.length,
         1033, // Locale (English US)
         this.textRecords_.length,
+        imageRecords.length,
       )
     ) {
       return { success: false, error: "Error creating MOBI header" };
@@ -729,10 +733,13 @@
       record0.push(0);
     }
 
-    // Collect all records
+    // Collect all records: header, text, images, EOF
     var records = [record0];
     for (var r = 0; r < this.textRecords_.length; r++) {
       records.push(this.textRecords_[r]);
+    }
+    for (var img = 0; img < imageRecords.length; img++) {
+      records.push(imageRecords[img]);
     }
 
     if (!eofRecord.generate()) {

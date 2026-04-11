@@ -1,6 +1,82 @@
 // MOBI Downloader
 
 var MobiDownloader = {
+    // Fetch a single image URL via CORS proxy, return byte array via callback
+    _fetchImageBytes: function(url, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", AppConfig.CORS_PROXY_URL + encodeURIComponent(url), true);
+        xhr.responseType = "arraybuffer";
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
+                var bytes = [];
+                if (typeof Uint8Array !== "undefined") {
+                    var uint8 = new Uint8Array(xhr.response);
+                    for (var i = 0; i < uint8.length; i++) {
+                        bytes.push(uint8[i]);
+                    }
+                }
+                callback(null, bytes);
+            } else {
+                callback(new Error("HTTP " + xhr.status));
+            }
+        };
+        xhr.onerror = function() { callback(new Error("Network error")); };
+        xhr.send();
+    },
+
+    // Replace <img src="URL"> with <img recindex="N"> and collect image byte arrays.
+    // Returns via callback(null, { html, imageRecords }) or skips broken images.
+    _embedImages: function(html, callback) {
+        // Collect unique http/https image URLs in order of first appearance
+        var urls = [];
+        var seen = {};
+        var imgTagRegex = /<img([^>]*)>/gi;
+        var match;
+        while ((match = imgTagRegex.exec(html)) !== null) {
+            var srcMatch = /src=["']([^"']+)["']/i.exec(match[1]);
+            if (srcMatch) {
+                var url = srcMatch[1];
+                if (!seen[url] && (url.indexOf("http://") === 0 || url.indexOf("https://") === 0)) {
+                    urls.push(url);
+                    seen[url] = true;
+                }
+            }
+        }
+
+        if (urls.length === 0) {
+            callback(null, { html: html, imageRecords: [] });
+            return;
+        }
+
+        var imageRecords = [];
+        var urlToIndex = {};
+
+        function fetchNext(i) {
+            if (i >= urls.length) {
+                // Replace img tags: keep only alt + recindex, strip src/srcset/sizes/loading/etc.
+                var newHtml = html.replace(/<img([^>]*)>/gi, function(imgTag, attrs) {
+                    var srcMatch = /src=["']([^"']+)["']/i.exec(attrs);
+                    if (!srcMatch || urlToIndex[srcMatch[1]] === undefined) { return imgTag; }
+                    var altMatch = /alt=["']([^"']*)["']/i.exec(attrs);
+                    var altAttr = altMatch ? " alt=\"" + altMatch[1] + "\"" : "";
+                    return "<img" + altAttr + " recindex=\"" + urlToIndex[srcMatch[1]] + "\">";
+                });
+                callback(null, { html: newHtml, imageRecords: imageRecords });
+                return;
+            }
+
+            MobiDownloader._fetchImageBytes(urls[i], function(err, bytes) {
+                if (!err && bytes.length > 0) {
+                    imageRecords.push(bytes);
+                    urlToIndex[urls[i]] = imageRecords.length; // 1-based index
+                }
+                fetchNext(i + 1);
+            });
+        }
+
+        fetchNext(0);
+    },
+
     // Generate and download MOBI for a single article
     generateAndDownloadMobi: function(article, articleHtml, commentsHtml) {
         var htmlContent =
@@ -24,14 +100,22 @@ var MobiDownloader = {
             return;
         }
 
-        var book = new MobiBook(title, feedTitle);
-        book.setHtmlContent(htmlContent);
+        function writeBook(html, imageRecords) {
+            var book = new MobiBook(title, feedTitle);
+            book.setHtmlContent(html);
+            var writer = new MobiWriter();
+            var result = writer.write(book, filename, false, imageRecords);
+            if (!result.success) {
+                alert("Error generating MOBI: " + result.error);
+            }
+        }
 
-        var writer = new MobiWriter();
-        var result = writer.write(book, filename);
-
-        if (!result.success) {
-            alert("Error generating MOBI: " + result.error);
+        if (AppConfig.MOBI_EMBED_IMAGES) {
+            MobiDownloader._embedImages(htmlContent, function(err, result) {
+                writeBook(result.html, result.imageRecords);
+            });
+        } else {
+            writeBook(htmlContent, []);
         }
     },
 
