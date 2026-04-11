@@ -260,8 +260,8 @@ func generatePalmDatabaseHeader(title string, records [][]byte) []byte {
 	binary.BigEndian.PutUint32(h[36:], ts) // creation_date
 	binary.BigEndian.PutUint32(h[40:], ts) // modification_date
 
-	copy(h[52:], "BOOK") // type
-	copy(h[56:], "MOBI") // creator
+	copy(h[60:], "BOOK") // type
+	copy(h[64:], "MOBI") // creator
 
 	binary.BigEndian.PutUint16(h[76:], uint16(len(records))) // number_of_records
 
