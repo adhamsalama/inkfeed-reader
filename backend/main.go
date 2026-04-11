@@ -100,6 +100,7 @@ func main() {
 			line_height       REAL,
 			cors_proxy_url    TEXT,
 			epub_embed_images INTEGER,
+			mobi_embed_images INTEGER,
 			email_to          TEXT,
 			updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
@@ -137,6 +138,7 @@ func main() {
 	}
 	// Add columns introduced after initial table creation (ignored if already present)
 	sqlDB.Exec(`ALTER TABLE user_preferences ADD COLUMN email_to TEXT`)
+	sqlDB.Exec(`ALTER TABLE user_preferences ADD COLUMN mobi_embed_images INTEGER`)
 	sqlDB.Exec(`DROP TABLE IF EXISTS persistent_cache`)
 	sqlDB.Exec(`ALTER TABLE user_favorites ADD COLUMN comments_url TEXT NOT NULL DEFAULT ''`)
 	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS article_archive (key TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', author TEXT NOT NULL DEFAULT '', site_name TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT '', html_content TEXT NOT NULL DEFAULT '', text_content TEXT NOT NULL DEFAULT '', archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`)

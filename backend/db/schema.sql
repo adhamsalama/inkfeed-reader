@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     line_height       REAL,
     cors_proxy_url    TEXT,
     epub_embed_images INTEGER,
+    mobi_embed_images INTEGER,
     email_to          TEXT,
     updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

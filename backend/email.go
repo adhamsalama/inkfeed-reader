@@ -288,7 +288,12 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 		switch req.Format {
 		case "mobi":
 			htmlContent := fetchAndCombine(req.URLs, title)
-			data, err := mobi.Write(mobi.Book{Title: title, Author: req.Author, Content: htmlContent})
+			embedImagesMobi := req.EmbedImages == nil || *req.EmbedImages
+			var mobiImgRecords [][]byte
+			if embedImagesMobi {
+				htmlContent, mobiImgRecords = downloadAndEmbedMobiImages(htmlContent)
+			}
+			data, err := mobi.Write(mobi.Book{Title: title, Author: req.Author, Content: htmlContent}, mobiImgRecords)
 			if err != nil {
 				jsonError(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -352,7 +357,12 @@ func emailHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch req.Format {
 	case "mobi":
-		data, err := mobi.Write(mobi.Book{Title: title, Author: req.Author, Content: articleHTML})
+		embedImagesMobi := req.EmbedImages == nil || *req.EmbedImages
+		var mobiImgRecords [][]byte
+		if embedImagesMobi {
+			articleHTML, mobiImgRecords = downloadAndEmbedMobiImages(articleHTML)
+		}
+		data, err := mobi.Write(mobi.Book{Title: title, Author: req.Author, Content: articleHTML}, mobiImgRecords)
 		if err != nil {
 			jsonError(w, err.Error(), http.StatusInternalServerError)
 			return

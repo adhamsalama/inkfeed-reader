@@ -28,7 +28,8 @@ type Book struct {
 }
 
 // Write generates a MOBI file and returns the raw bytes.
-func Write(book Book) ([]byte, error) {
+// imageRecords holds raw image bytes (JPEG/PNG/GIF) to embed; may be nil.
+func Write(book Book, imageRecords [][]byte) ([]byte, error) {
 	htmlBytes := []byte(book.Content)
 
 	// Chunk HTML into 4096-byte records, each with a null terminator.
@@ -50,7 +51,7 @@ func Write(book Book) ([]byte, error) {
 	exthData := generateExthHeader(book.Author)
 	palmDocData := generatePalmDocHeader(len(htmlBytes), len(textRecords))
 	titleBytes := []byte(book.Title)
-	mobiData := generateMobiHeader(palmDocHeaderSize, len(exthData), len(titleBytes), len(textRecords))
+	mobiData := generateMobiHeader(palmDocHeaderSize, len(exthData), len(titleBytes), len(textRecords), len(imageRecords))
 
 	// Record 0: PalmDocHeader + MobiHeader + ExthHeader + padded title
 	record0 := concat(palmDocData, mobiData, exthData)
@@ -58,8 +59,10 @@ func Write(book Book) ([]byte, error) {
 	record0 = append(record0, titleBytes...)
 	record0 = append(record0, make([]byte, titlePadding+2)...)
 
+	// Records: header, text, images, EOF
 	records := [][]byte{record0}
 	records = append(records, textRecords...)
+	records = append(records, imageRecords...)
 	records = append(records, []byte{0xe9, 0x8e, 0x0d, 0x0a}) // EOF record
 
 	palmDbData := generatePalmDatabaseHeader(book.Title, records)
@@ -153,7 +156,7 @@ func generatePalmDocHeader(textSize, textRecordCount int) []byte {
 // Fields with swapEndian=false in the JS source are written little-endian here.
 // All 0xFFFFFFFF fields are identical in both endiannesses; only
 // unknown_bytes_2=0x00000001 is materially little-endian.
-func generateMobiHeader(palmDocLen, exthLen, titleLen, textRecordsCount int) []byte {
+func generateMobiHeader(palmDocLen, exthLen, titleLen, textRecordsCount, imageRecordsCount int) []byte {
 	h := make([]byte, mobiHeaderSize)
 	o := 0
 
@@ -211,7 +214,7 @@ func generateMobiHeader(palmDocLen, exthLen, titleLen, textRecordsCount int) []b
 
 	binary.BigEndian.PutUint16(h[o:], 1) // first_content_record_number
 	o += 2
-	binary.BigEndian.PutUint16(h[o:], uint16(textRecordsCount)) // last_content_record_number
+	binary.BigEndian.PutUint16(h[o:], uint16(textRecordsCount+imageRecordsCount)) // last_content_record_number
 	o += 2
 
 	binary.LittleEndian.PutUint32(h[o:], 0x00000001) // unknown_bytes_2 (LE!)

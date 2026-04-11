@@ -373,7 +373,7 @@ func (q *Queries) GetUserFeedGroups(ctx context.Context, userID int64) ([]GetUse
 }
 
 const getUserPreferences = `-- name: GetUserPreferences :one
-SELECT font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, email_to
+SELECT font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, mobi_embed_images, email_to
 FROM user_preferences WHERE user_id = ? LIMIT 1
 `
 
@@ -383,6 +383,7 @@ type GetUserPreferencesRow struct {
 	LineHeight      sql.NullFloat64
 	CorsProxyUrl    sql.NullString
 	EpubEmbedImages sql.NullInt64
+	MobiEmbedImages sql.NullInt64
 	EmailTo         sql.NullString
 }
 
@@ -395,6 +396,7 @@ func (q *Queries) GetUserPreferences(ctx context.Context, userID int64) (GetUser
 		&i.LineHeight,
 		&i.CorsProxyUrl,
 		&i.EpubEmbedImages,
+		&i.MobiEmbedImages,
 		&i.EmailTo,
 	)
 	return i, err
@@ -579,14 +581,15 @@ func (q *Queries) UpsertArticleArchive(ctx context.Context, arg UpsertArticleArc
 }
 
 const upsertUserPreferences = `-- name: UpsertUserPreferences :exec
-INSERT INTO user_preferences (user_id, font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, email_to, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+INSERT INTO user_preferences (user_id, font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, mobi_embed_images, email_to, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 ON CONFLICT(user_id) DO UPDATE SET
     font_size = excluded.font_size,
     letter_spacing = excluded.letter_spacing,
     line_height = excluded.line_height,
     cors_proxy_url = excluded.cors_proxy_url,
     epub_embed_images = excluded.epub_embed_images,
+    mobi_embed_images = excluded.mobi_embed_images,
     email_to = excluded.email_to,
     updated_at = CURRENT_TIMESTAMP
 `
@@ -598,6 +601,7 @@ type UpsertUserPreferencesParams struct {
 	LineHeight      sql.NullFloat64
 	CorsProxyUrl    sql.NullString
 	EpubEmbedImages sql.NullInt64
+	MobiEmbedImages sql.NullInt64
 	EmailTo         sql.NullString
 }
 
@@ -609,6 +613,7 @@ func (q *Queries) UpsertUserPreferences(ctx context.Context, arg UpsertUserPrefe
 		arg.LineHeight,
 		arg.CorsProxyUrl,
 		arg.EpubEmbedImages,
+		arg.MobiEmbedImages,
 		arg.EmailTo,
 	)
 	return err

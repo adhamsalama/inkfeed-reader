@@ -2,7 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"html"
+	"io"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -12,11 +15,85 @@ import (
 )
 
 type MobiRequest struct {
-	URL         string   `json:"url"`  // single article
-	URLs        []string `json:"urls"` // multiple articles
+	URL         string   `json:"url"`          // single article
+	URLs        []string `json:"urls"`         // multiple articles
 	Title       string   `json:"title"`
 	Author      string   `json:"author"`
-	CommentsURL string   `json:"commentsUrl"` // optional comments page URL
+	CommentsURL string   `json:"commentsUrl"`  // optional comments page URL
+	EmbedImages *bool    `json:"embedImages"`  // embed images in MOBI (default true)
+}
+
+var imgAltRe = regexp.MustCompile(`(?i)\balt="([^"]*)"`)
+
+// downloadAndEmbedMobiImages fetches all images referenced in bodyHTML,
+// replaces each <img src="URL" ...> with <img recindex="N"> (1-based),
+// and returns the modified HTML alongside raw image bytes for MOBI records.
+// WebP images are converted to JPEG for Kindle compatibility.
+func downloadAndEmbedMobiImages(bodyHTML string) (string, [][]byte) {
+	urlToIdx := map[string]int{} // url → 1-based record index
+	var imageRecords [][]byte
+
+	result := imgSrcRe.ReplaceAllStringFunc(bodyHTML, func(match string) string {
+		sub := imgSrcRe.FindStringSubmatch(match)
+		if len(sub) < 2 {
+			return match
+		}
+		srcURL := sub[1]
+
+		if idx, ok := urlToIdx[srcURL]; ok {
+			return mobiImgTag(match, idx)
+		}
+
+		imgReq, err := http.NewRequest("GET", srcURL, nil)
+		if err != nil {
+			log.Printf("mobi: failed to create image request %s: %v", srcURL, err)
+			return match
+		}
+		imgReq.Header.Set("User-Agent", userAgent)
+		resp, err := http.DefaultClient.Do(imgReq)
+		if err != nil {
+			log.Printf("mobi: failed to download image %s: %v", srcURL, err)
+			return match
+		}
+		defer resp.Body.Close()
+
+		data, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Printf("mobi: failed to read image %s: %v", srcURL, err)
+			return match
+		}
+
+		ct := resp.Header.Get("Content-Type")
+		if ct == "" {
+			ct = http.DetectContentType(data)
+		}
+		if i := strings.Index(ct, ";"); i >= 0 {
+			ct = strings.TrimSpace(ct[:i])
+		}
+
+		// Convert WebP to JPEG; Kindle does not support WebP.
+		if ct == "image/webp" {
+			data, ct = compressImage(data, ct, imageQuality())
+		}
+
+		idx := len(imageRecords) + 1 // 1-based
+		urlToIdx[srcURL] = idx
+		imageRecords = append(imageRecords, data)
+
+		_ = ct // ct used implicitly via the record; Kindle infers type from bytes
+		return mobiImgTag(match, idx)
+	})
+
+	return result, imageRecords
+}
+
+// mobiImgTag returns an <img> tag with recindex="N" (preserving alt if present).
+func mobiImgTag(original string, recindex int) string {
+	alt := ""
+	if m := imgAltRe.FindStringSubmatch(original); len(m) > 1 {
+		alt = fmt.Sprintf(` alt="%s"`, m[1])
+	}
+	return fmt.Sprintf(`<img%s recindex="%d">`, alt, recindex)
 }
 
 var unsafeCharsRe = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
@@ -65,11 +142,17 @@ func mobiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	embedImages := req.EmbedImages == nil || *req.EmbedImages
+	var imageRecords [][]byte
+	if embedImages {
+		htmlContent, imageRecords = downloadAndEmbedMobiImages(htmlContent)
+	}
+
 	data, err := mobi.Write(mobi.Book{
 		Title:   req.Title,
 		Author:  req.Author,
 		Content: htmlContent,
-	})
+	}, imageRecords)
 	if err != nil {
 		jsonError(w, err.Error(), http.StatusInternalServerError)
 		return

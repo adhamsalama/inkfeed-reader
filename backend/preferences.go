@@ -15,6 +15,7 @@ type preferencesRequest struct {
 	LineHeight      float64 `json:"lineHeight"`
 	CorsProxyUrl    string  `json:"corsProxyUrl"`
 	EpubEmbedImages bool    `json:"epubEmbedImages"`
+	MobiEmbedImages bool    `json:"mobiEmbedImages"`
 	EmailTo         string  `json:"emailTo"`
 }
 
@@ -48,6 +49,7 @@ type preferencesResponse struct {
 	LineHeight      float64         `json:"lineHeight"`
 	CorsProxyUrl    string          `json:"corsProxyUrl"`
 	EpubEmbedImages bool            `json:"epubEmbedImages"`
+	MobiEmbedImages bool            `json:"mobiEmbedImages"`
 	EmailTo         string          `json:"emailTo"`
 	SavedFeeds      []savedFeedItem `json:"savedFeeds"`
 	FeedGroups      []feedGroupData `json:"feedGroups"`
@@ -143,6 +145,11 @@ func getPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 	} else {
 		resp.EpubEmbedImages = true
 	}
+	if prefs.MobiEmbedImages.Valid {
+		resp.MobiEmbedImages = prefs.MobiEmbedImages.Int64 != 0
+	} else {
+		resp.MobiEmbedImages = true
+	}
 	if prefs.EmailTo.Valid {
 		resp.EmailTo = prefs.EmailTo.String
 	}
@@ -158,9 +165,13 @@ func putPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 		return
 	}
 
-	embedInt := int64(0)
+	epubEmbedInt := int64(0)
 	if req.EpubEmbedImages {
-		embedInt = 1
+		epubEmbedInt = 1
+	}
+	mobiEmbedInt := int64(0)
+	if req.MobiEmbedImages {
+		mobiEmbedInt = 1
 	}
 
 	err := queries.UpsertUserPreferences(r.Context(), db.UpsertUserPreferencesParams{
@@ -169,7 +180,8 @@ func putPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 		LetterSpacing:   sql.NullFloat64{Float64: req.LetterSpacing, Valid: true},
 		LineHeight:      sql.NullFloat64{Float64: req.LineHeight, Valid: true},
 		CorsProxyUrl:    sql.NullString{String: req.CorsProxyUrl, Valid: true},
-		EpubEmbedImages: sql.NullInt64{Int64: embedInt, Valid: true},
+		EpubEmbedImages: sql.NullInt64{Int64: epubEmbedInt, Valid: true},
+		MobiEmbedImages: sql.NullInt64{Int64: mobiEmbedInt, Valid: true},
 		EmailTo:         sql.NullString{String: req.EmailTo, Valid: true},
 	})
 	if err != nil {
