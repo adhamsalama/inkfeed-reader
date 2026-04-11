@@ -22,6 +22,15 @@
   // Private Helper Functions
   // ============================================================
 
+  function toXhtml(html) {
+    // XHTML requires void elements to be self-closed
+    return html
+      .replace(/<(img|br|hr|input|meta|link|area|base|col|embed|param|source|track|wbr)(\s[^>]*)?\s*>/gi, function(match, tag, attrs) {
+        attrs = attrs || "";
+        return "<" + tag + attrs + "/>";
+      });
+  }
+
   function buildXhtmlContent(title, articleHtml, commentsHtml) {
     var xhtmlParts = [
       '<?xml version="1.0" encoding="UTF-8"?>',
@@ -34,13 +43,13 @@
       '<h1>',
       escapeHtml(title),
       '</h1>',
-      articleHtml
+      toXhtml(articleHtml)
     ];
 
     if (commentsHtml) {
       xhtmlParts.push('<hr/>');
       xhtmlParts.push('<h2>Comments</h2>');
-      xhtmlParts.push(commentsHtml);
+      xhtmlParts.push(toXhtml(commentsHtml));
     }
 
     xhtmlParts.push('</body></html>');
