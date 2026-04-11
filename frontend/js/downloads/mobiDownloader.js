@@ -1,7 +1,50 @@
 // MOBI Downloader
 
 var MobiDownloader = {
-    // Fetch a single image URL via CORS proxy, return byte array via callback
+    // Detect image format from magic bytes. Returns 'jpeg', 'png', 'gif', or 'other'.
+    _detectFormat: function(bytes) {
+        if (bytes.length < 4) { return 'other'; }
+        if (bytes[0] === 0xFF && bytes[1] === 0xD8) { return 'jpeg'; }
+        if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) { return 'png'; }
+        if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) { return 'gif'; }
+        return 'other';
+    },
+
+    // Convert raw image bytes to JPEG using Canvas. Falls back to original bytes on error.
+    _convertToJpeg: function(bytes, callback) {
+        try {
+            var uint8 = new Uint8Array(bytes);
+            var blob = new Blob([uint8]);
+            var url = URL.createObjectURL(blob);
+            var img = new Image();
+            img.onload = function() {
+                try {
+                    var canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth || 1;
+                    canvas.height = img.naturalHeight || 1;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    URL.revokeObjectURL(url);
+                    var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    var base64 = dataUrl.split(',')[1];
+                    var binary = atob(base64);
+                    var result = [];
+                    for (var i = 0; i < binary.length; i++) {
+                        result.push(binary.charCodeAt(i));
+                    }
+                    callback(result);
+                } catch (e) {
+                    URL.revokeObjectURL(url);
+                    callback(bytes);
+                }
+            };
+            img.onerror = function() { URL.revokeObjectURL(url); callback(bytes); };
+            img.src = url;
+        } catch (e) {
+            callback(bytes);
+        }
+    },
+
+    // Fetch a single image URL via CORS proxy, return Kindle-compatible byte array via callback.
     _fetchImageBytes: function(url, callback) {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", AppConfig.CORS_PROXY_URL + encodeURIComponent(url), true);
@@ -15,7 +58,14 @@ var MobiDownloader = {
                         bytes.push(uint8[i]);
                     }
                 }
-                callback(null, bytes);
+                var fmt = MobiDownloader._detectFormat(bytes);
+                if (fmt === 'jpeg' || fmt === 'png' || fmt === 'gif') {
+                    callback(null, bytes);
+                } else {
+                    MobiDownloader._convertToJpeg(bytes, function(converted) {
+                        callback(null, converted);
+                    });
+                }
             } else {
                 callback(new Error("HTTP " + xhr.status));
             }
