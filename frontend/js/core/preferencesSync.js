@@ -43,6 +43,8 @@ var PreferencesSync = {
             }
             AppConfig.EPUB_EMBED_IMAGES = prefs.epubEmbedImages;
             localStorage.setItem("epubEmbedImages", prefs.epubEmbedImages ? "true" : "false");
+            AppConfig.MOBI_EMBED_IMAGES = prefs.mobiEmbedImages;
+            localStorage.setItem("mobiEmbedImages", prefs.mobiEmbedImages ? "true" : "false");
             if (prefs.emailTo) {
                 localStorage.setItem("emailTo", prefs.emailTo);
             }
@@ -80,6 +82,7 @@ var PreferencesSync = {
             lineHeight: AppState.currentLineHeight,
             corsProxyUrl: AppConfig.CORS_PROXY_URL,
             epubEmbedImages: AppConfig.EPUB_EMBED_IMAGES,
+            mobiEmbedImages: AppConfig.MOBI_EMBED_IMAGES,
             emailTo: localStorage.getItem("emailTo") || ""
         }, null);
     },
@@ -134,6 +137,8 @@ var PreferencesSync = {
         if (savedProxy) { AppConfig.CORS_PROXY_URL = savedProxy; }
         var embedImages = localStorage.getItem("epubEmbedImages");
         if (embedImages !== null) { AppConfig.EPUB_EMBED_IMAGES = embedImages !== "false"; }
+        var mobiEmbedImages = localStorage.getItem("mobiEmbedImages");
+        if (mobiEmbedImages !== null) { AppConfig.MOBI_EMBED_IMAGES = mobiEmbedImages !== "false"; }
         applyContentStyles();
         FeedRenderer.renderSavedFeeds();
     }

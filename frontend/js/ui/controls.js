@@ -72,6 +72,7 @@ function toggleEpubEmbedImages() {
 function toggleMobiEmbedImages() {
     AppConfig.MOBI_EMBED_IMAGES = document.getElementById("mobi-embed-images-checkbox").checked;
     localStorage.setItem("mobiEmbedImages", AppConfig.MOBI_EMBED_IMAGES ? "true" : "false");
+    PreferencesSync.pushPrefs();
 }
 
 function openSettings(section) {

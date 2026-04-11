@@ -58,7 +58,7 @@ var BackendClient = {
         xhr.open("POST", AppConfig.BACKEND_URL + "/email", true);
         xhr.withCredentials = true;
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify({ url: articleUrl, to: to, format: format, author: author, commentsUrl: commentsUrl || "", embedImages: AppConfig.EPUB_EMBED_IMAGES }));
+        xhr.send(JSON.stringify({ url: articleUrl, to: to, format: format, author: author, commentsUrl: commentsUrl || "", embedImages: format === "mobi" ? AppConfig.MOBI_EMBED_IMAGES : AppConfig.EPUB_EMBED_IMAGES }));
     },
 
     emailBulk: function(articleUrls, to, format, author, callback) {
@@ -80,7 +80,7 @@ var BackendClient = {
         xhr.open("POST", AppConfig.BACKEND_URL + "/email", true);
         xhr.withCredentials = true;
         xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify({ urls: articleUrls, to: to, format: format, author: author, embedImages: AppConfig.EPUB_EMBED_IMAGES }));
+        xhr.send(JSON.stringify({ urls: articleUrls, to: to, format: format, author: author, embedImages: format === "mobi" ? AppConfig.MOBI_EMBED_IMAGES : AppConfig.EPUB_EMBED_IMAGES }));
     },
 
     fetchFeedArchive: function(feedUrl, limit, offset, callback) {
@@ -115,12 +115,12 @@ var BackendClient = {
 
     // Download a single article as MOBI. The backend fetches and extracts the article.
     downloadMobi: function(articleUrl, title, author, commentsUrl, filename) {
-        BackendClient._downloadMobiPost({ url: articleUrl, title: title, author: author, commentsUrl: commentsUrl || "" }, filename);
+        BackendClient._downloadMobiPost({ url: articleUrl, title: title, author: author, commentsUrl: commentsUrl || "", embedImages: AppConfig.MOBI_EMBED_IMAGES }, filename);
     },
 
     // Download multiple articles as a single MOBI. The backend fetches all URLs.
     downloadMobiBulk: function(articleUrls, title, author, filename) {
-        BackendClient._downloadMobiPost({ urls: articleUrls, title: title, author: author }, filename);
+        BackendClient._downloadMobiPost({ urls: articleUrls, title: title, author: author, embedImages: AppConfig.MOBI_EMBED_IMAGES }, filename);
     },
 
     // Download a single article as EPUB. The backend fetches and extracts the article.
