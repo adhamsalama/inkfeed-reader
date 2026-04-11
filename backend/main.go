@@ -27,6 +27,18 @@ const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
+		if r.Method == http.MethodOptions || origin != allowedOrigin {
+			log.Printf("CORS debug: method=%s path=%s origin=%q ua=%q acr-method=%q acr-headers=%q ip=%s allowed=%q match=%v",
+				r.Method, r.URL.Path,
+				origin,
+				r.Header.Get("User-Agent"),
+				r.Header.Get("Access-Control-Request-Method"),
+				r.Header.Get("Access-Control-Request-Headers"),
+				clientIP(r),
+				allowedOrigin,
+				origin == allowedOrigin,
+			)
+		}
 		if origin != allowedOrigin {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
