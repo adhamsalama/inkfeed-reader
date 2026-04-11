@@ -39,6 +39,7 @@
                     <button id="groups-toggle-btn" class="secondary hidden" onclick="toggleFeedGroups()">Groups</button>
                     <button id="favorites-toggle-btn" class="secondary" style="display:none" onclick="toggleFavorites()">Favorites</button>
                     <button class="secondary" onclick="toggleSuggestedFeeds()">Suggested</button>
+                    <button class="secondary" onclick="toggleWikipediaSearch()">Wikipedia</button>
                     <button class="secondary" onclick="openSettings()">Settings</button>
                 </div>
             </div>
@@ -54,6 +55,14 @@
             </div>
             <div id="favorites-section" class="saved-feeds-section hidden">
                 <div id="favorites-container"></div>
+            </div>
+            <div id="wikipedia-section" class="saved-feeds-section hidden">
+                <div class="proxy-input-row">
+                    <input type="text" id="wikipedia-search-input" placeholder="Search Wikipedia..." />
+                    <button onclick="searchWikipedia()">Search</button>
+                </div>
+                <div id="wikipedia-loading" class="loading hidden">Searching...</div>
+                <ul id="wikipedia-results-list" class="saved-feeds-list"></ul>
             </div>
         </div>
 
@@ -242,6 +251,9 @@
 
     <!-- Article selection -->
     <script src="./js/articles/articleSelection.js"></script>
+
+    <!-- Wikipedia search -->
+    <script src="./js/wikipedia/wikipediaSearch.js"></script>
 
     <!-- Event handlers & initialization -->
     <script src="./js/eventHandlers.js"></script>

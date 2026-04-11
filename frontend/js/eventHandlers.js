@@ -145,6 +145,25 @@
             }
         }
 
+        // Wikipedia search input Enter key handler
+        var wikiInput = document.getElementById("wikipedia-search-input");
+        if (wikiInput) {
+            if (wikiInput.addEventListener) {
+                wikiInput.addEventListener("keypress", function(e) {
+                    var key = e.key || e.keyCode;
+                    if (key === "Enter" || key === 13) {
+                        searchWikipedia();
+                    }
+                });
+            } else if (wikiInput.attachEvent) {
+                wikiInput.attachEvent("onkeypress", function(e) {
+                    if (e.keyCode === 13) {
+                        searchWikipedia();
+                    }
+                });
+            }
+        }
+
         // Feed input Enter key handler
         var feedInput = document.getElementById("feed-url");
         if (feedInput) {
