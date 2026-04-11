@@ -80,13 +80,12 @@ func cached(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-
 type responseRecorder struct {
 	header http.Header
 	body   bytes.Buffer
 	status int
 }
 
-func (r *responseRecorder) Header() http.Header        { return r.header }
-func (r *responseRecorder) WriteHeader(status int)     { r.status = status }
+func (r *responseRecorder) Header() http.Header         { return r.header }
+func (r *responseRecorder) WriteHeader(status int)      { r.status = status }
 func (r *responseRecorder) Write(b []byte) (int, error) { return r.body.Write(b) }

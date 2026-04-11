@@ -12,8 +12,8 @@ import (
 )
 
 type MobiRequest struct {
-	URL         string   `json:"url"`         // single article
-	URLs        []string `json:"urls"`        // multiple articles
+	URL         string   `json:"url"`  // single article
+	URLs        []string `json:"urls"` // multiple articles
 	Title       string   `json:"title"`
 	Author      string   `json:"author"`
 	CommentsURL string   `json:"commentsUrl"` // optional comments page URL

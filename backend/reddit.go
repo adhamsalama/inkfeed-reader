@@ -53,11 +53,11 @@ func redditPostHandler(w http.ResponseWriter, r *http.Request) {
 		Data struct {
 			Children []struct {
 				Data struct {
-					IsSelf      bool   `json:"is_self"`
-					URL         string `json:"url"`
+					IsSelf       bool   `json:"is_self"`
+					URL          string `json:"url"`
 					Selftext     string `json:"selftext"`
 					SelftextHTML string `json:"selftext_html"`
-					Permalink   string `json:"permalink"`
+					Permalink    string `json:"permalink"`
 				} `json:"data"`
 			} `json:"children"`
 		} `json:"data"`
@@ -85,7 +85,7 @@ func redditPostHandler(w http.ResponseWriter, r *http.Request) {
 		decoded = strings.ReplaceAll(decoded, "<!-- SC_ON -->", "")
 		decoded = strings.TrimSpace(decoded)
 		if strings.HasPrefix(decoded, `<div class="md">`) && strings.HasSuffix(decoded, "</div>") {
-			decoded = decoded[len(`<div class="md">`): len(decoded)-len("</div>")]
+			decoded = decoded[len(`<div class="md">`) : len(decoded)-len("</div>")]
 		}
 		contentHTML = decoded
 	} else if postData.Selftext != "" {
