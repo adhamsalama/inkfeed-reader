@@ -7,8 +7,8 @@ var AppConfig = {
 
     // Backend
     USE_BACKEND: false,
-    // BACKEND_URL: "https://api.inkfeed.xyz",
-    BACKEND_URL: "http://localhost:8080",
+    BACKEND_URL: "https://api.inkfeed.xyz",
+    // BACKEND_URL: "http://localhost:8080",
 
     // Font size constraints
     MIN_FONT_SIZE: 12,
