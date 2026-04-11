@@ -109,7 +109,7 @@ func issueSession(w http.ResponseWriter, r *http.Request, userID int64) error {
 		return err
 	}
 
-	secure := strings.HasPrefix(allowedOrigin, "https://")
+	secure := strings.HasPrefix(allowedOrigins[0], "https://")
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    token,

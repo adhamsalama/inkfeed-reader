@@ -322,7 +322,7 @@ func signoutHandler(w http.ResponseWriter, r *http.Request) {
 		queries.DeleteSession(r.Context(), cookie.Value)
 	}
 
-	secure := strings.HasPrefix(allowedOrigin, "https://")
+	secure := strings.HasPrefix(allowedOrigins[0], "https://")
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    "",

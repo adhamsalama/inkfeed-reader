@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/adhamsalama/inkfeed-backend/db"
 	"github.com/joho/godotenv"
@@ -16,7 +17,7 @@ import (
 
 var queries *db.Queries
 
-var allowedOrigin = "https://reader.inkfeed.xyz"
+var allowedOrigins = []string{"https://reader.inkfeed.xyz", "http://reader.inkfeed.xyz"}
 
 var feedProxyURL = "https://throbbing-morning-e187.adhamsalama.workers.dev"
 
@@ -24,10 +25,19 @@ type contextKey string
 
 const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
+func isAllowedOrigin(origin string) bool {
+	for _, o := range allowedOrigins {
+		if o == origin {
+			return true
+		}
+	}
+	return false
+}
+
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		if r.Method == http.MethodOptions || origin != allowedOrigin {
+		if r.Method == http.MethodOptions || !isAllowedOrigin(origin) {
 			log.Printf("CORS debug: method=%s path=%s origin=%q ua=%q acr-method=%q acr-headers=%q ip=%s allowed=%q match=%v",
 				r.Method, r.URL.Path,
 				origin,
@@ -35,15 +45,15 @@ func corsMiddleware(next http.Handler) http.Handler {
 				r.Header.Get("Access-Control-Request-Method"),
 				r.Header.Get("Access-Control-Request-Headers"),
 				clientIP(r),
-				allowedOrigin,
-				origin == allowedOrigin,
+				strings.Join(allowedOrigins, "|"),
+				isAllowedOrigin(origin),
 			)
 		}
-		if origin != allowedOrigin {
+		if !isAllowedOrigin(origin) {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
 		}
-		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -84,7 +94,7 @@ func main() {
 	godotenv.Load()
 
 	if os.Getenv("ENV") == "local" {
-		allowedOrigin = "http://localhost:8000"
+		allowedOrigins = append(allowedOrigins, "http://localhost:8000")
 	}
 	if v := os.Getenv("FEED_PROXY_URL"); v != "" {
 		feedProxyURL = v
