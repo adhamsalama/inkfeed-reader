@@ -1,4 +1,3 @@
-
 /**
  * MobiWriter.js - ES3 JavaScript port of MobiWriter
  * Minimal writer for the Mobipocket (.mobi) format
@@ -10,7 +9,7 @@
  *   writer.write(book, "output.mobi"); // triggers download in browser
  */
 
-(function(global) {
+(function (global) {
   "use strict";
 
   // ============================================================
@@ -19,11 +18,11 @@
 
   var Utils = {};
 
-  Utils.swapEndian16 = function(x) {
+  Utils.swapEndian16 = function (x) {
     return ((x >> 8) & 0xff) | ((x << 8) & 0xff00);
   };
 
-  Utils.swapEndian32 = function(x) {
+  Utils.swapEndian32 = function (x) {
     return (
       ((x >>> 24) & 0xff) |
       ((x >>> 8) & 0xff00) |
@@ -32,14 +31,14 @@
     );
   };
 
-  Utils.stringToBytes = function(str, bytes, offset) {
+  Utils.stringToBytes = function (str, bytes, offset) {
     offset = offset || 0;
     for (var i = 0; i < str.length; i++) {
       bytes[offset + i] = str.charCodeAt(i) & 0xff;
     }
   };
 
-  Utils.ushortToBytes = function(x, bytes, offset, swapEndian) {
+  Utils.ushortToBytes = function (x, bytes, offset, swapEndian) {
     if (swapEndian !== false) {
       x = Utils.swapEndian16(x);
     }
@@ -47,7 +46,7 @@
     bytes[offset + 1] = (x >> 8) & 0xff;
   };
 
-  Utils.uintToBytes = function(x, bytes, offset, swapEndian) {
+  Utils.uintToBytes = function (x, bytes, offset, swapEndian) {
     // Handle large numbers that exceed 32-bit signed int
     x = x >>> 0; // Convert to unsigned 32-bit
     if (swapEndian !== false) {
@@ -59,7 +58,7 @@
     bytes[offset + 3] = (x >>> 24) & 0xff;
   };
 
-  Utils.getFourBytesPadding = function(size) {
+  Utils.getFourBytesPadding = function (size) {
     var padding = 4 - (size % 4);
     if (padding === 4) {
       return 0;
@@ -67,7 +66,7 @@
     return padding;
   };
 
-  Utils.createByteArray = function(size) {
+  Utils.createByteArray = function (size) {
     var arr = [];
     for (var i = 0; i < size; i++) {
       arr[i] = 0;
@@ -75,7 +74,7 @@
     return arr;
   };
 
-  Utils.concatByteArrays = function() {
+  Utils.concatByteArrays = function () {
     var totalLength = 0;
     var i, j;
     for (i = 0; i < arguments.length; i++) {
@@ -91,7 +90,7 @@
     return result;
   };
 
-  Utils.byteArrayToString = function(bytes) {
+  Utils.byteArrayToString = function (bytes) {
     var str = "";
     for (var i = 0; i < bytes.length; i++) {
       str += String.fromCharCode(bytes[i]);
@@ -99,7 +98,7 @@
     return str;
   };
 
-  Utils.stringToByteArray = function(str) {
+  Utils.stringToByteArray = function (str) {
     var bytes = [];
     for (var i = 0; i < str.length; i++) {
       bytes[i] = str.charCodeAt(i) & 0xff;
@@ -108,7 +107,7 @@
   };
 
   // UTF-8 encode a string to byte array
-  Utils.utf8Encode = function(str) {
+  Utils.utf8Encode = function (str) {
     var bytes = [];
     for (var i = 0; i < str.length; i++) {
       var c = str.charCodeAt(i);
@@ -143,16 +142,16 @@
     this.data_ = null;
   }
 
-  EofRecord.prototype.generate = function() {
+  EofRecord.prototype.generate = function () {
     this.data_ = [0xe9, 0x8e, 0x0d, 0x0a];
     return true;
   };
 
-  EofRecord.prototype.data = function() {
+  EofRecord.prototype.data = function () {
     return this.data_;
   };
 
-  EofRecord.prototype.size = function() {
+  EofRecord.prototype.size = function () {
     return this.size_;
   };
 
@@ -172,7 +171,7 @@
     this.records_ = [];
   }
 
-  ExthHeader.prototype.addRecord = function(type, dataBytes) {
+  ExthHeader.prototype.addRecord = function (type, dataBytes) {
     var recordHeader = Utils.createByteArray(8);
     Utils.uintToBytes(type, recordHeader, 0);
     Utils.uintToBytes(dataBytes.length + 8, recordHeader, 4);
@@ -182,7 +181,7 @@
     this.records_.push(recordData);
   };
 
-  ExthHeader.prototype.generate = function() {
+  ExthHeader.prototype.generate = function () {
     // Add creator software records
     var creatorSoftware = Utils.createByteArray(4);
     Utils.uintToBytes(201, creatorSoftware, 0);
@@ -221,11 +220,11 @@
     return this.data_.length === this.size_;
   };
 
-  ExthHeader.prototype.data = function() {
+  ExthHeader.prototype.data = function () {
     return this.data_;
   };
 
-  ExthHeader.prototype.size = function() {
+  ExthHeader.prototype.size = function () {
     return this.size_;
   };
 
@@ -240,7 +239,7 @@
     this.data_ = null;
   }
 
-  MobiHeader.prototype.generate = function(
+  MobiHeader.prototype.generate = function (
     textEncoding,
     palmDbHeaderLength,
     palmDocHeaderLength,
@@ -437,11 +436,11 @@
     return this.data_.length === this.size_;
   };
 
-  MobiHeader.prototype.data = function() {
+  MobiHeader.prototype.data = function () {
     return this.data_;
   };
 
-  MobiHeader.prototype.size = function() {
+  MobiHeader.prototype.size = function () {
     return this.size_;
   };
 
@@ -456,10 +455,7 @@
     this.data_ = null;
   }
 
-  PalmDocHeader.prototype.generate = function(
-    textSize,
-    textRecordCount,
-  ) {
+  PalmDocHeader.prototype.generate = function (textSize, textRecordCount) {
     var header = Utils.createByteArray(PALM_DOC_HEADER_SIZE);
     var offset = 0;
 
@@ -490,11 +486,11 @@
     return this.data_.length === this.size_;
   };
 
-  PalmDocHeader.prototype.data = function() {
+  PalmDocHeader.prototype.data = function () {
     return this.data_;
   };
 
-  PalmDocHeader.prototype.size = function() {
+  PalmDocHeader.prototype.size = function () {
     return this.size_;
   };
 
@@ -507,15 +503,11 @@
 
   function PalmDatabaseHeader(recordsCount) {
     this.recordsCount_ = recordsCount;
-    this.size_ =
-      PALM_DB_HEADER_SIZE + recordsCount * RECORD_INFO_SIZE + 2;
+    this.size_ = PALM_DB_HEADER_SIZE + recordsCount * RECORD_INFO_SIZE + 2;
     this.data_ = null;
   }
 
-  PalmDatabaseHeader.prototype.generate = function(
-    mobiBookTitle,
-    records,
-  ) {
+  PalmDatabaseHeader.prototype.generate = function (mobiBookTitle, records) {
     var header = Utils.createByteArray(PALM_DB_HEADER_SIZE);
     var offset = 0;
 
@@ -592,11 +584,11 @@
     return this.data_.length === this.size_;
   };
 
-  PalmDatabaseHeader.prototype.data = function() {
+  PalmDatabaseHeader.prototype.data = function () {
     return this.data_;
   };
 
-  PalmDatabaseHeader.prototype.size = function() {
+  PalmDatabaseHeader.prototype.size = function () {
     return this.size_;
   };
 
@@ -610,27 +602,24 @@
     this.htmlContent_ = "";
   }
 
-  MobiBook.prototype.title = function() {
+  MobiBook.prototype.title = function () {
     return this.title_;
   };
 
-  MobiBook.prototype.author = function() {
+  MobiBook.prototype.author = function () {
     return this.author_;
   };
 
-  MobiBook.prototype.htmlContent = function() {
+  MobiBook.prototype.htmlContent = function () {
     return this.htmlContent_;
   };
 
-  MobiBook.prototype.setHtmlContent = function(html) {
+  MobiBook.prototype.setHtmlContent = function (html) {
     this.htmlContent_ = html;
   };
 
   // For loading from file input in browser
-  MobiBook.prototype.loadHtmlFromFileInput = function(
-    fileInput,
-    callback,
-  ) {
+  MobiBook.prototype.loadHtmlFromFileInput = function (fileInput, callback) {
     var self = this;
     if (typeof FileReader === "undefined") {
       callback(false, "FileReader not supported");
@@ -642,11 +631,11 @@
       return;
     }
     var reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       self.htmlContent_ = e.target.result;
       callback(true);
     };
-    reader.onerror = function() {
+    reader.onerror = function () {
       callback(false, "Error reading file");
     };
     reader.readAsText(file);
@@ -660,7 +649,12 @@
     this.textRecords_ = [];
   }
 
-  MobiWriter.prototype.write = function(mobiBook, filename, skipDownload, imageRecords) {
+  MobiWriter.prototype.write = function (
+    mobiBook,
+    filename,
+    skipDownload,
+    imageRecords,
+  ) {
     this.textRecords_ = [];
     imageRecords = imageRecords || [];
 
@@ -695,9 +689,7 @@
       return { success: false, error: "Error creating EXTH header" };
     }
 
-    if (
-      !palmDocHeader.generate(htmlBytes.length, this.textRecords_.length)
-    ) {
+    if (!palmDocHeader.generate(htmlBytes.length, this.textRecords_.length)) {
       return { success: false, error: "Error creating PalmDoc header" };
     }
 
@@ -768,7 +760,7 @@
     return { success: true, data: allData };
   };
 
-  MobiWriter.prototype._downloadFile = function(byteArray, filename) {
+  MobiWriter.prototype._downloadFile = function (byteArray, filename) {
     // Convert byte array to binary string
     var binaryString = "";
     for (var i = 0; i < byteArray.length; i++) {
@@ -811,23 +803,21 @@
     } else {
       // Fallback for older browsers using data URI
       var base64 = this._btoa(binaryString);
-      var dataUri =
-        "data:application/x-mobipocket-ebook;base64," + base64;
+      var dataUri = "data:application/x-mobipocket-ebook;base64," + base64;
 
       // Open in new window (user will need to save manually)
       var win = window.open(dataUri, "_blank");
       if (!win) {
         return {
           success: false,
-          error:
-            "Popup blocked. Please allow popups to download the file.",
+          error: "Popup blocked. Please allow popups to download the file.",
         };
       }
     }
   };
 
   // Base64 encoding for older browsers
-  MobiWriter.prototype._btoa = function(str) {
+  MobiWriter.prototype._btoa = function (str) {
     if (typeof btoa !== "undefined") {
       return btoa(str);
     }
@@ -847,8 +837,7 @@
 
       result += chars.charAt((triplet >> 18) & 0x3f);
       result += chars.charAt((triplet >> 12) & 0x3f);
-      result +=
-        i > str.length + 1 ? "=" : chars.charAt((triplet >> 6) & 0x3f);
+      result += i > str.length + 1 ? "=" : chars.charAt((triplet >> 6) & 0x3f);
       result += i > str.length ? "=" : chars.charAt(triplet & 0x3f);
     }
 
@@ -856,7 +845,7 @@
   };
 
   // Get raw bytes without triggering download
-  MobiWriter.prototype.getBytes = function(mobiBook) {
+  MobiWriter.prototype.getBytes = function (mobiBook) {
     var result = this.write(mobiBook, "");
     return result.data;
   };
