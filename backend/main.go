@@ -55,11 +55,22 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (sr *statusRecorder) WriteHeader(code int) {
+	sr.status = code
+	sr.ResponseWriter.WriteHeader(code)
+}
+
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path, _ := url.PathUnescape(r.URL.RequestURI())
-		log.Printf("%s %s %s", r.Method, path, clientIP(r))
-		next.ServeHTTP(w, r)
+		rec := &statusRecorder{ResponseWriter: w, status: 200}
+		next.ServeHTTP(rec, r)
+		log.Printf("%s %s %d %s", r.Method, path, rec.status, clientIP(r))
 	})
 }
 
