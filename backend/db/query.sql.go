@@ -277,6 +277,22 @@ func (q *Queries) GetNextFeedItemWithoutArchive(ctx context.Context) (string, er
 	return item_url, err
 }
 
+const getOldestArticleArchiveKey = `-- name: GetOldestArticleArchiveKey :one
+SELECT key, title FROM article_archive ORDER BY archived_at ASC LIMIT 1
+`
+
+type GetOldestArticleArchiveKeyRow struct {
+	Key   string
+	Title string
+}
+
+func (q *Queries) GetOldestArticleArchiveKey(ctx context.Context) (GetOldestArticleArchiveKeyRow, error) {
+	row := q.db.QueryRowContext(ctx, getOldestArticleArchiveKey)
+	var i GetOldestArticleArchiveKeyRow
+	err := row.Scan(&i.Key, &i.Title)
+	return i, err
+}
+
 const getSession = `-- name: GetSession :one
 SELECT token, user_id, expires_at FROM sessions WHERE token = ? AND expires_at > CURRENT_TIMESTAMP LIMIT 1
 `

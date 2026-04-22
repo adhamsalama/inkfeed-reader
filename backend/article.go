@@ -141,11 +141,17 @@ func pruneArticleArchive() {
 	log.Printf("article archive size %d bytes exceeds target, pruning oldest articles", size)
 	deleted := 0
 	for size > archivePruneTargetBytes {
-		if err := queries.DeleteOldestArticleArchiveRow(ctx); err != nil {
+		article, err := queries.GetOldestArticleArchiveKey(ctx)
+		if err != nil {
 			log.Printf("article archive prune error: %v", err)
 			return
 		}
+		if err := queries.DeleteOldestArticleArchiveRow(ctx); err != nil {
+			log.Printf("article archive delete error: %v", err)
+			return
+		}
 		deleted++
+		log.Printf("article archive deleted: %s (%s)", article.Key, article.Title)
 		size, err = queries.GetArticleArchiveTotalSize(ctx)
 		if err != nil {
 			log.Printf("article archive size check error: %v", err)

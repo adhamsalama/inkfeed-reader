@@ -108,6 +108,9 @@ ON CONFLICT(key) DO UPDATE SET title = excluded.title, author = excluded.author,
 -- name: GetArticleArchiveTotalSize :one
 SELECT CAST(COALESCE(SUM(LENGTH(html_content) + LENGTH(text_content)), 0) AS INTEGER) AS total_size FROM article_archive;
 
+-- name: GetOldestArticleArchiveKey :one
+SELECT key, title FROM article_archive ORDER BY archived_at ASC LIMIT 1;
+
 -- name: DeleteOldestArticleArchiveRow :exec
 DELETE FROM article_archive
 WHERE key = (SELECT key FROM article_archive ORDER BY archived_at ASC LIMIT 1);
