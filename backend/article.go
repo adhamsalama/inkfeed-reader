@@ -126,6 +126,46 @@ func archiveArticle(key, title, author, siteName, createdAt, htmlContent, textCo
 	}
 }
 
+const archivePruneTargetBytes = 90 * 1024 * 1024 // 90 MB - prune down to this
+
+func pruneArticleArchive() {
+	ctx := context.Background()
+	size, err := queries.GetArticleArchiveTotalSize(ctx)
+	if err != nil {
+		log.Printf("article archive size check error: %v", err)
+		return
+	}
+	if size <= archivePruneTargetBytes {
+		return
+	}
+	log.Printf("article archive size %d bytes exceeds target, pruning oldest articles", size)
+	deleted := 0
+	for size > archivePruneTargetBytes {
+		if err := queries.DeleteOldestArticleArchiveRow(ctx); err != nil {
+			log.Printf("article archive prune error: %v", err)
+			return
+		}
+		deleted++
+		size, err = queries.GetArticleArchiveTotalSize(ctx)
+		if err != nil {
+			log.Printf("article archive size check error: %v", err)
+			return
+		}
+	}
+	log.Printf("article archive pruned %d rows, size now %d bytes", deleted, size)
+}
+
+func startArticleArchivePruner() {
+	go func() {
+		pruneArticleArchive() // run once at startup
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			pruneArticleArchive()
+		}
+	}()
+}
+
 // articleMetaHTML returns an HTML snippet with article metadata.
 func articleMetaHTML(article readability.Article) string {
 	var sb strings.Builder

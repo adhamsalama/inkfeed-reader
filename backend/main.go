@@ -183,6 +183,7 @@ func main() {
 	startFeedScraper()
 	startContentArchiver()
 	startCacheCleanup()
+	startArticleArchivePruner()
 
 	mux := http.NewServeMux()
 	protected := func(h http.HandlerFunc) http.Handler {

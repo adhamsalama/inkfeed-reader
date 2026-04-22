@@ -67,6 +67,16 @@ func (q *Queries) DeleteAllUserFavorites(ctx context.Context, userID int64) erro
 	return err
 }
 
+const deleteOldestArticleArchiveRow = `-- name: DeleteOldestArticleArchiveRow :exec
+DELETE FROM article_archive
+WHERE key = (SELECT key FROM article_archive ORDER BY archived_at ASC LIMIT 1)
+`
+
+func (q *Queries) DeleteOldestArticleArchiveRow(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteOldestArticleArchiveRow)
+	return err
+}
+
 const deleteSession = `-- name: DeleteSession :exec
 DELETE FROM sessions WHERE token = ?
 `
@@ -128,6 +138,17 @@ func (q *Queries) GetArticleArchive(ctx context.Context, key string) (GetArticle
 		&i.TextContent,
 	)
 	return i, err
+}
+
+const getArticleArchiveTotalSize = `-- name: GetArticleArchiveTotalSize :one
+SELECT CAST(COALESCE(SUM(LENGTH(html_content) + LENGTH(text_content)), 0) AS INTEGER) AS total_size FROM article_archive
+`
+
+func (q *Queries) GetArticleArchiveTotalSize(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getArticleArchiveTotalSize)
+	var total_size int64
+	err := row.Scan(&total_size)
+	return total_size, err
 }
 
 const getDistinctSavedFeedURLs = `-- name: GetDistinctSavedFeedURLs :many
