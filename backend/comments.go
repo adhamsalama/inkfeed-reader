@@ -228,12 +228,12 @@ func fetchHNComments(rawURL string) (string, error) {
 		limit = maxTopLevelComments
 	}
 	for i := 0; i < limit; i++ {
-		renderHNComment(&sb, item.Children[i], 0, &counter)
+		renderHNComment(&sb, item.Children[i], 0, &counter, i >= 10)
 	}
 	return sb.String(), nil
 }
 
-func renderHNComment(sb *strings.Builder, item hnItem, depth int, counter *int) {
+func renderHNComment(sb *strings.Builder, item hnItem, depth int, counter *int, collapsed bool) {
 	n := *counter
 	*counter++
 	collapseID := fmt.Sprintf("hn-c-%d", n)
@@ -254,23 +254,30 @@ func renderHNComment(sb *strings.Builder, item hnItem, depth int, counter *int) 
 		}
 	}
 
+	toggleIcon := "[&minus;]"
+	bodyStyle := ""
+	if collapsed {
+		toggleIcon = "[+]"
+		bodyStyle = ` style="display:none"`
+	}
+
 	sb.WriteString(`<div class="hn-comment">`)
 	sb.WriteString(`<div class="hn-comment-header">`)
-	fmt.Fprintf(sb, `<span id="%s-btn" class="hn-toggle" onclick="toggleHNComment('%s')">[&minus;]</span> `, collapseID, collapseID)
+	fmt.Fprintf(sb, `<span id="%s-btn" class="hn-toggle" onclick="toggleHNComment('%s')">%s</span> `, collapseID, collapseID, toggleIcon)
 	fmt.Fprintf(sb, `<strong class="hn-author">%s</strong>`, html.EscapeString(author))
 	if dateStr != "" {
 		fmt.Fprintf(sb, ` <span class="hn-date">%s</span>`, dateStr)
 	}
 	sb.WriteString(`</div>`)
 
-	fmt.Fprintf(sb, `<div id="%s" class="hn-comment-body">`, collapseID)
+	fmt.Fprintf(sb, `<div id="%s" class="hn-comment-body"%s>`, collapseID, bodyStyle)
 	if item.Text != "" {
 		fmt.Fprintf(sb, `<div class="hn-comment-text">%s</div>`, item.Text)
 	} else {
 		sb.WriteString(`<div class="hn-comment-text hn-deleted">[deleted]</div>`)
 	}
 	for _, child := range item.Children {
-		renderHNComment(sb, child, depth+1, counter)
+		renderHNComment(sb, child, depth+1, counter, true)
 	}
 	sb.WriteString(`</div>`) // hn-comment-body
 	sb.WriteString(`</div>`) // hn-comment
@@ -324,7 +331,7 @@ func fetchRedditComments(rawURL string) (string, error) {
 
 	for i := 0; i < limit; i++ {
 		replyCount := 0
-		renderRedditComment(&sb, comments[i], 0, true, &replyCount, &counter)
+		renderRedditComment(&sb, comments[i], 0, true, &replyCount, &counter, i >= 10)
 	}
 
 	if sb.Len() == 0 {
@@ -333,7 +340,7 @@ func fetchRedditComments(rawURL string) (string, error) {
 	return sb.String(), nil
 }
 
-func renderRedditComment(sb *strings.Builder, thing redditThing, depth int, isTopLevel bool, replyCount *int, counter *int) {
+func renderRedditComment(sb *strings.Builder, thing redditThing, depth int, isTopLevel bool, replyCount *int, counter *int, collapsed bool) {
 	if thing.Kind == "more" {
 		return
 	}
@@ -353,9 +360,16 @@ func renderRedditComment(sb *strings.Builder, thing redditThing, depth int, isTo
 		author = "[deleted]"
 	}
 
+	toggleIcon := "[&minus;]"
+	bodyStyle := ""
+	if collapsed {
+		toggleIcon = "[+]"
+		bodyStyle = ` style="display:none"`
+	}
+
 	sb.WriteString(`<div class="hn-comment">`)
 	sb.WriteString(`<div class="hn-comment-header">`)
-	fmt.Fprintf(sb, `<span id="%s-btn" class="hn-toggle" onclick="toggleRedditComment('%s')">[&minus;]</span> `, collapseID, collapseID)
+	fmt.Fprintf(sb, `<span id="%s-btn" class="hn-toggle" onclick="toggleRedditComment('%s')">%s</span> `, collapseID, collapseID, toggleIcon)
 	fmt.Fprintf(sb, `<strong class="hn-author">%s</strong>`, html.EscapeString(author))
 	if d.CreatedUTC > 0 {
 		t := time.Unix(int64(d.CreatedUTC), 0)
@@ -363,7 +377,7 @@ func renderRedditComment(sb *strings.Builder, thing redditThing, depth int, isTo
 	}
 	sb.WriteString(`</div>`)
 
-	fmt.Fprintf(sb, `<div id="%s" class="hn-comment-body">`, collapseID)
+	fmt.Fprintf(sb, `<div id="%s" class="hn-comment-body"%s>`, collapseID, bodyStyle)
 	if d.BodyHTML != "" {
 		decoded := html.UnescapeString(d.BodyHTML)
 		text := stripHTMLTags(decoded)
@@ -376,7 +390,7 @@ func renderRedditComment(sb *strings.Builder, thing redditThing, depth int, isTo
 		var repliesListing redditListing
 		if err := json.Unmarshal(d.Replies, &repliesListing); err == nil {
 			for _, child := range repliesListing.Data.Children {
-				renderRedditComment(sb, child, depth+1, false, replyCount, counter)
+				renderRedditComment(sb, child, depth+1, false, replyCount, counter, true)
 			}
 		}
 	}
@@ -427,7 +441,7 @@ func buildLobstersTree(comments []lobstersComment) []*lobstersNode {
 	return roots
 }
 
-func renderLobstersComment(sb *strings.Builder, node *lobstersNode, counter *int) {
+func renderLobstersComment(sb *strings.Builder, node *lobstersNode, counter *int, collapsed bool) {
 	c := node.comment
 	n := *counter
 	*counter++
@@ -447,16 +461,23 @@ func renderLobstersComment(sb *strings.Builder, node *lobstersNode, counter *int
 		}
 	}
 
+	toggleIcon := "[&minus;]"
+	bodyStyle := ""
+	if collapsed {
+		toggleIcon = "[+]"
+		bodyStyle = ` style="display:none"`
+	}
+
 	sb.WriteString(`<div class="hn-comment">`)
 	sb.WriteString(`<div class="hn-comment-header">`)
-	fmt.Fprintf(sb, `<span id="%s-btn" class="hn-toggle" onclick="toggleLobstersComment('%s')">[&minus;]</span> `, collapseID, collapseID)
+	fmt.Fprintf(sb, `<span id="%s-btn" class="hn-toggle" onclick="toggleLobstersComment('%s')">%s</span> `, collapseID, collapseID, toggleIcon)
 	fmt.Fprintf(sb, `<strong class="hn-author">%s</strong>`, html.EscapeString(author))
 	if dateStr != "" {
 		fmt.Fprintf(sb, ` <span class="hn-date">%s</span>`, dateStr)
 	}
 	sb.WriteString(`</div>`)
 
-	fmt.Fprintf(sb, `<div id="%s" class="hn-comment-body">`, collapseID)
+	fmt.Fprintf(sb, `<div id="%s" class="hn-comment-body"%s>`, collapseID, bodyStyle)
 	if c.IsDeleted || c.IsModerated {
 		sb.WriteString(`<div class="hn-comment-text hn-deleted">[deleted]</div>`)
 	} else if c.Comment != "" {
@@ -465,7 +486,7 @@ func renderLobstersComment(sb *strings.Builder, node *lobstersNode, counter *int
 		sb.WriteString(`</div>`)
 	}
 	for _, child := range node.children {
-		renderLobstersComment(sb, child, counter)
+		renderLobstersComment(sb, child, counter, true)
 	}
 	sb.WriteString(`</div>`) // hn-comment-body
 	sb.WriteString(`</div>`) // hn-comment
@@ -507,7 +528,7 @@ func fetchLobsteComments(rawURL string) (string, error) {
 		limit = maxTopLevelComments
 	}
 	for i := 0; i < limit; i++ {
-		renderLobstersComment(&sb, roots[i], &counter)
+		renderLobstersComment(&sb, roots[i], &counter, i >= 10)
 	}
 	return sb.String(), nil
 }
