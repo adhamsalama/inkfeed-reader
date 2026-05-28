@@ -85,6 +85,7 @@ function renderArchiveArticles(articles) {
         (function(idx) {
             li.onclick = function() {
                 AppState.currentArticles = [archiveArticles[idx]];
+                AppState.feedScrollBackId = "archive-article-" + idx;
                 ArticleViewer.openArticle(0);
                 return false;
             };

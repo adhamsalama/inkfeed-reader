@@ -7,6 +7,7 @@ var AppState = {
     currentArticleIndex: -1,
     currentArticleUrl: "",
     pendingScrollTarget: "",
+    feedScrollBackId: "",
     readArticles: new Set(),
     lastLoadedFeedUrl: "",
     lastLoadedFeedTitle: ""

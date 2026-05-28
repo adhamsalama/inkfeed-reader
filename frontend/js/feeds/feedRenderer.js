@@ -357,6 +357,7 @@ var FeedRenderer = {
                 li.id = "article-" + i;
                 (function (index) {
                     li.onclick = function () {
+                        AppState.feedScrollBackId = "article-" + index;
                         ArticleViewer.openArticle(index);
                         return false;
                     };

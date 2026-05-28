@@ -11,10 +11,8 @@ var ViewManager = {
         removeClass(document.getElementById("input-view"), "active");
         addClass(document.getElementById("feed-view"), "active");
         removeClass(document.getElementById("article-view"), "active");
-        if (AppState.currentArticleIndex >= 0) {
-            var articleEl = document.getElementById(
-                "article-" + AppState.currentArticleIndex
-            );
+        if (AppState.feedScrollBackId) {
+            var articleEl = document.getElementById(AppState.feedScrollBackId);
             if (articleEl) {
                 articleEl.scrollIntoView();
             }
