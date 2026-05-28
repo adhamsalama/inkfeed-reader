@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     mobi_embed_images INTEGER,
     email_to          TEXT,
     font_family       TEXT,
+    bold_text         INTEGER,
     updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

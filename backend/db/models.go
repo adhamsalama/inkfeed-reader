@@ -82,6 +82,7 @@ type UserPreference struct {
 	MobiEmbedImages sql.NullInt64
 	EmailTo         sql.NullString
 	FontFamily      sql.NullString
+	BoldText        sql.NullInt64
 	UpdatedAt       time.Time
 }
 

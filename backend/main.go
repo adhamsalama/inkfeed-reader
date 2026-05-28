@@ -169,6 +169,7 @@ func main() {
 	migrate(`ALTER TABLE feed_items ADD COLUMN comments_url TEXT`)
 	migrate(`ALTER TABLE user_saved_feeds ADD COLUMN archive_enabled INTEGER NOT NULL DEFAULT 0`)
 	migrate(`ALTER TABLE user_preferences ADD COLUMN font_family TEXT`)
+	migrate(`ALTER TABLE user_preferences ADD COLUMN bold_text INTEGER`)
 	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS feed_items (
 		id             INTEGER  PRIMARY KEY AUTOINCREMENT,
 		feed_url       TEXT     NOT NULL,
