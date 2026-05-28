@@ -81,15 +81,15 @@
 
     window.toggleFavorites = function() {
         var section = document.getElementById("favorites-section");
-        var btn = document.getElementById("favorites-toggle-btn");
         if (!section) { return; }
         if (section.className.indexOf("hidden") >= 0) {
+            closeAllToggleSections();
+            var btn = document.getElementById("favorites-toggle-btn");
             removeClass(section, "hidden");
             if (btn) { addClass(btn, "btn-active"); }
             FeedRenderer.renderFavorites();
         } else {
-            addClass(section, "hidden");
-            if (btn) { removeClass(btn, "btn-active"); }
+            deactivateToggle("favorites-section", "favorites-toggle-btn");
         }
     };
 

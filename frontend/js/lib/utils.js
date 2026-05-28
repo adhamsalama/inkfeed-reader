@@ -29,6 +29,20 @@ function deactivateToggle(sectionId, btnId) {
   if (btn) { removeClass(btn, "btn-active"); }
 }
 
+// Helper: close all toggle sections so only one can be open at a time
+function closeAllToggleSections() {
+  var pairs = [
+    ["saved-feeds-section",     "saved-toggle-btn"],
+    ["groups-section",          "groups-toggle-btn"],
+    ["favorites-section",       "favorites-toggle-btn"],
+    ["suggested-feeds-section", "suggested-toggle-btn"],
+    ["wikipedia-section",       "wikipedia-toggle-btn"]
+  ];
+  for (var i = 0; i < pairs.length; i++) {
+    deactivateToggle(pairs[i][0], pairs[i][1]);
+  }
+}
+
 // Helper: add class to element
 function addClass(el, className) {
   if (!el) return;

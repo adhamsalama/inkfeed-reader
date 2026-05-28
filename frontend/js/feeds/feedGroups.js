@@ -141,12 +141,12 @@
             var section = document.getElementById("groups-section");
             var btn = document.getElementById("groups-toggle-btn");
             if (section.className.indexOf("hidden") >= 0) {
+                closeAllToggleSections();
                 removeClass(section, "hidden");
                 FeedRenderer.renderFeedGroups();
                 if (btn) { addClass(btn, "btn-active"); }
             } else {
-                addClass(section, "hidden");
-                if (btn) { removeClass(btn, "btn-active"); }
+                deactivateToggle("groups-section", "groups-toggle-btn");
             }
         }
     };

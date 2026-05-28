@@ -55,13 +55,13 @@ function toggleWikipediaSearch() {
     var btn = document.getElementById("wikipedia-toggle-btn");
     if (!section) return;
     if (section.className.indexOf("hidden") >= 0) {
+        closeAllToggleSections();
         removeClass(section, "hidden");
         if (btn) { addClass(btn, "btn-active"); }
         var input = document.getElementById("wikipedia-search-input");
         if (input && input.focus) { input.focus(); }
     } else {
-        addClass(section, "hidden");
-        if (btn) { removeClass(btn, "btn-active"); }
+        deactivateToggle("wikipedia-section", "wikipedia-toggle-btn");
     }
 }
 
