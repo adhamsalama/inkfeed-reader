@@ -114,6 +114,114 @@ var CommentsViewer = {
                 return;
             }
 
+            var isLobstersComments = article.comments.indexOf("lobste.rs/s/") >= 0;
+
+            if (isLobstersComments && !AppConfig.USE_BACKEND) {
+                var getLobstersJsonUrl = function(url) {
+                    var idx = url.indexOf("/s/");
+                    if (idx < 0) { return null; }
+                    var rest = url.substring(idx + 3);
+                    var slashIdx = rest.indexOf("/");
+                    var shortID = slashIdx >= 0 ? rest.substring(0, slashIdx) : rest;
+                    var qIdx = shortID.indexOf("?");
+                    if (qIdx >= 0) { shortID = shortID.substring(0, qIdx); }
+                    var hIdx = shortID.indexOf("#");
+                    if (hIdx >= 0) { shortID = shortID.substring(0, hIdx); }
+                    if (!shortID) { return null; }
+                    return "https://lobste.rs/s/" + shortID + ".json";
+                };
+
+                var buildLobstersTree = function(comments) {
+                    var roots = [];
+                    var stack = [];
+                    for (var i = 0; i < comments.length; i++) {
+                        var c = comments[i];
+                        var node = { comment: c, children: [] };
+                        var level = c.indent_level || 1;
+                        while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+                            stack.pop();
+                        }
+                        if (stack.length === 0) {
+                            roots.push(node);
+                        } else {
+                            stack[stack.length - 1].node.children.push(node);
+                        }
+                        stack.push({ node: node, level: level });
+                    }
+                    return roots;
+                };
+
+                var lobCounter = [0];
+                var renderLobstersComment = function(node) {
+                    var c = node.comment;
+                    var n = lobCounter[0]++;
+                    var collapseId = "lob-c-" + n;
+                    var author = "[deleted]";
+                    if (!c.is_deleted && !c.is_moderated && c.commenting_user) {
+                        author = c.commenting_user.username || "[deleted]";
+                    }
+                    var dateStr = c.created_at ? c.created_at.substring(0, 10) : "";
+                    var parts = [];
+                    parts.push('<div class="hn-comment">');
+                    parts.push('<div class="hn-comment-header">');
+                    parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleLobstersComment(\'' + collapseId + '\')">[&minus;]</span> ');
+                    parts.push('<strong class="hn-author">' + escapeHtml(author) + '</strong>');
+                    if (dateStr) {
+                        parts.push(' <span class="hn-date">' + escapeHtml(dateStr) + '</span>');
+                    }
+                    parts.push('</div>');
+                    parts.push('<div id="' + collapseId + '" class="hn-comment-body">');
+                    if (c.is_deleted || c.is_moderated) {
+                        parts.push('<div class="hn-comment-text hn-deleted">[deleted]</div>');
+                    } else if (c.comment) {
+                        parts.push('<div class="hn-comment-text">' + c.comment + '</div>');
+                    }
+                    for (var ci = 0; ci < node.children.length; ci++) {
+                        parts.push(renderLobstersComment(node.children[ci]));
+                    }
+                    parts.push('</div>');
+                    parts.push('</div>');
+                    return parts.join("");
+                };
+
+                var lobJsonUrl = getLobstersJsonUrl(article.comments);
+                if (!lobJsonUrl) {
+                    commentsContent.innerHTML = '<p class="error">Could not parse Lobste.rs story URL.</p>';
+                    addClass(commentsContent, "visible");
+                    addClass(commentsLoading, "hidden");
+                    return;
+                }
+                fetchUrl(lobJsonUrl, function(error, responseText) {
+                    addClass(commentsLoading, "hidden");
+                    if (error) {
+                        commentsContent.innerHTML = '<p class="error">Error fetching Lobste.rs comments: ' + escapeHtml(error.message) + '</p>';
+                        addClass(commentsContent, "visible");
+                        return;
+                    }
+                    try {
+                        var data = JSON.parse(responseText);
+                        var comments = data.comments || [];
+                        if (comments.length === 0) {
+                            commentsContent.innerHTML = '<p>No comments yet.</p>';
+                            addClass(commentsContent, "visible");
+                            return;
+                        }
+                        var roots = buildLobstersTree(comments);
+                        var htmlParts = [];
+                        var limit = Math.min(roots.length, AppConfig.MAX_TOP_LEVEL_COMMENTS);
+                        for (var i = 0; i < limit; i++) {
+                            htmlParts.push(renderLobstersComment(roots[i]));
+                        }
+                        commentsContent.innerHTML = '<div class="comments-body hn-comments">' + htmlParts.join("") + '</div>';
+                        addClass(commentsContent, "visible");
+                    } catch (e) {
+                        commentsContent.innerHTML = '<p class="error">Error parsing Lobste.rs comments: ' + escapeHtml(e.message) + '</p>';
+                        addClass(commentsContent, "visible");
+                    }
+                });
+                return;
+            }
+
             var isRedditComments = article.comments.indexOf(".json") >= 0;
 
             // Client-side Reddit fetch+render, used directly or as backend fallback
@@ -323,6 +431,19 @@ window.toggleRedditComment = function(collapseId) {
 };
 
 window.toggleHNComment = function(collapseId) {
+    var el = document.getElementById(collapseId);
+    var btn = document.getElementById(collapseId + "-btn");
+    if (!el) return;
+    if (el.style.display === "none") {
+        el.style.display = "";
+        if (btn) btn.innerHTML = "[&minus;]";
+    } else {
+        el.style.display = "none";
+        if (btn) btn.innerHTML = "[+]";
+    }
+};
+
+window.toggleLobstersComment = function(collapseId) {
     var el = document.getElementById(collapseId);
     var btn = document.getElementById(collapseId + "-btn");
     if (!el) return;
