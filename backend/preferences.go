@@ -4,10 +4,19 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/adhamsalama/inkfeed-backend/db"
 )
+
+func maxArchivedFeeds() int {
+	if v, err := strconv.Atoi(os.Getenv("MAX_ARCHIVED_FEEDS")); err == nil && v > 0 {
+		return v
+	}
+	return 50
+}
 
 type preferencesRequest struct {
 	FontSize        float64 `json:"fontSize"`
@@ -203,6 +212,17 @@ func savedFeedsHandler(w http.ResponseWriter, r *http.Request) {
 	var feeds []savedFeedItem
 	if err := json.NewDecoder(r.Body).Decode(&feeds); err != nil {
 		jsonError(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	archivedCount := 0
+	for _, f := range feeds {
+		if f.ArchiveEnabled {
+			archivedCount++
+		}
+	}
+	if archivedCount > maxArchivedFeeds() {
+		jsonError(w, "archived feeds limit is 50", http.StatusBadRequest)
 		return
 	}
 
