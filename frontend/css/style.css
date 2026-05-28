@@ -103,6 +103,11 @@ button.secondary:active {
   background-color: #ddd;
 }
 
+button.secondary.btn-active {
+  background-color: #000;
+  color: #fff;
+}
+
 input[type="text"] {
   font-family: Georgia, serif;
   font-size: 1em;

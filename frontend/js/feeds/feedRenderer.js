@@ -11,6 +11,7 @@ var FeedRenderer = {
                 removeClass(groupsBtn, "hidden");
             } else {
                 addClass(groupsBtn, "hidden");
+                removeClass(groupsBtn, "btn-active");
                 addClass(document.getElementById("groups-section"), "hidden");
             }
         }
@@ -169,7 +170,7 @@ var FeedRenderer = {
                     link.onclick = function() {
                         var feedInput = document.getElementById("feed-url");
                         feedInput.value = url;
-                        addClass(document.getElementById("groups-section"), "hidden");
+                        deactivateToggle("groups-section", "groups-toggle-btn");
                         loadFeed();
                         return false;
                     };
@@ -215,7 +216,7 @@ var FeedRenderer = {
             setText(loadAllBtn, "Load All");
             (function(feeds, name) {
                 loadAllBtn.onclick = function() {
-                    addClass(document.getElementById("suggested-feeds-section"), "hidden");
+                    deactivateToggle("suggested-feeds-section", "suggested-toggle-btn");
                     loadCategoryFeeds(feeds, name);
                     return false;
                 };
@@ -241,7 +242,7 @@ var FeedRenderer = {
                     link.onclick = function() {
                         var feedInput = document.getElementById("feed-url");
                         feedInput.value = url;
-                        addClass(document.getElementById("suggested-feeds-section"), "hidden");
+                        deactivateToggle("suggested-feeds-section", "suggested-toggle-btn");
                         loadFeed();
                         return false;
                     };

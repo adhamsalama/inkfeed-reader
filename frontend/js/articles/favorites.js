@@ -18,6 +18,7 @@ var FavoritesManager = (function() {
             FeedRenderer.renderFavorites();
         }
         PreferencesSync.pushFavorites();
+        if (window.updateFavoritesButtonVisibility) { window.updateFavoritesButtonVisibility(); }
     }
 
     function isFavorited(url) {

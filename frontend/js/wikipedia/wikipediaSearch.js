@@ -52,13 +52,16 @@ var WikipediaSearch = {
 
 function toggleWikipediaSearch() {
     var section = document.getElementById("wikipedia-section");
+    var btn = document.getElementById("wikipedia-toggle-btn");
     if (!section) return;
     if (section.className.indexOf("hidden") >= 0) {
         removeClass(section, "hidden");
+        if (btn) { addClass(btn, "btn-active"); }
         var input = document.getElementById("wikipedia-search-input");
         if (input && input.focus) { input.focus(); }
     } else {
         addClass(section, "hidden");
+        if (btn) { removeClass(btn, "btn-active"); }
     }
 }
 
@@ -108,7 +111,7 @@ function searchWikipedia() {
                     AppState.currentArticles = allResults;
                     setText(document.getElementById("feed-title"), "Wikipedia");
                     document.title = "Wikipedia";
-                    addClass(document.getElementById("wikipedia-section"), "hidden");
+                    deactivateToggle("wikipedia-section", "wikipedia-toggle-btn");
                     ArticleViewer.openArticle(idx);
                     return false;
                 };

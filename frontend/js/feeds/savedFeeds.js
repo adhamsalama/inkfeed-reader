@@ -111,17 +111,19 @@ var SavedFeedsManager = {
     loadSavedFeed: function(url) {
         var feedInput = document.getElementById("feed-url");
         feedInput.value = url;
-        // Hide saved feeds list
-        addClass(document.getElementById("saved-feeds-section"), "hidden");
+        deactivateToggle("saved-feeds-section", "saved-toggle-btn");
         loadFeed();
     },
 
     toggleSavedFeeds: function() {
         var section = document.getElementById("saved-feeds-section");
+        var btn = document.getElementById("saved-toggle-btn");
         if (section.className.indexOf("hidden") >= 0) {
             removeClass(section, "hidden");
+            if (btn) { addClass(btn, "btn-active"); }
         } else {
             addClass(section, "hidden");
+            if (btn) { removeClass(btn, "btn-active"); }
         }
     }
 };
@@ -137,10 +139,13 @@ function toggleSavedFeeds() {
 
 function toggleSuggestedFeeds() {
     var section = document.getElementById("suggested-feeds-section");
+    var btn = document.getElementById("suggested-toggle-btn");
     if (section.className.indexOf("hidden") >= 0) {
         FeedRenderer.renderSuggestedFeeds();
         removeClass(section, "hidden");
+        if (btn) { addClass(btn, "btn-active"); }
     } else {
         addClass(section, "hidden");
+        if (btn) { removeClass(btn, "btn-active"); }
     }
 }

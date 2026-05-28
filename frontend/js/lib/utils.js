@@ -21,6 +21,14 @@ function downloadBlob(blob, filename) {
   return false;
 }
 
+// Helper: hide a section and remove btn-active from its toggle button
+function deactivateToggle(sectionId, btnId) {
+  var section = document.getElementById(sectionId);
+  if (section) { addClass(section, "hidden"); }
+  var btn = document.getElementById(btnId);
+  if (btn) { removeClass(btn, "btn-active"); }
+}
+
 // Helper: add class to element
 function addClass(el, className) {
   if (!el) return;

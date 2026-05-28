@@ -133,17 +133,20 @@
         },
 
         loadGroup: function(feeds, name) {
-            addClass(document.getElementById("groups-section"), "hidden");
+            deactivateToggle("groups-section", "groups-toggle-btn");
             loadCategoryFeeds(feeds, name);
         },
 
         toggleFeedGroups: function() {
             var section = document.getElementById("groups-section");
+            var btn = document.getElementById("groups-toggle-btn");
             if (section.className.indexOf("hidden") >= 0) {
                 removeClass(section, "hidden");
                 FeedRenderer.renderFeedGroups();
+                if (btn) { addClass(btn, "btn-active"); }
             } else {
                 addClass(section, "hidden");
+                if (btn) { removeClass(btn, "btn-active"); }
             }
         }
     };

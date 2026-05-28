@@ -40,14 +40,10 @@
 
             showBackendBanner();
 
-            if (AppConfig.USE_BACKEND) {
-                var favToggleBtn = document.getElementById("favorites-toggle-btn");
-                if (favToggleBtn) { favToggleBtn.style.display = ""; }
-            }
-
             // Load preferences from backend (if logged in), then render saved feeds
             PreferencesSync.loadFromBackend(function() {
                 FeedRenderer.renderSavedFeeds();
+                updateFavoritesButtonVisibility();
 
                 // Populate input from URL parameter if present (check query string first, then hash)
                 var feedInput = document.getElementById("feed-url");
@@ -61,7 +57,12 @@
                     }
                     loadFeed(); // Auto-load the feed
                 } else if (!feedInput.value) {
-                    toggleSuggestedFeeds();
+                    var groups = FeedGroupsManager.getGroups();
+                    if (groups.length > 0) {
+                        toggleFeedGroups();
+                    } else {
+                        toggleSuggestedFeeds();
+                    }
                 }
             });
         } catch (e) {
@@ -80,12 +81,29 @@
 
     window.toggleFavorites = function() {
         var section = document.getElementById("favorites-section");
+        var btn = document.getElementById("favorites-toggle-btn");
         if (!section) { return; }
         if (section.className.indexOf("hidden") >= 0) {
             removeClass(section, "hidden");
+            if (btn) { addClass(btn, "btn-active"); }
             FeedRenderer.renderFavorites();
         } else {
             addClass(section, "hidden");
+            if (btn) { removeClass(btn, "btn-active"); }
+        }
+    };
+
+    window.updateFavoritesButtonVisibility = function() {
+        var btn = document.getElementById("favorites-toggle-btn");
+        if (!btn) { return; }
+        var favs = FavoritesManager.getFavorites();
+        if (favs.length > 0) {
+            removeClass(btn, "hidden");
+        } else {
+            addClass(btn, "hidden");
+            removeClass(btn, "btn-active");
+            var section = document.getElementById("favorites-section");
+            if (section) { addClass(section, "hidden"); }
         }
     };
 
