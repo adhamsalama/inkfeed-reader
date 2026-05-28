@@ -10,6 +10,7 @@ function applyContentStyles() {
         els[i].style.wordSpacing = AppState.currentLetterSpacing * 2 + "px";
         els[i].style.lineHeight = AppState.currentLineHeight;
         if (AppState.currentFontFamily) { els[i].style.fontFamily = AppState.currentFontFamily; }
+        els[i].style.fontWeight = AppState.boldText ? "bold" : "";
     }
 }
 
@@ -45,7 +46,10 @@ function updateFontPicker() {
         }
     }
     var preview = document.getElementById("font-preview");
-    if (preview) { preview.style.fontFamily = AppState.currentFontFamily || "inherit"; }
+    if (preview) {
+        preview.style.fontFamily = AppState.currentFontFamily || "inherit";
+        preview.style.fontWeight = AppState.boldText ? "bold" : "";
+    }
 }
 
 function adjustFontSize(delta) {
@@ -117,6 +121,18 @@ function toggleMobiEmbedImages() {
     PreferencesSync.pushPrefs();
 }
 
+function toggleBoldText() {
+    AppState.boldText = !AppState.boldText;
+    applyContentStyles();
+    localStorage.setItem("boldText", AppState.boldText ? "true" : "false");
+    var btn = document.getElementById("bold-toggle-btn");
+    if (btn) {
+        if (AppState.boldText) { addClass(btn, "btn-active"); } else { removeClass(btn, "btn-active"); }
+    }
+    updateFontPicker();
+    PreferencesSync.pushPrefs();
+}
+
 function buildFontPicker() {
     var container = document.getElementById("font-picker");
     if (!container) { return; }
@@ -143,6 +159,10 @@ function openSettings(section) {
     document.getElementById("epub-embed-images-checkbox").checked = AppConfig.EPUB_EMBED_IMAGES;
     document.getElementById("mobi-embed-images-checkbox").checked = AppConfig.MOBI_EMBED_IMAGES;
     document.getElementById("settings-modal").classList.remove("hidden");
+    var boldBtn = document.getElementById("bold-toggle-btn");
+    if (boldBtn) {
+        if (AppState.boldText) { addClass(boldBtn, "btn-active"); } else { removeClass(boldBtn, "btn-active"); }
+    }
     buildFontPicker();
     AccountView.render();
     if (section) {

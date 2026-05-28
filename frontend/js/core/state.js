@@ -2,6 +2,7 @@
 var AppState = {
     currentFontSize: 0,
     currentFontFamily: "",
+    boldText: false,
     currentLetterSpacing: 0,
     currentLineHeight: 1.5,
     currentArticles: [],

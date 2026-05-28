@@ -26,6 +26,9 @@
             if (savedFontFamily) {
                 AppState.currentFontFamily = savedFontFamily;
             }
+            if (localStorage.getItem("boldText") === "true") {
+                AppState.boldText = true;
+            }
             applyContentStyles();
 
             // Load read articles from localStorage

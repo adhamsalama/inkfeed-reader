@@ -45,6 +45,10 @@ var PreferencesSync = {
                 AppState.currentFontFamily = prefs.fontFamily;
                 localStorage.setItem("fontFamily", prefs.fontFamily);
             }
+            if (prefs.boldText) {
+                AppState.boldText = true;
+                localStorage.setItem("boldText", "true");
+            }
             AppConfig.EPUB_EMBED_IMAGES = prefs.epubEmbedImages;
             localStorage.setItem("epubEmbedImages", prefs.epubEmbedImages ? "true" : "false");
             AppConfig.MOBI_EMBED_IMAGES = prefs.mobiEmbedImages;
@@ -92,7 +96,8 @@ var PreferencesSync = {
             epubEmbedImages: AppConfig.EPUB_EMBED_IMAGES,
             mobiEmbedImages: AppConfig.MOBI_EMBED_IMAGES,
             emailTo: localStorage.getItem("emailTo") || "",
-            fontFamily: AppState.currentFontFamily || ""
+            fontFamily: AppState.currentFontFamily || "",
+            boldText: AppState.boldText || false
         }, null);
     },
 
