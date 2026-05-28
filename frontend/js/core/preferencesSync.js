@@ -52,7 +52,11 @@ var PreferencesSync = {
             if (prefs.savedFeeds && prefs.savedFeeds.length > 0) {
                 var feedItems = [];
                 for (var i = 0; i < prefs.savedFeeds.length; i++) {
-                    feedItems.push({ url: prefs.savedFeeds[i].url, title: prefs.savedFeeds[i].title });
+                    feedItems.push({
+                        url: prefs.savedFeeds[i].url,
+                        title: prefs.savedFeeds[i].title,
+                        archiveEnabled: prefs.savedFeeds[i].archiveEnabled || false
+                    });
                 }
                 localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feedItems));
             }
@@ -94,7 +98,7 @@ var PreferencesSync = {
             var feeds = data ? JSON.parse(data) : [];
             var payload = [];
             for (var i = 0; i < feeds.length; i++) {
-                payload.push({ url: feeds[i].url, title: feeds[i].title });
+                payload.push({ url: feeds[i].url, title: feeds[i].title, archiveEnabled: feeds[i].archiveEnabled || false });
             }
             AuthClient.putSavedFeeds(payload, null);
         } catch (e) {

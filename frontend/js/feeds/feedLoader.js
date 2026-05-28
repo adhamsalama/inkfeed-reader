@@ -272,7 +272,7 @@ function loadFeed() {
                 document.title = data.title;
                 SavedFeedsManager.updateFeedTitle(url, data.title);
                 FeedRenderer.renderArticleList(data.articles);
-                if (AuthState.isLoggedIn() && SavedFeedsManager.isSavedFeed(url)) {
+                if (AuthState.isLoggedIn() && SavedFeedsManager.isFeedArchiveEnabled(url)) {
                     removeClass(document.getElementById("show-archive-btn"), "hidden");
                 }
             });
@@ -299,7 +299,7 @@ function loadFeed() {
                 document.title = parsed.title;
                 SavedFeedsManager.updateFeedTitle(url, parsed.title);
                 FeedRenderer.renderArticleList(parsed.articles);
-                if (AuthState.isLoggedIn() && SavedFeedsManager.isSavedFeed(url)) {
+                if (AuthState.isLoggedIn() && SavedFeedsManager.isFeedArchiveEnabled(url)) {
                     removeClass(document.getElementById("show-archive-btn"), "hidden");
                 }
             } catch (e) {

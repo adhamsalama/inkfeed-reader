@@ -12,6 +12,14 @@ var SavedFeedsManager = {
         }
     },
 
+    isFeedArchiveEnabled: function(url) {
+        var feeds = SavedFeedsManager.getSavedFeeds();
+        for (var i = 0; i < feeds.length; i++) {
+            if (feeds[i].url === url) return !!feeds[i].archiveEnabled;
+        }
+        return false;
+    },
+
     isSavedFeed: function(url) {
         var feeds = SavedFeedsManager.getSavedFeeds();
         for (var i = 0; i < feeds.length; i++) {
@@ -100,6 +108,24 @@ var SavedFeedsManager = {
             var temp = feeds[index];
             feeds[index] = feeds[newIndex];
             feeds[newIndex] = temp;
+            localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feeds));
+            FeedRenderer.renderSavedFeeds();
+            PreferencesSync.pushSavedFeeds();
+        } catch (e) {
+            // Silently fail
+        }
+    },
+
+    toggleFeedArchive: function(url) {
+        try {
+            if (!window.localStorage) return;
+            var feeds = this.getSavedFeeds();
+            for (var i = 0; i < feeds.length; i++) {
+                if (feeds[i].url === url) {
+                    feeds[i].archiveEnabled = !feeds[i].archiveEnabled;
+                    break;
+                }
+            }
             localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feeds));
             FeedRenderer.renderSavedFeeds();
             PreferencesSync.pushSavedFeeds();

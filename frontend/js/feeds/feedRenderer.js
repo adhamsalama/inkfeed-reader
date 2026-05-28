@@ -96,6 +96,21 @@ var FeedRenderer = {
             li.appendChild(downBtn);
             li.appendChild(deleteBtn);
             li.appendChild(groupBtn);
+
+            if (AppConfig.USE_BACKEND) {
+                var archiveBtn = document.createElement("button");
+                archiveBtn.className = "secondary delete-feed-btn" + (feed.archiveEnabled ? " btn-active" : "");
+                setText(archiveBtn, "A");
+                archiveBtn.title = feed.archiveEnabled ? "Disable archiving" : "Enable archiving";
+                (function(url) {
+                    archiveBtn.onclick = function() {
+                        SavedFeedsManager.toggleFeedArchive(url);
+                        return false;
+                    };
+                })(feed.url);
+                li.appendChild(archiveBtn);
+            }
+
             list.appendChild(li);
         }
     },
