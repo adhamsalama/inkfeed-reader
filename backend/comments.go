@@ -44,6 +44,47 @@ type hnItem struct {
 	Children  []hnItem `json:"children"`
 }
 
+// Lobste.rs types
+type lobstersStory struct {
+	Comments []lobstersComment `json:"comments"`
+}
+
+type lobstersComment struct {
+	ShortID        string          `json:"short_id"`
+	CreatedAt      string          `json:"created_at"`
+	IsDeleted      bool            `json:"is_deleted"`
+	IsModerated    bool            `json:"is_moderated"`
+	Comment        string          `json:"comment"`
+	IndentLevel    int             `json:"indent_level"`
+	CommentingUser json.RawMessage `json:"commenting_user"`
+}
+
+type lobstersNode struct {
+	comment  lobstersComment
+	children []*lobstersNode
+}
+
+// lobstersUsername extracts the username from the commenting_user field, which
+// the Lobste.rs API returns as either {"username":"...",...} or a plain string.
+func lobstersUsername(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return "[deleted]"
+	}
+	if raw[0] == '{' {
+		var u struct {
+			Username string `json:"username"`
+		}
+		if err := json.Unmarshal(raw, &u); err == nil && u.Username != "" {
+			return u.Username
+		}
+	}
+	var s string
+	if err := json.Unmarshal(raw, &s); err == nil && s != "" {
+		return s
+	}
+	return "[deleted]"
+}
+
 var htmlTagRe = regexp.MustCompile(`<[^>]+>`)
 
 func stripHTMLTags(s string) string {
@@ -63,6 +104,13 @@ func fetchCommentsHTML(rawURL string) string {
 	}
 	if strings.Contains(rawURL, "news.ycombinator.com/item?id=") {
 		h, err := fetchHNComments(rawURL)
+		if err != nil {
+			return ""
+		}
+		return h
+	}
+	if strings.Contains(rawURL, "lobste.rs/s/") {
+		h, err := fetchLobsteComments(rawURL)
 		if err != nil {
 			return ""
 		}
@@ -94,6 +142,16 @@ func commentsHandler(w http.ResponseWriter, r *http.Request) {
 
 	if strings.Contains(rawURL, "news.ycombinator.com/item?id=") {
 		htmlContent, err := fetchHNComments(rawURL)
+		if err != nil {
+			jsonError(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+		json.NewEncoder(w).Encode(CommentsResponse{HTML: htmlContent})
+		return
+	}
+
+	if strings.Contains(rawURL, "lobste.rs/s/") {
+		htmlContent, err := fetchLobsteComments(rawURL)
 		if err != nil {
 			jsonError(w, err.Error(), http.StatusBadGateway)
 			return
@@ -325,4 +383,131 @@ func renderRedditComment(sb *strings.Builder, thing redditThing, depth int, isTo
 
 	sb.WriteString(`</div>`) // hn-comment-body
 	sb.WriteString(`</div>`) // hn-comment
+}
+
+// ── Lobste.rs ─────────────────────────────────────────────────────────────────
+
+func lobstersJSONURL(rawURL string) (string, error) {
+	idx := strings.Index(rawURL, "/s/")
+	if idx < 0 {
+		return "", fmt.Errorf("could not find story short_id in Lobste.rs URL")
+	}
+	rest := rawURL[idx+3:]
+	shortID := rest
+	if i := strings.IndexAny(rest, "/?#"); i >= 0 {
+		shortID = rest[:i]
+	}
+	if shortID == "" {
+		return "", fmt.Errorf("empty story short_id in Lobste.rs URL")
+	}
+	return "https://lobste.rs/s/" + shortID + ".json", nil
+}
+
+func buildLobstersTree(comments []lobstersComment) []*lobstersNode {
+	type entry struct {
+		node  *lobstersNode
+		level int
+	}
+	var roots []*lobstersNode
+	var stack []entry
+	for i := range comments {
+		node := &lobstersNode{comment: comments[i]}
+		level := comments[i].IndentLevel
+		for len(stack) > 0 && stack[len(stack)-1].level >= level {
+			stack = stack[:len(stack)-1]
+		}
+		if len(stack) == 0 {
+			roots = append(roots, node)
+		} else {
+			p := stack[len(stack)-1].node
+			p.children = append(p.children, node)
+		}
+		stack = append(stack, entry{node, level})
+	}
+	return roots
+}
+
+func renderLobstersComment(sb *strings.Builder, node *lobstersNode, counter *int) {
+	c := node.comment
+	n := *counter
+	*counter++
+	collapseID := fmt.Sprintf("lob-c-%d", n)
+
+	author := "[deleted]"
+	if !c.IsDeleted && !c.IsModerated {
+		author = lobstersUsername(c.CommentingUser)
+	}
+
+	dateStr := ""
+	if c.CreatedAt != "" {
+		if t, err := time.Parse(time.RFC3339, c.CreatedAt); err == nil {
+			dateStr = t.Format("2006-01-02")
+		} else if len(c.CreatedAt) >= 10 {
+			dateStr = c.CreatedAt[:10]
+		}
+	}
+
+	sb.WriteString(`<div class="hn-comment">`)
+	sb.WriteString(`<div class="hn-comment-header">`)
+	fmt.Fprintf(sb, `<span id="%s-btn" class="hn-toggle" onclick="toggleLobstersComment('%s')">[&minus;]</span> `, collapseID, collapseID)
+	fmt.Fprintf(sb, `<strong class="hn-author">%s</strong>`, html.EscapeString(author))
+	if dateStr != "" {
+		fmt.Fprintf(sb, ` <span class="hn-date">%s</span>`, dateStr)
+	}
+	sb.WriteString(`</div>`)
+
+	fmt.Fprintf(sb, `<div id="%s" class="hn-comment-body">`, collapseID)
+	if c.IsDeleted || c.IsModerated {
+		sb.WriteString(`<div class="hn-comment-text hn-deleted">[deleted]</div>`)
+	} else if c.Comment != "" {
+		sb.WriteString(`<div class="hn-comment-text">`)
+		sb.WriteString(c.Comment)
+		sb.WriteString(`</div>`)
+	}
+	for _, child := range node.children {
+		renderLobstersComment(sb, child, counter)
+	}
+	sb.WriteString(`</div>`) // hn-comment-body
+	sb.WriteString(`</div>`) // hn-comment
+}
+
+func fetchLobsteComments(rawURL string) (string, error) {
+	jsonURL, err := lobstersJSONURL(rawURL)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	req, err := http.NewRequest("GET", jsonURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", userAgent)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var story lobstersStory
+	if err := json.NewDecoder(resp.Body).Decode(&story); err != nil {
+		return "", fmt.Errorf("failed to parse Lobste.rs JSON: %w", err)
+	}
+
+	if len(story.Comments) == 0 {
+		return "<p>No comments yet.</p>", nil
+	}
+
+	roots := buildLobstersTree(story.Comments)
+	var sb strings.Builder
+	counter := 0
+	limit := len(roots)
+	if limit > maxTopLevelComments {
+		limit = maxTopLevelComments
+	}
+	for i := 0; i < limit; i++ {
+		renderLobstersComment(&sb, roots[i], &counter)
+	}
+	return sb.String(), nil
 }
