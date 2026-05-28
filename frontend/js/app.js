@@ -82,9 +82,9 @@
     window.toggleFavorites = function() {
         var section = document.getElementById("favorites-section");
         if (!section) { return; }
+        var btn = document.getElementById("favorites-toggle-btn");
         if (section.className.indexOf("hidden") >= 0) {
             closeAllToggleSections();
-            var btn = document.getElementById("favorites-toggle-btn");
             removeClass(section, "hidden");
             if (btn) { addClass(btn, "btn-active"); }
             FeedRenderer.renderFavorites();
