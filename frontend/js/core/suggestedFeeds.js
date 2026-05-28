@@ -6,6 +6,7 @@ var SUGGESTED_FEEDS = [
         feeds: [
             { title: "Hacker News", url: "https://news.ycombinator.com/rss" },
             { title: "Lobste.rs", url: "https://lobste.rs/rss" },
+            { title: "Electronic Frontier Foundation", url: "https://www.eff.org/rss/updates.xml" },
             {
                 title: "Ars Technica",
                 url: "https://feeds.arstechnica.com/arstechnica/index",
@@ -47,10 +48,7 @@ var SUGGESTED_FEEDS = [
     {
         category: "Science & Culture",
         feeds: [
-            {
-                title: "Atlas Obscura",
-                url: "https://www.atlasobscura.com/feeds/latest",
-            },
+            {title: "Quanta Magazine", url: "https://www.quantamagazine.org/feed/"},
             { title: "Nautilus", url: "https://nautil.us/feed/" },
             { title: "r/science", url: "https://www.reddit.com/r/science/.rss" },
             {
@@ -71,7 +69,7 @@ var SUGGESTED_FEEDS = [
             { title: "KDE", url: "https://planet.kde.org/index.xml" },
             { title: "CNCF", url: "https://www.cncf.io/feed/" },
             { title: "Kubernetes", url: "https://kubernetes.io/feed.xml" },
-            { title: "PostgreSQL", url: "https://www.postgresql.org/news.rss" },
+            { title: "PostgreSQL", url: "https://planet.postgresql.org/rss20.xml" },
             { title: "r/linux", url: "https://www.reddit.com/r/linux/.rss" },
             {
                 title: "r/opensource",
