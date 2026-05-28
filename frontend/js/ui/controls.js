@@ -5,14 +5,56 @@
 function applyContentStyles() {
     var els = document.querySelectorAll(".article-content");
     for (var i = 0; i < els.length; i++) {
-        els[i].style.fontSize = AppState.currentFontSize + "px";
+        if (AppState.currentFontSize > 0) { els[i].style.fontSize = AppState.currentFontSize + "px"; }
         els[i].style.letterSpacing = AppState.currentLetterSpacing + "px";
         els[i].style.wordSpacing = AppState.currentLetterSpacing * 2 + "px";
         els[i].style.lineHeight = AppState.currentLineHeight;
+        if (AppState.currentFontFamily) { els[i].style.fontFamily = AppState.currentFontFamily; }
     }
 }
 
+var FONT_OPTIONS = [
+    { label: "Default",      value: "" },
+    { label: "Merriweather", value: "Merriweather, serif" },
+    { label: "Lora",         value: "Lora, serif" },
+    { label: "Source Serif", value: '"Source Serif 4", serif' },
+    { label: "Open Sans",    value: '"Open Sans", sans-serif' },
+    { label: "Roboto",       value: "Roboto, sans-serif" },
+    { label: "Roboto Mono",  value: '"Roboto Mono", monospace' }
+];
+
+function setFontFamily(value) {
+    AppState.currentFontFamily = value;
+    applyContentStyles();
+    if (value) {
+        localStorage.setItem("fontFamily", value);
+    } else {
+        localStorage.removeItem("fontFamily");
+    }
+    updateFontPicker();
+    PreferencesSync.pushPrefs();
+}
+
+function updateFontPicker() {
+    var btns = document.querySelectorAll(".font-option-btn");
+    for (var i = 0; i < btns.length; i++) {
+        if (btns[i].getAttribute("data-font") === AppState.currentFontFamily) {
+            addClass(btns[i], "btn-active");
+        } else {
+            removeClass(btns[i], "btn-active");
+        }
+    }
+    var preview = document.getElementById("font-preview");
+    if (preview) { preview.style.fontFamily = AppState.currentFontFamily || "inherit"; }
+}
+
 function adjustFontSize(delta) {
+    if (AppState.currentFontSize === 0) {
+        var el = document.querySelector(".article-content");
+        AppState.currentFontSize = el
+            ? parseFloat(window.getComputedStyle(el).fontSize) || 16
+            : 16;
+    }
     AppState.currentFontSize = Math.max(
         AppConfig.MIN_FONT_SIZE,
         Math.min(AppConfig.MAX_FONT_SIZE, AppState.currentFontSize + delta)
@@ -75,12 +117,33 @@ function toggleMobiEmbedImages() {
     PreferencesSync.pushPrefs();
 }
 
+function buildFontPicker() {
+    var container = document.getElementById("font-picker");
+    if (!container) { return; }
+    container.innerHTML = "";
+    for (var i = 0; i < FONT_OPTIONS.length; i++) {
+        (function(opt) {
+            var btn = document.createElement("button");
+            btn.className = "secondary font-option-btn";
+            btn.setAttribute("data-font", opt.value);
+            btn.style.fontFamily = opt.value || "inherit";
+            btn.style.marginRight = "4px";
+            btn.style.marginBottom = "4px";
+            setText(btn, opt.label);
+            btn.onclick = function() { setFontFamily(opt.value); return false; };
+            container.appendChild(btn);
+        })(FONT_OPTIONS[i]);
+    }
+    updateFontPicker();
+}
+
 function openSettings(section) {
     document.getElementById("proxy-url-input").value = AppConfig.CORS_PROXY_URL;
     document.getElementById("email-to-input").value = localStorage.getItem("emailTo") || "";
     document.getElementById("epub-embed-images-checkbox").checked = AppConfig.EPUB_EMBED_IMAGES;
     document.getElementById("mobi-embed-images-checkbox").checked = AppConfig.MOBI_EMBED_IMAGES;
     document.getElementById("settings-modal").classList.remove("hidden");
+    buildFontPicker();
     AccountView.render();
     if (section) {
         var sectionEl = document.getElementById("settings-" + section + "-section");

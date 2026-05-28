@@ -22,6 +22,10 @@
             if (savedLineHeight) {
                 AppState.currentLineHeight = savedLineHeight;
             }
+            var savedFontFamily = localStorage.getItem("fontFamily");
+            if (savedFontFamily) {
+                AppState.currentFontFamily = savedFontFamily;
+            }
             applyContentStyles();
 
             // Load read articles from localStorage

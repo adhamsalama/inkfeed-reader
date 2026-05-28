@@ -1,6 +1,7 @@
 // Global Application State
 var AppState = {
-    currentFontSize: 16,
+    currentFontSize: 0,
+    currentFontFamily: "",
     currentLetterSpacing: 0,
     currentLineHeight: 1.5,
     currentArticles: [],

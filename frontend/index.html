@@ -10,6 +10,9 @@
     <meta property="og:description" content="A simple RSS reader built for your Kindle. Load any feed, read articles, and download or email them as MOBI or EPUB." />
     <meta property="og:url" content="https://reader.inkfeed.xyz" />
     <meta property="og:type" content="website" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora&family=Merriweather&family=Open+Sans&family=Roboto&family=Roboto+Mono&family=Source+Serif+4&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.min.js"></script>
     <script type="text/javascript" src="https://stuk.github.io/jszip/dist/jszip.js"></script>
@@ -149,7 +152,7 @@
                 <div class="settings-section-title">Display</div>
                 <div class="control-row">
                     <div class="control-group">
-                        <span class="control-label">Font:</span>
+                        <span class="control-label">Size:</span>
                         <button onclick="adjustFontSize(-2)">A-</button>
                         <button onclick="adjustFontSize(2)">A+</button>
                     </div>
@@ -164,6 +167,8 @@
                         <button onclick="adjustLineHeight(0.1)">+</button>
                     </div>
                 </div>
+                <div id="font-picker" style="margin-top:10px;"></div>
+                <div id="font-preview" style="margin-top:8px; font-size:0.95em; color:#444; border-left:3px solid #ccc; padding-left:8px;">The quick brown fox jumps over the lazy dog.</div>
             </div>
             <div class="settings-section">
                 <div class="settings-section-title">Proxy URL</div>
