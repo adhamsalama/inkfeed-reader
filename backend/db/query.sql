@@ -17,12 +17,12 @@ DELETE FROM sessions WHERE token = ?;
 SELECT * FROM users WHERE id = ? LIMIT 1;
 
 -- name: GetUserPreferences :one
-SELECT font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, mobi_embed_images, email_to
+SELECT font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, mobi_embed_images, email_to, font_family
 FROM user_preferences WHERE user_id = ? LIMIT 1;
 
 -- name: UpsertUserPreferences :exec
-INSERT INTO user_preferences (user_id, font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, mobi_embed_images, email_to, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+INSERT INTO user_preferences (user_id, font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, mobi_embed_images, email_to, font_family, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 ON CONFLICT(user_id) DO UPDATE SET
     font_size = excluded.font_size,
     letter_spacing = excluded.letter_spacing,
@@ -31,6 +31,7 @@ ON CONFLICT(user_id) DO UPDATE SET
     epub_embed_images = excluded.epub_embed_images,
     mobi_embed_images = excluded.mobi_embed_images,
     email_to = excluded.email_to,
+    font_family = excluded.font_family,
     updated_at = CURRENT_TIMESTAMP;
 
 -- name: GetUserSavedFeeds :many

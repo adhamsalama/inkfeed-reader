@@ -26,6 +26,7 @@ type preferencesRequest struct {
 	EpubEmbedImages bool    `json:"epubEmbedImages"`
 	MobiEmbedImages bool    `json:"mobiEmbedImages"`
 	EmailTo         string  `json:"emailTo"`
+	FontFamily      string  `json:"fontFamily"`
 }
 
 type savedFeedItem struct {
@@ -61,6 +62,7 @@ type preferencesResponse struct {
 	EpubEmbedImages bool            `json:"epubEmbedImages"`
 	MobiEmbedImages bool            `json:"mobiEmbedImages"`
 	EmailTo         string          `json:"emailTo"`
+	FontFamily      string          `json:"fontFamily"`
 	SavedFeeds      []savedFeedItem `json:"savedFeeds"`
 	FeedGroups      []feedGroupData `json:"feedGroups"`
 	Favorites       []favoriteItem  `json:"favorites"`
@@ -163,6 +165,9 @@ func getPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 	if prefs.EmailTo.Valid {
 		resp.EmailTo = prefs.EmailTo.String
 	}
+	if prefs.FontFamily.Valid {
+		resp.FontFamily = prefs.FontFamily.String
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
@@ -193,6 +198,7 @@ func putPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 		EpubEmbedImages: sql.NullInt64{Int64: epubEmbedInt, Valid: true},
 		MobiEmbedImages: sql.NullInt64{Int64: mobiEmbedInt, Valid: true},
 		EmailTo:         sql.NullString{String: req.EmailTo, Valid: true},
+		FontFamily:      sql.NullString{String: req.FontFamily, Valid: true},
 	})
 	if err != nil {
 		jsonError(w, "internal error", http.StatusInternalServerError)

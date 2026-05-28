@@ -81,6 +81,7 @@ type UserPreference struct {
 	EpubEmbedImages sql.NullInt64
 	MobiEmbedImages sql.NullInt64
 	EmailTo         sql.NullString
+	FontFamily      sql.NullString
 	UpdatedAt       time.Time
 }
 

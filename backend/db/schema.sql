@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     epub_embed_images INTEGER,
     mobi_embed_images INTEGER,
     email_to          TEXT,
+    font_family       TEXT,
     updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

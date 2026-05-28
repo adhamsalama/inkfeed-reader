@@ -156,17 +156,19 @@ func main() {
 	); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
-	// Add columns introduced after initial table creation (ignored if already present)
-	sqlDB.Exec(`ALTER TABLE user_preferences ADD COLUMN email_to TEXT`)
-	sqlDB.Exec(`ALTER TABLE user_preferences ADD COLUMN mobi_embed_images INTEGER`)
-	sqlDB.Exec(`DROP TABLE IF EXISTS persistent_cache`)
-	sqlDB.Exec(`ALTER TABLE user_favorites ADD COLUMN comments_url TEXT NOT NULL DEFAULT ''`)
-	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS article_archive (key TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', author TEXT NOT NULL DEFAULT '', site_name TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT '', html_content TEXT NOT NULL DEFAULT '', text_content TEXT NOT NULL DEFAULT '', archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`)
-	sqlDB.Exec(`ALTER TABLE article_archive DROP COLUMN body`)
+	// SQLite doesn't support IF NOT EXISTS on ALTER TABLE; errors are intentionally swallowed.
+	migrate := func(query string) { _, _ = sqlDB.Exec(query) }
 
-	sqlDB.Exec(`ALTER TABLE feed_items ADD COLUMN archive_failed INTEGER NOT NULL DEFAULT 0`)
-	sqlDB.Exec(`ALTER TABLE feed_items ADD COLUMN comments_url TEXT`)
-	sqlDB.Exec(`ALTER TABLE user_saved_feeds ADD COLUMN archive_enabled INTEGER NOT NULL DEFAULT 0`)
+	migrate(`ALTER TABLE user_preferences ADD COLUMN email_to TEXT`)
+	migrate(`ALTER TABLE user_preferences ADD COLUMN mobi_embed_images INTEGER`)
+	migrate(`DROP TABLE IF EXISTS persistent_cache`)
+	migrate(`ALTER TABLE user_favorites ADD COLUMN comments_url TEXT NOT NULL DEFAULT ''`)
+	migrate(`CREATE TABLE IF NOT EXISTS article_archive (key TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', author TEXT NOT NULL DEFAULT '', site_name TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT '', html_content TEXT NOT NULL DEFAULT '', text_content TEXT NOT NULL DEFAULT '', archived_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`)
+	migrate(`ALTER TABLE article_archive DROP COLUMN body`)
+	migrate(`ALTER TABLE feed_items ADD COLUMN archive_failed INTEGER NOT NULL DEFAULT 0`)
+	migrate(`ALTER TABLE feed_items ADD COLUMN comments_url TEXT`)
+	migrate(`ALTER TABLE user_saved_feeds ADD COLUMN archive_enabled INTEGER NOT NULL DEFAULT 0`)
+	migrate(`ALTER TABLE user_preferences ADD COLUMN font_family TEXT`)
 	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS feed_items (
 		id             INTEGER  PRIMARY KEY AUTOINCREMENT,
 		feed_url       TEXT     NOT NULL,
