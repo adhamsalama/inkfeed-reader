@@ -58,7 +58,7 @@ var CommentsViewer = {
                         var data = JSON.parse(hnXhr.responseText);
                         var hnCounter = [0];
 
-                        var renderHNComment = function(comment, depth) {
+                        var renderHNComment = function(comment, depth, collapsed) {
                             if (!comment) return "";
                             var text = comment.text || "";
                             var author = comment.author || "[deleted]";
@@ -67,25 +67,26 @@ var CommentsViewer = {
                             var n = hnCounter[0]++;
                             var collapseId = "hn-c-" + n;
                             var dateStr = createdAt ? createdAt.substring(0, 10) : "";
-
+                            var toggleIcon = collapsed ? "[+]" : "[&minus;]";
+                            var bodyStyle = collapsed ? ' style="display:none"' : "";
 
                             var parts = [];
                             parts.push('<div class="hn-comment">');
                             parts.push('<div class="hn-comment-header">');
-                            parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleHNComment(\'' + collapseId + '\')">[&minus;]</span> ');
+                            parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleHNComment(\'' + collapseId + '\')">' + toggleIcon + '</span> ');
                             parts.push('<strong class="hn-author">' + escapeHtml(author) + '</strong>');
                             if (dateStr) {
                                 parts.push(' <span class="hn-date">' + escapeHtml(dateStr) + '</span>');
                             }
                             parts.push('</div>');
-                            parts.push('<div id="' + collapseId + '" class="hn-comment-body">');
+                            parts.push('<div id="' + collapseId + '" class="hn-comment-body"' + bodyStyle + '>');
                             if (text) {
                                 parts.push('<div class="hn-comment-text">' + text + '</div>');
                             } else {
                                 parts.push('<div class="hn-comment-text hn-deleted">[deleted]</div>');
                             }
                             for (var ci = 0; ci < children.length; ci++) {
-                                parts.push(renderHNComment(children[ci], depth + 1));
+                                parts.push(renderHNComment(children[ci], depth + 1, true));
                             }
                             parts.push('</div>');
                             parts.push('</div>');
@@ -99,7 +100,7 @@ var CommentsViewer = {
                             var htmlParts = [];
                             var maxComments = Math.min(topChildren.length, AppConfig.MAX_TOP_LEVEL_COMMENTS);
                             for (var ci = 0; ci < maxComments; ci++) {
-                                htmlParts.push(renderHNComment(topChildren[ci], 0));
+                                htmlParts.push(renderHNComment(topChildren[ci], 0, ci >= 10));
                             }
                             commentsContent.innerHTML = '<div class="comments-body hn-comments">' + htmlParts.join("") + '</div>';
                         }
@@ -152,7 +153,7 @@ var CommentsViewer = {
                 };
 
                 var lobCounter = [0];
-                var renderLobstersComment = function(node) {
+                var renderLobstersComment = function(node, collapsed) {
                     var c = node.comment;
                     var n = lobCounter[0]++;
                     var collapseId = "lob-c-" + n;
@@ -161,23 +162,25 @@ var CommentsViewer = {
                         author = c.commenting_user.username || "[deleted]";
                     }
                     var dateStr = c.created_at ? c.created_at.substring(0, 10) : "";
+                    var toggleIcon = collapsed ? "[+]" : "[&minus;]";
+                    var bodyStyle = collapsed ? ' style="display:none"' : "";
                     var parts = [];
                     parts.push('<div class="hn-comment">');
                     parts.push('<div class="hn-comment-header">');
-                    parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleLobstersComment(\'' + collapseId + '\')">[&minus;]</span> ');
+                    parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleLobstersComment(\'' + collapseId + '\')">' + toggleIcon + '</span> ');
                     parts.push('<strong class="hn-author">' + escapeHtml(author) + '</strong>');
                     if (dateStr) {
                         parts.push(' <span class="hn-date">' + escapeHtml(dateStr) + '</span>');
                     }
                     parts.push('</div>');
-                    parts.push('<div id="' + collapseId + '" class="hn-comment-body">');
+                    parts.push('<div id="' + collapseId + '" class="hn-comment-body"' + bodyStyle + '>');
                     if (c.is_deleted || c.is_moderated) {
                         parts.push('<div class="hn-comment-text hn-deleted">[deleted]</div>');
                     } else if (c.comment) {
                         parts.push('<div class="hn-comment-text">' + c.comment + '</div>');
                     }
                     for (var ci = 0; ci < node.children.length; ci++) {
-                        parts.push(renderLobstersComment(node.children[ci]));
+                        parts.push(renderLobstersComment(node.children[ci], true));
                     }
                     parts.push('</div>');
                     parts.push('</div>');
@@ -210,7 +213,7 @@ var CommentsViewer = {
                         var htmlParts = [];
                         var limit = Math.min(roots.length, AppConfig.MAX_TOP_LEVEL_COMMENTS);
                         for (var i = 0; i < limit; i++) {
-                            htmlParts.push(renderLobstersComment(roots[i]));
+                            htmlParts.push(renderLobstersComment(roots[i], i >= 10));
                         }
                         commentsContent.innerHTML = '<div class="comments-body hn-comments">' + htmlParts.join("") + '</div>';
                         addClass(commentsContent, "visible");
@@ -238,7 +241,7 @@ var CommentsViewer = {
                         var redditCounter = [0];
                         var replyCount = {count: 0};
 
-                        var renderRedditComment = function(commentData, depth, isTopLevel) {
+                        var renderRedditComment = function(commentData, depth, isTopLevel, collapsed) {
                             if (!commentData || !commentData.data) return "";
                             var data = commentData.data;
                             if (commentData.kind === "more") return "";
@@ -248,19 +251,21 @@ var CommentsViewer = {
                             }
                             var n = redditCounter[0]++;
                             var collapseId = "rc-" + n;
+                            var toggleIcon = collapsed ? "[+]" : "[&minus;]";
+                            var bodyStyle = collapsed ? ' style="display:none"' : "";
 
                             var author = data.author || "[deleted]";
                             var parts = [];
                             parts.push('<div class="hn-comment">');
                             parts.push('<div class="hn-comment-header">');
-                            parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleRedditComment(\'' + collapseId + '\')">[&minus;]</span> ');
+                            parts.push('<span id="' + collapseId + '-btn" class="hn-toggle" onclick="toggleRedditComment(\'' + collapseId + '\')">' + toggleIcon + '</span> ');
                             parts.push('<strong class="hn-author">' + escapeHtml(author) + '</strong>');
                             if (data.created_utc) {
                                 var date = new Date(data.created_utc * 1000);
                                 parts.push(' <span class="hn-date">' + escapeHtml(date.toLocaleDateString()) + '</span>');
                             }
                             parts.push('</div>');
-                            parts.push('<div id="' + collapseId + '" class="hn-comment-body">');
+                            parts.push('<div id="' + collapseId + '" class="hn-comment-body"' + bodyStyle + '>');
                             if (data.body_html) {
                                 var tempDiv = document.createElement("div");
                                 tempDiv.innerHTML = data.body_html;
@@ -271,7 +276,7 @@ var CommentsViewer = {
                             if (data.replies && data.replies.data && data.replies.data.children) {
                                 var replies = data.replies.data.children;
                                 for (var ri = 0; ri < replies.length; ri++) {
-                                    parts.push(renderRedditComment(replies[ri], depth + 1, false));
+                                    parts.push(renderRedditComment(replies[ri], depth + 1, false, true));
                                 }
                             }
                             parts.push('</div>');
@@ -285,7 +290,7 @@ var CommentsViewer = {
                             var maxComments = Math.min(comments.length, AppConfig.MAX_TOP_LEVEL_COMMENTS);
                             for (var i = 0; i < maxComments; i++) {
                                 replyCount.count = 0;
-                                htmlParts.push(renderRedditComment(comments[i], 0, true));
+                                htmlParts.push(renderRedditComment(comments[i], 0, true, i >= 10));
                             }
                         }
                         if (htmlParts.length === 0) {
