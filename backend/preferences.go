@@ -20,8 +20,9 @@ type preferencesRequest struct {
 }
 
 type savedFeedItem struct {
-	URL   string `json:"url"`
-	Title string `json:"title"`
+	URL            string `json:"url"`
+	Title          string `json:"title"`
+	ArchiveEnabled bool   `json:"archiveEnabled"`
 }
 
 type feedGroupItem struct {
@@ -89,7 +90,7 @@ func getPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 
 	feedItems := make([]savedFeedItem, len(feeds))
 	for i, f := range feeds {
-		feedItems[i] = savedFeedItem{URL: f.Url, Title: f.Title}
+		feedItems[i] = savedFeedItem{URL: f.Url, Title: f.Title, ArchiveEnabled: f.ArchiveEnabled != 0}
 	}
 
 	groups, err := queries.GetUserFeedGroups(r.Context(), userID)
@@ -211,11 +212,16 @@ func savedFeedsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i, f := range feeds {
+		archiveEnabled := int64(0)
+		if f.ArchiveEnabled {
+			archiveEnabled = 1
+		}
 		err := queries.InsertUserSavedFeed(r.Context(), db.InsertUserSavedFeedParams{
-			UserID:   userID,
-			Url:      f.URL,
-			Title:    f.Title,
-			Position: int64(i),
+			UserID:         userID,
+			Url:            f.URL,
+			Title:          f.Title,
+			Position:       int64(i),
+			ArchiveEnabled: archiveEnabled,
 		})
 		if err != nil {
 			jsonError(w, "internal error", http.StatusInternalServerError)

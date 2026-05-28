@@ -166,6 +166,7 @@ func main() {
 
 	sqlDB.Exec(`ALTER TABLE feed_items ADD COLUMN archive_failed INTEGER NOT NULL DEFAULT 0`)
 	sqlDB.Exec(`ALTER TABLE feed_items ADD COLUMN comments_url TEXT`)
+	sqlDB.Exec(`ALTER TABLE user_saved_feeds ADD COLUMN archive_enabled INTEGER NOT NULL DEFAULT 0`)
 	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS feed_items (
 		id             INTEGER  PRIMARY KEY AUTOINCREMENT,
 		feed_url       TEXT     NOT NULL,

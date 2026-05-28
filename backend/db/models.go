@@ -85,9 +85,10 @@ type UserPreference struct {
 }
 
 type UserSavedFeed struct {
-	ID       int64
-	UserID   int64
-	Url      string
-	Title    string
-	Position int64
+	ID             int64
+	UserID         int64
+	Url            string
+	Title          string
+	Position       int64
+	ArchiveEnabled int64
 }

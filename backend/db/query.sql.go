@@ -160,7 +160,7 @@ func (q *Queries) GetArticleArchiveTotalSize(ctx context.Context) (int64, error)
 }
 
 const getDistinctSavedFeedURLs = `-- name: GetDistinctSavedFeedURLs :many
-SELECT DISTINCT url FROM user_saved_feeds
+SELECT DISTINCT url FROM user_saved_feeds WHERE archive_enabled = 1
 `
 
 func (q *Queries) GetDistinctSavedFeedURLs(ctx context.Context) ([]string, error) {
@@ -448,12 +448,13 @@ func (q *Queries) GetUserPreferences(ctx context.Context, userID int64) (GetUser
 }
 
 const getUserSavedFeeds = `-- name: GetUserSavedFeeds :many
-SELECT url, title FROM user_saved_feeds WHERE user_id = ? ORDER BY position
+SELECT url, title, archive_enabled FROM user_saved_feeds WHERE user_id = ? ORDER BY position
 `
 
 type GetUserSavedFeedsRow struct {
-	Url   string
-	Title string
+	Url            string
+	Title          string
+	ArchiveEnabled int64
 }
 
 func (q *Queries) GetUserSavedFeeds(ctx context.Context, userID int64) ([]GetUserSavedFeedsRow, error) {
@@ -465,7 +466,7 @@ func (q *Queries) GetUserSavedFeeds(ctx context.Context, userID int64) ([]GetUse
 	var items []GetUserSavedFeedsRow
 	for rows.Next() {
 		var i GetUserSavedFeedsRow
-		if err := rows.Scan(&i.Url, &i.Title); err != nil {
+		if err := rows.Scan(&i.Url, &i.Title, &i.ArchiveEnabled); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -568,14 +569,15 @@ func (q *Queries) InsertUserFavorite(ctx context.Context, arg InsertUserFavorite
 }
 
 const insertUserSavedFeed = `-- name: InsertUserSavedFeed :exec
-INSERT INTO user_saved_feeds (user_id, url, title, position) VALUES (?, ?, ?, ?)
+INSERT INTO user_saved_feeds (user_id, url, title, position, archive_enabled) VALUES (?, ?, ?, ?, ?)
 `
 
 type InsertUserSavedFeedParams struct {
-	UserID   int64
-	Url      string
-	Title    string
-	Position int64
+	UserID         int64
+	Url            string
+	Title          string
+	Position       int64
+	ArchiveEnabled int64
 }
 
 func (q *Queries) InsertUserSavedFeed(ctx context.Context, arg InsertUserSavedFeedParams) error {
@@ -584,6 +586,7 @@ func (q *Queries) InsertUserSavedFeed(ctx context.Context, arg InsertUserSavedFe
 		arg.Url,
 		arg.Title,
 		arg.Position,
+		arg.ArchiveEnabled,
 	)
 	return err
 }

@@ -34,13 +34,13 @@ ON CONFLICT(user_id) DO UPDATE SET
     updated_at = CURRENT_TIMESTAMP;
 
 -- name: GetUserSavedFeeds :many
-SELECT url, title FROM user_saved_feeds WHERE user_id = ? ORDER BY position;
+SELECT url, title, archive_enabled FROM user_saved_feeds WHERE user_id = ? ORDER BY position;
 
 -- name: DeleteUserSavedFeeds :exec
 DELETE FROM user_saved_feeds WHERE user_id = ?;
 
 -- name: InsertUserSavedFeed :exec
-INSERT INTO user_saved_feeds (user_id, url, title, position) VALUES (?, ?, ?, ?);
+INSERT INTO user_saved_feeds (user_id, url, title, position, archive_enabled) VALUES (?, ?, ?, ?, ?);
 
 -- name: GetUserFeedGroups :many
 SELECT id, name FROM user_feed_groups WHERE user_id = ? ORDER BY position;
@@ -79,7 +79,7 @@ INSERT OR IGNORE INTO feed_items (feed_url, item_url, title, description, pub_da
 VALUES (?, ?, ?, ?, ?, ?);
 
 -- name: GetDistinctSavedFeedURLs :many
-SELECT DISTINCT url FROM user_saved_feeds;
+SELECT DISTINCT url FROM user_saved_feeds WHERE archive_enabled = 1;
 
 -- name: GetNextFeedItemWithoutArchive :one
 SELECT item_url FROM feed_items

@@ -24,11 +24,12 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 );
 
 CREATE TABLE IF NOT EXISTS user_saved_feeds (
-    id       INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id  INTEGER NOT NULL REFERENCES users(id),
-    url      TEXT    NOT NULL,
-    title    TEXT    NOT NULL,
-    position INTEGER NOT NULL DEFAULT 0
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id         INTEGER NOT NULL REFERENCES users(id),
+    url             TEXT    NOT NULL,
+    title           TEXT    NOT NULL,
+    position        INTEGER NOT NULL DEFAULT 0,
+    archive_enabled INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS user_feed_groups (
