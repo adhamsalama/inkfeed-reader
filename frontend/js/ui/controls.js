@@ -3,14 +3,13 @@
 // Global functions (called from HTML onclick handlers)
 
 function applyContentStyles() {
+    document.body.style.fontFamily = AppState.currentFontFamily || "";
     var els = document.querySelectorAll(".article-content");
     for (var i = 0; i < els.length; i++) {
         if (AppState.currentFontSize > 0) { els[i].style.fontSize = AppState.currentFontSize + "px"; }
         els[i].style.letterSpacing = AppState.currentLetterSpacing + "px";
         els[i].style.wordSpacing = AppState.currentLetterSpacing * 2 + "px";
         els[i].style.lineHeight = AppState.currentLineHeight;
-        if (AppState.currentFontFamily) { els[i].style.fontFamily = AppState.currentFontFamily; }
-        els[i].style.fontWeight = AppState.boldText ? "bold" : "";
     }
 }
 
@@ -121,15 +120,23 @@ function toggleMobiEmbedImages() {
     PreferencesSync.pushPrefs();
 }
 
-function toggleBoldText() {
-    AppState.boldText = !AppState.boldText;
-    applyContentStyles();
-    localStorage.setItem("boldText", AppState.boldText ? "true" : "false");
+function applyBoldText() {
+    if (AppState.boldText) {
+        addClass(document.body, "bold-text");
+    } else {
+        removeClass(document.body, "bold-text");
+    }
     var btn = document.getElementById("bold-toggle-btn");
     if (btn) {
         if (AppState.boldText) { addClass(btn, "btn-active"); } else { removeClass(btn, "btn-active"); }
     }
     updateFontPicker();
+}
+
+function toggleBoldText() {
+    AppState.boldText = !AppState.boldText;
+    applyBoldText();
+    localStorage.setItem("boldText", AppState.boldText ? "true" : "false");
     PreferencesSync.pushPrefs();
 }
 

@@ -48,6 +48,7 @@ var PreferencesSync = {
             if (prefs.boldText) {
                 AppState.boldText = true;
                 localStorage.setItem("boldText", "true");
+                applyBoldText();
             }
             AppConfig.EPUB_EMBED_IMAGES = prefs.epubEmbedImages;
             localStorage.setItem("epubEmbedImages", prefs.epubEmbedImages ? "true" : "false");

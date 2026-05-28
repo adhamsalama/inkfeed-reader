@@ -226,6 +226,10 @@ input[type="text"] {
   min-height: 1em;
 }
 
+body.bold-text {
+  font-weight: bold;
+}
+
 .article-content {
   display: none;
   padding: 15px;

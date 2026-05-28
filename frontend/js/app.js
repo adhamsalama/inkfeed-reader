@@ -30,6 +30,7 @@
                 AppState.boldText = true;
             }
             applyContentStyles();
+            applyBoldText();
 
             // Load read articles from localStorage
             try {
