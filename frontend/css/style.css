@@ -79,7 +79,7 @@ h2 {
 }
 
 button {
-  font-family: Georgia, serif;
+  font-family: inherit;
   font-size: 1em;
   padding: 8px 15px;
   background-color: #000;
@@ -109,7 +109,7 @@ button.secondary.btn-active {
 }
 
 input[type="text"] {
-  font-family: Georgia, serif;
+  font-family: inherit;
   font-size: 1em;
   padding: 8px;
   border: 2px solid #000;
