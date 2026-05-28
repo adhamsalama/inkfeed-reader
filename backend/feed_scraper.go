@@ -23,6 +23,45 @@ func feedScrapeInterval() time.Duration {
 	return time.Hour
 }
 
+func feedItemsMaxAgeHours() int {
+	if v, err := strconv.Atoi(os.Getenv("FEED_ITEMS_MAX_AGE_HOURS")); err == nil && v > 0 {
+		return v
+	}
+	return 14 * 24
+}
+
+func feedItemsPruneInterval() time.Duration {
+	if v, err := strconv.Atoi(os.Getenv("FEED_ITEMS_PRUNE_INTERVAL_HOURS")); err == nil && v > 0 {
+		return time.Duration(v) * time.Hour
+	}
+	return time.Hour
+}
+
+func startFeedItemsPruner() {
+	go func() {
+		pruneFeedItems()
+		ticker := time.NewTicker(feedItemsPruneInterval())
+		defer ticker.Stop()
+		for range ticker.C {
+			pruneFeedItems()
+		}
+	}()
+}
+
+func pruneFeedItems() {
+	ctx := context.Background()
+	hours := strconv.Itoa(feedItemsMaxAgeHours())
+	result, err := queries.DeleteOldFeedItems(ctx, sql.NullString{String: hours, Valid: true})
+	if err != nil {
+		log.Printf("feed items pruner: error: %v", err)
+		return
+	}
+	n, _ := result.RowsAffected()
+	if n > 0 {
+		log.Printf("feed items pruner: deleted %d rows older than %s hours", n, hours)
+	}
+}
+
 func startFeedScraper() {
 	go func() {
 		interval := feedScrapeInterval()

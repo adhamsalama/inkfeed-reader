@@ -100,6 +100,9 @@ LIMIT ? OFFSET ?;
 -- name: CountFeedArchiveItems :one
 SELECT COUNT(*) FROM feed_items WHERE feed_url = ?;
 
+-- name: DeleteOldFeedItems :execresult
+DELETE FROM feed_items WHERE scraped_at < datetime('now', '-' || ? || ' hours');
+
 
 -- name: UpsertArticleArchive :exec
 INSERT INTO article_archive (key, title, author, site_name, created_at, html_content, text_content) VALUES (?, ?, ?, ?, ?, ?, ?)

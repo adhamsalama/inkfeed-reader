@@ -45,6 +45,8 @@ Copy `.env` and configure:
 | `COMMENTS_CACHE_TTL_MINUTES` | `30` | Comments persistent cache TTL |
 | `FEED_SCRAPE_INTERVAL_HOURS` | `1` | How often to scrape saved feeds |
 | `CONTENT_ARCHIVER_TIMEOUT_SECONDS` | `5` | HTTP timeout for background article archiving |
+| `FEED_ITEMS_MAX_AGE_HOURS` | `336` (14 days) | Feed items older than this are pruned |
+| `FEED_ITEMS_PRUNE_INTERVAL_HOURS` | `1` | How often to prune old feed items |
 
 ## Architecture
 

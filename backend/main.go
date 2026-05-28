@@ -16,7 +16,7 @@ import (
 
 var queries *db.Queries
 
-var allowedOrigins = []string{"https://reader.inkfeed.xyz", "http://reader.inkfeed.xyz"}
+var allowedOrigins = []string{"https://reader.inkfeed.xyz", "http://reader.inkfeed.xyz", "http://localhost:9999"}
 
 var feedProxyURL = "https://throbbing-morning-e187.adhamsalama.workers.dev"
 
@@ -184,6 +184,7 @@ func main() {
 	startContentArchiver()
 	startCacheCleanup()
 	startArticleArchivePruner()
+	startFeedItemsPruner()
 
 	mux := http.NewServeMux()
 	protected := func(h http.HandlerFunc) http.Handler {
