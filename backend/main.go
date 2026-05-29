@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/adhamsalama/inkfeed-backend/db"
 	"github.com/joho/godotenv"
@@ -16,7 +17,7 @@ import (
 
 var queries *db.Queries
 
-var allowedOrigins = []string{"https://reader.inkfeed.xyz", "http://reader.inkfeed.xyz", "http://localhost:9999"}
+var allowedOrigins = []string{"https://reader.inkfeed.xyz", "http://reader.inkfeed.xyz"}
 
 var feedProxyURL = "https://throbbing-morning-e187.adhamsalama.workers.dev"
 
@@ -80,6 +81,9 @@ func jsonError(w http.ResponseWriter, message string, code int) {
 func main() {
 	godotenv.Load()
 
+	if v := os.Getenv("ALLOWED_ORIGINS"); v != "" {
+		allowedOrigins = strings.Split(v, ",")
+	}
 	if os.Getenv("ENV") == "local" {
 		allowedOrigins = append(allowedOrigins, "http://localhost:8000")
 	}
