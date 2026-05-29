@@ -29,8 +29,12 @@
             if (localStorage.getItem("boldText") === "true") {
                 AppState.boldText = true;
             }
+            if (localStorage.getItem("darkMode") === "true") {
+                AppState.darkMode = true;
+            }
             applyContentStyles();
             applyBoldText();
+            applyDarkMode();
 
             // Load read articles from localStorage
             try {

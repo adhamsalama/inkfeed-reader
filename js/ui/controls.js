@@ -253,6 +253,31 @@ function closeEmailInput() {
     closeSettings();
 }
 
+function applyDarkMode() {
+    if (AppState.darkMode) {
+        addClass(document.body, "dark-mode");
+    } else {
+        removeClass(document.body, "dark-mode");
+    }
+    var btn = document.getElementById("dark-mode-btn");
+    if (btn) {
+        if (AppState.darkMode) {
+            setText(btn, "On");
+            addClass(btn, "btn-active");
+        } else {
+            setText(btn, "Off");
+            removeClass(btn, "btn-active");
+        }
+    }
+}
+
+function toggleDarkMode() {
+    AppState.darkMode = !AppState.darkMode;
+    applyDarkMode();
+    localStorage.setItem("darkMode", AppState.darkMode ? "true" : "false");
+    PreferencesSync.pushPrefs();
+}
+
 // Initialize on load.
 (function() {
     updateBackendToggleBtn();
