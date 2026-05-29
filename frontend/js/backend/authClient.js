@@ -66,6 +66,28 @@ var AuthClient = {
         xhr.send(null);
     },
 
+    changePassword: function(currentPassword, newPassword, confirmPassword, callback) {
+        var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    callback(null);
+                } else {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        callback(new Error(data.error || "Failed to change password"));
+                    } catch (e) {
+                        callback(new Error("Failed to change password: " + xhr.status));
+                    }
+                }
+            }
+        };
+        xhr.open("POST", AppConfig.BACKEND_URL + "/change-password", true);
+        xhr.withCredentials = true;
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify({ currentPassword: currentPassword, newPassword: newPassword, confirmPassword: confirmPassword }));
+    },
+
     getPreferences: function(callback) {
         var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
         xhr.onreadystatechange = function() {
