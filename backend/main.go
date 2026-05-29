@@ -199,6 +199,7 @@ func main() {
 	mux.Handle("/signup", corsMiddleware(signupRateLimitMiddleware(http.HandlerFunc(signupHandler))))
 	mux.Handle("/signin", corsMiddleware(signinRateLimitMiddleware(http.HandlerFunc(signinHandler))))
 	mux.Handle("/signout", corsMiddleware(http.HandlerFunc(signoutHandler)))
+	mux.Handle("/change-password", corsMiddleware(authMiddleware(signinRateLimitMiddleware(http.HandlerFunc(changePasswordHandler)))))
 	mux.Handle("/preferences", protected(preferencesHandler))
 	mux.Handle("/saved-feeds", protected(savedFeedsHandler))
 	mux.Handle("/feed-groups", protected(feedGroupsHandler))

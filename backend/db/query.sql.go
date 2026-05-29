@@ -626,6 +626,20 @@ func (q *Queries) MarkFeedItemArchiveFailed(ctx context.Context, itemUrl string)
 	return err
 }
 
+const updateUserPassword = `-- name: UpdateUserPassword :exec
+UPDATE users SET password_hash = ? WHERE id = ?
+`
+
+type UpdateUserPasswordParams struct {
+	PasswordHash string
+	ID           int64
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserPassword, arg.PasswordHash, arg.ID)
+	return err
+}
+
 const upsertArticleArchive = `-- name: UpsertArticleArchive :exec
 INSERT INTO article_archive (key, title, author, site_name, created_at, html_content, text_content) VALUES (?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(key) DO UPDATE SET title = excluded.title, author = excluded.author, site_name = excluded.site_name, created_at = excluded.created_at, html_content = excluded.html_content, text_content = excluded.text_content, updated_at = CURRENT_TIMESTAMP

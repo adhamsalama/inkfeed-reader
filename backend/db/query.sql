@@ -110,6 +110,9 @@ DELETE FROM feed_items WHERE scraped_at < datetime('now', '-' || ? || ' hours');
 INSERT INTO article_archive (key, title, author, site_name, created_at, html_content, text_content) VALUES (?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(key) DO UPDATE SET title = excluded.title, author = excluded.author, site_name = excluded.site_name, created_at = excluded.created_at, html_content = excluded.html_content, text_content = excluded.text_content, updated_at = CURRENT_TIMESTAMP;
 
+-- name: UpdateUserPassword :exec
+UPDATE users SET password_hash = ? WHERE id = ?;
+
 -- name: GetIPRateLimit :one
 SELECT count, window_start, blocked_until FROM ip_rate_limits WHERE ip = ? AND endpoint = ? LIMIT 1;
 
