@@ -91,6 +91,7 @@ type UserPreference struct {
 	EmailTo         sql.NullString
 	FontFamily      sql.NullString
 	BoldText        sql.NullInt64
+	DarkMode        sql.NullInt64
 	UpdatedAt       time.Time
 }
 

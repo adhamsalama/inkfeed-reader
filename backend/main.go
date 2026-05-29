@@ -17,7 +17,7 @@ import (
 
 var queries *db.Queries
 
-var allowedOrigins = []string{"https://reader.inkfeed.xyz", "http://reader.inkfeed.xyz"}
+var allowedOrigins = []string{"https://reader.inkfeed.xyz", "http://reader.inkfeed.xyz", "http://localhost:9999"}
 
 var feedProxyURL = "https://throbbing-morning-e187.adhamsalama.workers.dev"
 
@@ -174,6 +174,7 @@ func main() {
 	migrate(`ALTER TABLE user_saved_feeds ADD COLUMN archive_enabled INTEGER NOT NULL DEFAULT 0`)
 	migrate(`ALTER TABLE user_preferences ADD COLUMN font_family TEXT`)
 	migrate(`ALTER TABLE user_preferences ADD COLUMN bold_text INTEGER`)
+	migrate(`ALTER TABLE user_preferences ADD COLUMN dark_mode INTEGER`)
 	migrate(`CREATE TABLE IF NOT EXISTS ip_rate_limits (ip TEXT NOT NULL, endpoint TEXT NOT NULL, count INTEGER NOT NULL DEFAULT 0, window_start DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, blocked_until DATETIME, PRIMARY KEY (ip, endpoint))`)
 	sqlDB.Exec(`CREATE TABLE IF NOT EXISTS feed_items (
 		id             INTEGER  PRIMARY KEY AUTOINCREMENT,

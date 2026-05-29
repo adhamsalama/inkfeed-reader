@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     email_to          TEXT,
     font_family       TEXT,
     bold_text         INTEGER,
+    dark_mode         INTEGER,
     updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

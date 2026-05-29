@@ -28,6 +28,7 @@ type preferencesRequest struct {
 	EmailTo         string  `json:"emailTo"`
 	FontFamily      string  `json:"fontFamily"`
 	BoldText        bool    `json:"boldText"`
+	DarkMode        bool    `json:"darkMode"`
 }
 
 type savedFeedItem struct {
@@ -65,6 +66,7 @@ type preferencesResponse struct {
 	EmailTo         string          `json:"emailTo"`
 	FontFamily      string          `json:"fontFamily"`
 	BoldText        bool            `json:"boldText"`
+	DarkMode        bool            `json:"darkMode"`
 	SavedFeeds      []savedFeedItem `json:"savedFeeds"`
 	FeedGroups      []feedGroupData `json:"feedGroups"`
 	Favorites       []favoriteItem  `json:"favorites"`
@@ -173,6 +175,9 @@ func getPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 	if prefs.BoldText.Valid {
 		resp.BoldText = prefs.BoldText.Int64 != 0
 	}
+	if prefs.DarkMode.Valid {
+		resp.DarkMode = prefs.DarkMode.Int64 != 0
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
@@ -205,6 +210,7 @@ func putPreferencesHandler(w http.ResponseWriter, r *http.Request, userID int64)
 		EmailTo:         sql.NullString{String: req.EmailTo, Valid: true},
 		FontFamily:      sql.NullString{String: req.FontFamily, Valid: true},
 		BoldText:        sql.NullInt64{Int64: func() int64 { if req.BoldText { return 1 }; return 0 }(), Valid: true},
+		DarkMode:        sql.NullInt64{Int64: func() int64 { if req.DarkMode { return 1 }; return 0 }(), Valid: true},
 	})
 	if err != nil {
 		jsonError(w, "internal error", http.StatusInternalServerError)

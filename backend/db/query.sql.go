@@ -440,7 +440,7 @@ func (q *Queries) GetUserFeedGroups(ctx context.Context, userID int64) ([]GetUse
 }
 
 const getUserPreferences = `-- name: GetUserPreferences :one
-SELECT font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, mobi_embed_images, email_to, font_family, bold_text
+SELECT font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, mobi_embed_images, email_to, font_family, bold_text, dark_mode
 FROM user_preferences WHERE user_id = ? LIMIT 1
 `
 
@@ -454,6 +454,7 @@ type GetUserPreferencesRow struct {
 	EmailTo         sql.NullString
 	FontFamily      sql.NullString
 	BoldText        sql.NullInt64
+	DarkMode        sql.NullInt64
 }
 
 func (q *Queries) GetUserPreferences(ctx context.Context, userID int64) (GetUserPreferencesRow, error) {
@@ -469,6 +470,7 @@ func (q *Queries) GetUserPreferences(ctx context.Context, userID int64) (GetUser
 		&i.EmailTo,
 		&i.FontFamily,
 		&i.BoldText,
+		&i.DarkMode,
 	)
 	return i, err
 }
@@ -697,8 +699,8 @@ func (q *Queries) UpsertIPRateLimit(ctx context.Context, arg UpsertIPRateLimitPa
 }
 
 const upsertUserPreferences = `-- name: UpsertUserPreferences :exec
-INSERT INTO user_preferences (user_id, font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, mobi_embed_images, email_to, font_family, bold_text, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+INSERT INTO user_preferences (user_id, font_size, letter_spacing, line_height, cors_proxy_url, epub_embed_images, mobi_embed_images, email_to, font_family, bold_text, dark_mode, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 ON CONFLICT(user_id) DO UPDATE SET
     font_size = excluded.font_size,
     letter_spacing = excluded.letter_spacing,
@@ -709,6 +711,7 @@ ON CONFLICT(user_id) DO UPDATE SET
     email_to = excluded.email_to,
     font_family = excluded.font_family,
     bold_text = excluded.bold_text,
+    dark_mode = excluded.dark_mode,
     updated_at = CURRENT_TIMESTAMP
 `
 
@@ -723,6 +726,7 @@ type UpsertUserPreferencesParams struct {
 	EmailTo         sql.NullString
 	FontFamily      sql.NullString
 	BoldText        sql.NullInt64
+	DarkMode        sql.NullInt64
 }
 
 func (q *Queries) UpsertUserPreferences(ctx context.Context, arg UpsertUserPreferencesParams) error {
@@ -737,6 +741,7 @@ func (q *Queries) UpsertUserPreferences(ctx context.Context, arg UpsertUserPrefe
 		arg.EmailTo,
 		arg.FontFamily,
 		arg.BoldText,
+		arg.DarkMode,
 	)
 	return err
 }

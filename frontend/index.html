@@ -171,7 +171,13 @@
                     </div>
                 </div>
                 <div id="font-picker" style="margin-top:10px;"></div>
-                <div id="font-preview" style="margin-top:8px; font-size:0.95em; color:#444; border-left:3px solid #ccc; padding-left:8px;">The quick brown fox jumps over the lazy dog.</div>
+                <div id="font-preview">The quick brown fox jumps over the lazy dog.</div>
+                <div class="control-row" style="margin-top:10px;">
+                    <div class="control-group">
+                        <span class="control-label">Dark mode:</span>
+                        <button id="dark-mode-btn" class="secondary" onclick="toggleDarkMode()">Off</button>
+                    </div>
+                </div>
             </div>
             <div class="settings-section">
                 <div class="settings-section-title">Proxy URL</div>
@@ -183,7 +189,7 @@
             <div class="settings-section" id="settings-backend-section">
                 <div class="settings-section-title">Backend</div>
                 <button id="use-backend-btn" class="secondary" onclick="toggleUseBackend()">Backend: OFF</button>
-                <div style="margin-top: 8px; font-size: 0.85em; color: #555;">
+                <div class="settings-description">
                     Backend-only features: send to email, embed images in EPUB.<br/>Using the backend for article fetches and downloads saves battery.
                 </div>
             </div>
@@ -193,7 +199,7 @@
                     <input type="text" id="email-to-input" placeholder="recipient@example.com" />
                     <button onclick="saveEmailAddress()">Save</button>
                 </div>
-                <div style="margin-top: 8px; font-size: 0.85em; color: #555;">
+                <div class="settings-description">
                     If using a Kindle email, add <strong>export@sender.inkfeed.xyz</strong> to your approved senders.
                 </div>
             </div>

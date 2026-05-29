@@ -50,6 +50,11 @@ var PreferencesSync = {
                 localStorage.setItem("boldText", "true");
                 applyBoldText();
             }
+            if (prefs.darkMode) {
+                AppState.darkMode = true;
+                localStorage.setItem("darkMode", "true");
+                applyDarkMode();
+            }
             AppConfig.EPUB_EMBED_IMAGES = prefs.epubEmbedImages;
             localStorage.setItem("epubEmbedImages", prefs.epubEmbedImages ? "true" : "false");
             AppConfig.MOBI_EMBED_IMAGES = prefs.mobiEmbedImages;
@@ -98,7 +103,8 @@ var PreferencesSync = {
             mobiEmbedImages: AppConfig.MOBI_EMBED_IMAGES,
             emailTo: localStorage.getItem("emailTo") || "",
             fontFamily: AppState.currentFontFamily || "",
-            boldText: AppState.boldText || false
+            boldText: AppState.boldText || false,
+            darkMode: AppState.darkMode || false
         }, null);
     },
 
