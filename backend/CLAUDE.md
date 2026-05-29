@@ -38,6 +38,10 @@ Copy `.env` and configure:
 | `EMAIL_FROM` / `EMAIL_FROM_NAME` | — | Sender identity |
 | `RATE_LIMIT_MAX` | `40` | Requests per window |
 | `RATE_LIMIT_WINDOW_SECONDS` | `60` | Rate limit window |
+| `SIGNIN_RATE_LIMIT_MAX` | `10` | Max signin attempts per IP per window |
+| `SIGNUP_RATE_LIMIT_MAX` | `1000` | Max signup attempts per IP per window |
+| `AUTH_RATE_LIMIT_WINDOW_HOURS` | `1` | Window duration for signin/signup rate limits |
+| `AUTH_RATE_LIMIT_BLOCK_HOURS` | `2` | How long to block an IP after exceeding signin/signup limit |
 | `IMAGE_QUALITY` | `50` | JPEG compression quality (1–100) |
 | `IMAGE_COMPRESSION` | `true` | Set `false` to disable |
 | `FEED_PROXY_URL` | (Cloudflare Worker URL) | Proxy for fetching feeds |

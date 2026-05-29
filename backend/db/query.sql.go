@@ -271,6 +271,28 @@ func (q *Queries) GetFeedGroupItems(ctx context.Context, groupID int64) ([]GetFe
 	return items, nil
 }
 
+const getIPRateLimit = `-- name: GetIPRateLimit :one
+SELECT count, window_start, blocked_until FROM ip_rate_limits WHERE ip = ? AND endpoint = ? LIMIT 1
+`
+
+type GetIPRateLimitParams struct {
+	Ip       string
+	Endpoint string
+}
+
+type GetIPRateLimitRow struct {
+	Count        int64
+	WindowStart  time.Time
+	BlockedUntil sql.NullTime
+}
+
+func (q *Queries) GetIPRateLimit(ctx context.Context, arg GetIPRateLimitParams) (GetIPRateLimitRow, error) {
+	row := q.db.QueryRowContext(ctx, getIPRateLimit, arg.Ip, arg.Endpoint)
+	var i GetIPRateLimitRow
+	err := row.Scan(&i.Count, &i.WindowStart, &i.BlockedUntil)
+	return i, err
+}
+
 const getNextFeedItemWithoutArchive = `-- name: GetNextFeedItemWithoutArchive :one
 SELECT item_url FROM feed_items
 WHERE item_url NOT IN (SELECT key FROM article_archive)
@@ -628,6 +650,34 @@ func (q *Queries) UpsertArticleArchive(ctx context.Context, arg UpsertArticleArc
 		arg.CreatedAt,
 		arg.HtmlContent,
 		arg.TextContent,
+	)
+	return err
+}
+
+const upsertIPRateLimit = `-- name: UpsertIPRateLimit :exec
+INSERT INTO ip_rate_limits (ip, endpoint, count, window_start, blocked_until)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(ip, endpoint) DO UPDATE SET
+    count = excluded.count,
+    window_start = excluded.window_start,
+    blocked_until = excluded.blocked_until
+`
+
+type UpsertIPRateLimitParams struct {
+	Ip           string
+	Endpoint     string
+	Count        int64
+	WindowStart  time.Time
+	BlockedUntil sql.NullTime
+}
+
+func (q *Queries) UpsertIPRateLimit(ctx context.Context, arg UpsertIPRateLimitParams) error {
+	_, err := q.db.ExecContext(ctx, upsertIPRateLimit,
+		arg.Ip,
+		arg.Endpoint,
+		arg.Count,
+		arg.WindowStart,
+		arg.BlockedUntil,
 	)
 	return err
 }

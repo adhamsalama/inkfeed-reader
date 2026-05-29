@@ -33,6 +33,14 @@ type FeedItem struct {
 	CommentsUrl   sql.NullString
 }
 
+type IpRateLimit struct {
+	Ip           string
+	Endpoint     string
+	Count        int64
+	WindowStart  time.Time
+	BlockedUntil sql.NullTime
+}
+
 type Session struct {
 	Token     string
 	UserID    int64

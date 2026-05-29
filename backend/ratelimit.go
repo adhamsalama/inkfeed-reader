@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"net"
 	"net/http"
 	"os"
@@ -8,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/adhamsalama/inkfeed-backend/db"
 )
 
 var (
@@ -19,11 +23,13 @@ var (
 	emailRateLimitMu   sync.Mutex
 	emailRateLimitHits map[string]time.Time
 
-	signupRateLimitMu   sync.Mutex
-	signupRateLimitHits map[string]time.Time
+	signinRateLimitMu  sync.Mutex
+	signupRateLimitMu  sync.Mutex
 
-	signinRateLimitMu   sync.Mutex
-	signinRateLimitHits map[string][]time.Time
+	signinRateLimitMax    int
+	signupRateLimitMax    int
+	authRateLimitWindow   time.Duration
+	authRateLimitBlock    time.Duration
 )
 
 func clientIP(r *http.Request) string {
@@ -43,8 +49,6 @@ func clientIP(r *http.Request) string {
 func init() {
 	rateLimitHits = make(map[string][]time.Time)
 	emailRateLimitHits = make(map[string]time.Time)
-	signupRateLimitHits = make(map[string]time.Time)
-	signinRateLimitHits = make(map[string][]time.Time)
 
 	rateLimitMax = 40
 	if v := os.Getenv("RATE_LIMIT_MAX"); v != "" {
@@ -59,6 +63,95 @@ func init() {
 			rateLimitWindow = time.Duration(n) * time.Second
 		}
 	}
+
+	signinRateLimitMax = 10
+	if v := os.Getenv("SIGNIN_RATE_LIMIT_MAX"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			signinRateLimitMax = n
+		}
+	}
+
+	signupRateLimitMax = 1000
+	if v := os.Getenv("SIGNUP_RATE_LIMIT_MAX"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			signupRateLimitMax = n
+		}
+	}
+
+	authRateLimitWindow = time.Hour
+	if v := os.Getenv("AUTH_RATE_LIMIT_WINDOW_HOURS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			authRateLimitWindow = time.Duration(n) * time.Hour
+		}
+	}
+
+	authRateLimitBlock = 2 * time.Hour
+	if v := os.Getenv("AUTH_RATE_LIMIT_BLOCK_HOURS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			authRateLimitBlock = time.Duration(n) * time.Hour
+		}
+	}
+}
+
+// dbRateLimit checks and updates a persistent rate limit for the given IP and endpoint.
+// Returns true if the request is allowed, false if it should be blocked.
+// limit is the max requests allowed in window. blockDuration is how long to block after exceeding.
+func dbRateLimit(ctx context.Context, mu *sync.Mutex, ip, endpoint string, limit int, window, blockDuration time.Duration) bool {
+	mu.Lock()
+	defer mu.Unlock()
+
+	now := time.Now()
+
+	row, err := queries.GetIPRateLimit(ctx, db.GetIPRateLimitParams{Ip: ip, Endpoint: endpoint})
+	if err == sql.ErrNoRows {
+		queries.UpsertIPRateLimit(ctx, db.UpsertIPRateLimitParams{
+			Ip:           ip,
+			Endpoint:     endpoint,
+			Count:        1,
+			WindowStart:  now,
+			BlockedUntil: sql.NullTime{},
+		})
+		return true
+	}
+	if err != nil {
+		return true
+	}
+
+	if row.BlockedUntil.Valid && now.Before(row.BlockedUntil.Time) {
+		return false
+	}
+
+	var count int64
+	var windowStart time.Time
+	if !row.BlockedUntil.Valid || now.After(row.BlockedUntil.Time) {
+		if now.Sub(row.WindowStart) > window {
+			count = 1
+			windowStart = now
+		} else {
+			count = row.Count + 1
+			windowStart = row.WindowStart
+		}
+	}
+
+	if count > int64(limit) {
+		queries.UpsertIPRateLimit(ctx, db.UpsertIPRateLimitParams{
+			Ip:           ip,
+			Endpoint:     endpoint,
+			Count:        count,
+			WindowStart:  windowStart,
+			BlockedUntil: sql.NullTime{Time: now.Add(blockDuration), Valid: true},
+		})
+		return false
+	}
+
+	queries.UpsertIPRateLimit(ctx, db.UpsertIPRateLimitParams{
+		Ip:           ip,
+		Endpoint:     endpoint,
+		Count:        count,
+		WindowStart:  windowStart,
+		BlockedUntil: sql.NullTime{},
+	})
+	return true
 }
 
 func emailRateLimitMiddleware(next http.Handler) http.Handler {
@@ -82,17 +175,10 @@ func emailRateLimitMiddleware(next http.Handler) http.Handler {
 func signupRateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := clientIP(r)
-
-		signupRateLimitMu.Lock()
-		last, seen := signupRateLimitHits[ip]
-		if seen && time.Since(last) < time.Minute {
-			signupRateLimitMu.Unlock()
-			jsonError(w, "rate limit exceeded: 1 signup per minute", http.StatusTooManyRequests)
+		if !dbRateLimit(r.Context(), &signupRateLimitMu, ip, "signup", signupRateLimitMax, authRateLimitWindow, authRateLimitBlock) {
+			jsonError(w, "rate limit exceeded: too many signup attempts", http.StatusTooManyRequests)
 			return
 		}
-		signupRateLimitHits[ip] = time.Now()
-		signupRateLimitMu.Unlock()
-
 		next.ServeHTTP(w, r)
 	})
 }
@@ -100,26 +186,10 @@ func signupRateLimitMiddleware(next http.Handler) http.Handler {
 func signinRateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := clientIP(r)
-
-		signinRateLimitMu.Lock()
-		now := time.Now()
-		cutoff := now.Add(-time.Minute)
-		hits := signinRateLimitHits[ip]
-		filtered := hits[:0]
-		for _, t := range hits {
-			if t.After(cutoff) {
-				filtered = append(filtered, t)
-			}
-		}
-		signinRateLimitHits[ip] = filtered
-		if len(filtered) >= 5 {
-			signinRateLimitMu.Unlock()
-			jsonError(w, "rate limit exceeded: 5 signin attempts per minute", http.StatusTooManyRequests)
+		if !dbRateLimit(r.Context(), &signinRateLimitMu, ip, "signin", signinRateLimitMax, authRateLimitWindow, authRateLimitBlock) {
+			jsonError(w, "rate limit exceeded: too many signin attempts", http.StatusTooManyRequests)
 			return
 		}
-		signinRateLimitHits[ip] = append(filtered, now)
-		signinRateLimitMu.Unlock()
-
 		next.ServeHTTP(w, r)
 	})
 }

@@ -110,6 +110,17 @@ DELETE FROM feed_items WHERE scraped_at < datetime('now', '-' || ? || ' hours');
 INSERT INTO article_archive (key, title, author, site_name, created_at, html_content, text_content) VALUES (?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(key) DO UPDATE SET title = excluded.title, author = excluded.author, site_name = excluded.site_name, created_at = excluded.created_at, html_content = excluded.html_content, text_content = excluded.text_content, updated_at = CURRENT_TIMESTAMP;
 
+-- name: GetIPRateLimit :one
+SELECT count, window_start, blocked_until FROM ip_rate_limits WHERE ip = ? AND endpoint = ? LIMIT 1;
+
+-- name: UpsertIPRateLimit :exec
+INSERT INTO ip_rate_limits (ip, endpoint, count, window_start, blocked_until)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(ip, endpoint) DO UPDATE SET
+    count = excluded.count,
+    window_start = excluded.window_start,
+    blocked_until = excluded.blocked_until;
+
 -- name: GetArticleArchiveTotalSize :one
 SELECT CAST(COALESCE(SUM(LENGTH(html_content) + LENGTH(text_content)), 0) AS INTEGER) AS total_size FROM article_archive;
 

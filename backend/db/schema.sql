@@ -72,6 +72,15 @@ CREATE TABLE IF NOT EXISTS article_archive (
     updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS ip_rate_limits (
+    ip            TEXT     NOT NULL,
+    endpoint      TEXT     NOT NULL,
+    count         INTEGER  NOT NULL DEFAULT 0,
+    window_start  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    blocked_until DATETIME,
+    PRIMARY KEY (ip, endpoint)
+);
+
 CREATE TABLE IF NOT EXISTS feed_items (
     id             INTEGER  PRIMARY KEY AUTOINCREMENT,
     feed_url       TEXT     NOT NULL,
