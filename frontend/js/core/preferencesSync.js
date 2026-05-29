@@ -45,16 +45,12 @@ var PreferencesSync = {
                 AppState.currentFontFamily = prefs.fontFamily;
                 localStorage.setItem("fontFamily", prefs.fontFamily);
             }
-            if (prefs.boldText) {
-                AppState.boldText = true;
-                localStorage.setItem("boldText", "true");
-                applyBoldText();
-            }
-            if (prefs.darkMode) {
-                AppState.darkMode = true;
-                localStorage.setItem("darkMode", "true");
-                applyDarkMode();
-            }
+            AppState.boldText = prefs.boldText || false;
+            localStorage.setItem("boldText", AppState.boldText ? "true" : "false");
+            applyBoldText();
+            AppState.darkMode = prefs.darkMode || false;
+            localStorage.setItem("darkMode", AppState.darkMode ? "true" : "false");
+            applyDarkMode();
             AppConfig.EPUB_EMBED_IMAGES = prefs.epubEmbedImages;
             localStorage.setItem("epubEmbedImages", prefs.epubEmbedImages ? "true" : "false");
             AppConfig.MOBI_EMBED_IMAGES = prefs.mobiEmbedImages;
