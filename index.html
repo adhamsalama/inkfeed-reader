@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inkfeed</title>
+    <meta name="description" content="A simple RSS reader built for your Kindle. Load any feed, read articles, and download or email them as MOBI or EPUB." />
+    <meta property="og:title" content="Inkfeed" />
+    <meta property="og:description" content="A simple RSS reader built for your Kindle. Load any feed, read articles, and download or email them as MOBI or EPUB." />
+    <meta property="og:url" content="https://reader.inkfeed.xyz" />
+    <meta property="og:type" content="website" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora&family=Merriweather&family=Open+Sans&family=Roboto&family=Roboto+Mono&family=Source+Serif+4&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.min.js"></script>
+    <script type="text/javascript" src="https://stuk.github.io/jszip/dist/jszip.js"></script>
+
+    <script type="text/javascript" src="//stuk.github.io/jszip-utils/dist/jszip-utils.js"></script>
+</head>
+
+<body>
+    <div id="backend-banner" class="backend-banner hidden">
+        <span id="backend-banner-message">Sign up / Sign in and enable backend mode to email articles to yourself and save battery.</span>
+        <button onclick="dismissBackendBanner()">OK</button>
+    </div>
+    <div id="scroll-buttons" class="scroll-buttons hidden">
+        <button id="scroll-top-btn" class="scroll-btn scroll-top-btn" onclick="scrollToTop()">Top</button>
+        <button id="scroll-up-btn" class="scroll-btn" onclick="scrollPage(-1)">^</button>
+        <button id="scroll-down-btn" class="scroll-btn" onclick="scrollPage(1)">v</button>
+    </div>
+    <div class="container">
+        <div id="input-view" class="active">
+            <div class="feed-input-section">
+                <input type="text" id="feed-url" placeholder="Enter RSS feed URL..." />
+                <div class="feed-action-row">
+                    <button onclick="loadFeed()">Load</button>
+                    <button class="secondary" onclick="saveCurrentFeed()">Save</button>
+                    <button id="saved-toggle-btn" class="secondary" onclick="toggleSavedFeeds()">Saved</button>
+                    <div class="feed-row-break"></div>
+                    <button id="groups-toggle-btn" class="secondary hidden" onclick="toggleFeedGroups()">Groups</button>
+                    <button id="favorites-toggle-btn" class="secondary hidden" onclick="toggleFavorites()">Favorites</button>
+                    <button id="suggested-toggle-btn" class="secondary" onclick="toggleSuggestedFeeds()">Suggested</button>
+                    <button id="wikipedia-toggle-btn" class="secondary" onclick="toggleWikipediaSearch()">Wikipedia</button>
+                    <button class="secondary" onclick="openSettings()">Settings</button>
+                </div>
+            </div>
+            <div id="input-error" class="error hidden"></div>
+            <div id="saved-feeds-section" class="saved-feeds-section hidden">
+                <ul id="saved-feeds-list" class="saved-feeds-list"></ul>
+            </div>
+            <div id="suggested-feeds-section" class="saved-feeds-section hidden">
+                <div id="suggested-feeds-container"></div>
+            </div>
+            <div id="groups-section" class="saved-feeds-section hidden">
+                <div id="groups-container"></div>
+            </div>
+            <div id="favorites-section" class="saved-feeds-section hidden">
+                <div id="favorites-container"></div>
+            </div>
+            <div id="wikipedia-section" class="saved-feeds-section hidden">
+                <div class="proxy-input-row">
+                    <input type="text" id="wikipedia-search-input" placeholder="Search Wikipedia..." />
+                    <button onclick="searchWikipedia()">Search</button>
+                </div>
+                <div id="wikipedia-loading" class="loading hidden">Searching...</div>
+                <ul id="wikipedia-results-list" class="saved-feeds-list"></ul>
+            </div>
+        </div>
+
+        <div id="feed-view">
+            <div class="feed-title-row">
+                <h2 id="feed-title">Feed Articles</h2>
+                <span id="render-progress"></span>
+                <button id="show-archive-btn" class="secondary hidden" style="margin-left:8px" onclick="showFeedArchive()">Archived</button>
+            </div>
+            <div class="article-buttons" id="normal-nav-buttons">
+                <div class="article-action-row">
+                    <span class="action-label">Download</span>
+                    <button onclick="startArticleSelection('text')">Text</button>
+                    <button onclick="startArticleSelection('mobi')">MOBI</button>
+                    <button onclick="startArticleSelection('epub')">EPUB</button>
+                </div>
+                <div class="article-action-row" id="email-all-row" style="display:none">
+                    <span class="action-label">Email</span>
+                    <button id="email-all-mobi-btn" onclick="startArticleSelection('email-mobi')">MOBI</button>
+                    <button id="email-all-epub-btn" onclick="startArticleSelection('email-epub')">EPUB</button>
+                </div>
+                <div id="email-all-status" style="font-size:0.9em; margin-top:4px;"></div>
+            </div>
+            <div class="nav-buttons" id="selection-nav-buttons" style="display: none;">
+                <button id="selection-action-btn" onclick="downloadSelectedArticles()" class="primary">Download Selected</button>
+                <button onclick="cancelArticleSelection()" class="secondary">Cancel</button>
+                <span style="margin-left: 15px; font-weight: bold;">Selected: <span id="selection-count">0</span>
+                    articles</span>
+            </div>
+            <hr />
+            <div id="feed-loading" class="loading hidden">Loading feed...</div>
+            <div id="download-all-progress" class="loading hidden">Downloading articles...</div>
+            <ul id="article-list" class="article-list"></ul>
+            <div id="feed-archive-section" class="hidden">
+                <div id="archive-loading" class="loading hidden">Loading archived articles...</div>
+                <ul id="archive-article-list" class="article-list"></ul>
+                <div id="archive-load-more" class="hidden" style="text-align:center; padding:8px;">
+                    <button class="secondary" onclick="loadMoreArchive()">Load more</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="article-view">
+            <div id="article-title-bar"></div>
+            <div class="article-buttons">
+                <div class="article-nav-row">
+                    <button class="secondary" onclick="showFeedView()">Back</button>
+                    <button onclick="fetchFullArticle()">Full Article</button>
+                    <button id="view-comments-btn" style="display:none">Comments</button>
+                </div>
+                <div class="article-action-row">
+                    <span class="action-label">Download</span>
+                    <button onclick="downloadArticle()">Text</button>
+                    <button id="download-mobi-btn">MOBI</button>
+                    <button id="download-epub-btn">EPUB</button>
+                </div>
+                <div class="article-action-row" id="email-row" style="display:none">
+                    <span class="action-label">Email</span>
+                    <button id="email-mobi-btn" onclick="openEmailInput('mobi')">MOBI</button>
+                    <button id="email-epub-btn" onclick="openEmailInput('epub')">EPUB</button>
+                </div>
+                <div id="email-send-status" style="font-size:0.9em; margin-top:4px;"></div>
+                <span id="view-comments-html-btn" style="display:none"></span>
+            </div>
+            <div id="article-loading" class="loading hidden">
+                Loading article...
+            </div>
+            <div id="article-content" class="article-content visible"></div>
+            <div id="comments-loading" class="loading hidden">
+                Loading comments...
+            </div>
+            <div id="comments-content" class="article-content"></div>
+            <div id="comments-html-content" class="article-content"></div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="settings-modal hidden">
+        <div class="settings-panel">
+            <div class="settings-header">
+                <strong>Settings</strong>
+                <button class="secondary" onclick="closeSettings()">Close</button>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title">Display</div>
+                <div class="control-row">
+                    <div class="control-group">
+                        <span class="control-label">Size:</span>
+                        <button onclick="adjustFontSize(-2)">A-</button>
+                        <button onclick="adjustFontSize(2)">A+</button>
+                    </div>
+                    <div class="control-group">
+                        <span class="control-label">Spacing:</span>
+                        <button onclick="adjustSpacing(-1)">-</button>
+                        <button onclick="adjustSpacing(1)">+</button>
+                    </div>
+                    <div class="control-group">
+                        <span class="control-label">Line:</span>
+                        <button onclick="adjustLineHeight(-0.1)">-</button>
+                        <button onclick="adjustLineHeight(0.1)">+</button>
+                    </div>
+                    <div class="control-group">
+                        <button id="bold-toggle-btn" class="secondary" onclick="toggleBoldText()"><strong>B</strong></button>
+                    </div>
+                </div>
+                <div id="font-picker" style="margin-top:10px;"></div>
+                <div id="font-preview" style="margin-top:8px; font-size:0.95em; color:#444; border-left:3px solid #ccc; padding-left:8px;">The quick brown fox jumps over the lazy dog.</div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-title">Proxy URL</div>
+                <div class="proxy-input-row">
+                    <input type="text" id="proxy-url-input" placeholder="https://proxy.example.com/?" />
+                    <button onclick="saveProxyUrl()">Save</button>
+                </div>
+            </div>
+            <div class="settings-section" id="settings-backend-section">
+                <div class="settings-section-title">Backend</div>
+                <button id="use-backend-btn" class="secondary" onclick="toggleUseBackend()">Backend: OFF</button>
+                <div style="margin-top: 8px; font-size: 0.85em; color: #555;">
+                    Backend-only features: send to email, embed images in EPUB.<br/>Using the backend for article fetches and downloads saves battery.
+                </div>
+            </div>
+            <div class="settings-section" id="settings-email-section">
+                <div class="settings-section-title">Email Address</div>
+                <div class="proxy-input-row">
+                    <input type="text" id="email-to-input" placeholder="recipient@example.com" />
+                    <button onclick="saveEmailAddress()">Save</button>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.85em; color: #555;">
+                    If using a Kindle email, add <strong>export@sender.inkfeed.xyz</strong> to your approved senders.
+                </div>
+            </div>
+            <div class="settings-section" id="settings-epub-section">
+                <div class="settings-section-title">EPUB</div>
+                <label>
+                    <input type="checkbox" id="epub-embed-images-checkbox" onchange="toggleEpubEmbedImages()" />
+                    Embed images
+                </label>
+            </div>
+            <div class="settings-section" id="settings-mobi-section">
+                <div class="settings-section-title">MOBI</div>
+                <label>
+                    <input type="checkbox" id="mobi-embed-images-checkbox" onchange="toggleMobiEmbedImages()" />
+                    Embed images
+                </label>
+            </div>
+            <div class="settings-section" id="settings-account-section">
+                <div class="settings-section-title">Account</div>
+                <div id="account-view-content"></div>
+            </div>
+            <a href="https://github.com/adhamsalama/inkfeed-reader" target="_blank">GitHub</a>
+        </div>
+    </div>
+
+    <!-- Existing lib -->
+    <script src="./js/lib/utils.js"></script>
+    <script src="./js/lib/googleNewsDecoder.js"></script>
+    <script src="./js/lib/mobiWriter.js"></script>
+    <script src="./js/lib/epubWriter.js"></script>
+
+    <!-- Core (no dependencies) -->
+    <script src="./js/core/config.js"></script>
+    <script src="./js/core/state.js"></script>
+    <script src="./js/core/authState.js"></script>
+    <script src="./js/core/suggestedFeeds.js"></script>
+
+    <!-- Backend clients -->
+    <script src="./js/backend/backendClient.js"></script>
+    <script src="./js/backend/authClient.js"></script>
+
+    <!-- Preferences sync (depends on core + auth clients) -->
+    <script src="./js/core/preferencesSync.js"></script>
+
+    <!-- Utils -->
+    <script src="./js/utils/urlHelpers.js"></script>
+
+    <!-- UI -->
+    <script src="./js/ui/controls.js"></script>
+    <script src="./js/ui/viewManager.js"></script>
+    <script src="./js/ui/scrollControls.js"></script>
+    <script src="./js/ui/accountView.js"></script>
+
+    <!-- Articles -->
+    <script src="./js/articles/articleFetcher.js"></script>
+    <script src="./js/articles/articleViewer.js"></script>
+    <script src="./js/articles/favorites.js"></script>
+    <script src="./js/articles/comments.js"></script>
+
+    <!-- Downloads -->
+    <script src="./js/downloads/textDownloader.js"></script>
+    <script src="./js/downloads/mobiDownloader.js"></script>
+    <script src="./js/downloads/epubDownloader.js"></script>
+
+    <!-- Feeds -->
+    <script src="./js/feeds/savedFeeds.js"></script>
+    <script src="./js/feeds/feedRenderer.js"></script>
+    <script src="./js/feeds/feedLoader.js"></script>
+    <script src="./js/feeds/feedGroups.js"></script>
+
+    <!-- Article selection -->
+    <script src="./js/articles/articleSelection.js"></script>
+
+    <!-- Wikipedia search -->
+    <script src="./js/wikipedia/wikipediaSearch.js"></script>
+
+    <!-- Event handlers & initialization -->
+    <script src="./js/eventHandlers.js"></script>
+    <script src="./js/app.js"></script>
+</body>
+
+</html>

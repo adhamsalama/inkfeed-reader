@@ -1,0 +1,177 @@
+// Saved Feeds Management (LocalStorage)
+
+var SavedFeedsManager = {
+    getSavedFeeds: function() {
+        try {
+            if (!window.localStorage) return [];
+            var data = localStorage.getItem(AppConfig.SAVED_FEEDS_KEY);
+            if (!data) return [];
+            return JSON.parse(data);
+        } catch (e) {
+            return [];
+        }
+    },
+
+    isFeedArchiveEnabled: function(url) {
+        var feeds = SavedFeedsManager.getSavedFeeds();
+        for (var i = 0; i < feeds.length; i++) {
+            if (feeds[i].url === url) return !!feeds[i].archiveEnabled;
+        }
+        return false;
+    },
+
+    isSavedFeed: function(url) {
+        var feeds = SavedFeedsManager.getSavedFeeds();
+        for (var i = 0; i < feeds.length; i++) {
+            if (feeds[i].url === url) return true;
+        }
+        return false;
+    },
+
+    saveCurrentFeed: function() {
+        try {
+            if (!window.localStorage) {
+                alert("localStorage not available");
+                return;
+            }
+            var feedInput = document.getElementById("feed-url");
+            var url = feedInput.value.replace(/^\s+|\s+$/g, "");
+            if (!url) {
+                alert("Please enter a feed URL first");
+                return;
+            }
+
+            var feeds = this.getSavedFeeds();
+            // Check if already exists
+            for (var i = 0; i < feeds.length; i++) {
+                if (feeds[i].url === url) {
+                    return;
+                }
+            }
+            // Add new feed — use known title if this URL was already loaded
+            var knownTitle = (AppState.lastLoadedFeedUrl === url && AppState.lastLoadedFeedTitle) ? AppState.lastLoadedFeedTitle : url;
+            feeds.push({url: url, title: knownTitle});
+            localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feeds));
+            FeedRenderer.renderSavedFeeds();
+            PreferencesSync.pushSavedFeeds();
+        } catch (e) {
+            alert("Error saving feed: " + e.message);
+        }
+    },
+
+    updateFeedTitle: function(url, title) {
+        try {
+            if (!window.localStorage || !title) return;
+            var feeds = this.getSavedFeeds();
+            var changed = false;
+            for (var i = 0; i < feeds.length; i++) {
+                if (feeds[i].url === url && feeds[i].title !== title) {
+                    feeds[i].title = title;
+                    changed = true;
+                    break;
+                }
+            }
+            if (!changed) return;
+            localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feeds));
+            FeedRenderer.renderSavedFeeds();
+            PreferencesSync.pushSavedFeeds();
+        } catch (e) {
+            // Silently fail
+        }
+    },
+
+    deleteFeed: function(url) {
+        try {
+            if (!window.localStorage) return;
+            var feeds = this.getSavedFeeds();
+            var newFeeds = [];
+            for (var i = 0; i < feeds.length; i++) {
+                if (feeds[i].url !== url) {
+                    newFeeds.push(feeds[i]);
+                }
+            }
+            localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(newFeeds));
+            FeedRenderer.renderSavedFeeds();
+            PreferencesSync.pushSavedFeeds();
+        } catch (e) {
+            // Silently fail
+        }
+    },
+
+    moveFeed: function(index, direction) {
+        try {
+            if (!window.localStorage) return;
+            var feeds = this.getSavedFeeds();
+            var newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= feeds.length) return;
+            // Swap feeds
+            var temp = feeds[index];
+            feeds[index] = feeds[newIndex];
+            feeds[newIndex] = temp;
+            localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feeds));
+            FeedRenderer.renderSavedFeeds();
+            PreferencesSync.pushSavedFeeds();
+        } catch (e) {
+            // Silently fail
+        }
+    },
+
+    toggleFeedArchive: function(url) {
+        try {
+            if (!window.localStorage) return;
+            var feeds = this.getSavedFeeds();
+            for (var i = 0; i < feeds.length; i++) {
+                if (feeds[i].url === url) {
+                    feeds[i].archiveEnabled = !feeds[i].archiveEnabled;
+                    break;
+                }
+            }
+            localStorage.setItem(AppConfig.SAVED_FEEDS_KEY, JSON.stringify(feeds));
+            FeedRenderer.renderSavedFeeds();
+            PreferencesSync.pushSavedFeeds();
+        } catch (e) {
+            // Silently fail
+        }
+    },
+
+    loadSavedFeed: function(url) {
+        var feedInput = document.getElementById("feed-url");
+        feedInput.value = url;
+        deactivateToggle("saved-feeds-section", "saved-toggle-btn");
+        loadFeed();
+    },
+
+    toggleSavedFeeds: function() {
+        var section = document.getElementById("saved-feeds-section");
+        var btn = document.getElementById("saved-toggle-btn");
+        if (section.className.indexOf("hidden") >= 0) {
+            closeAllToggleSections();
+            removeClass(section, "hidden");
+            if (btn) { addClass(btn, "btn-active"); }
+        } else {
+            deactivateToggle("saved-feeds-section", "saved-toggle-btn");
+        }
+    }
+};
+
+// Global proxy functions for HTML onclick handlers
+function saveCurrentFeed() {
+    SavedFeedsManager.saveCurrentFeed();
+}
+
+function toggleSavedFeeds() {
+    SavedFeedsManager.toggleSavedFeeds();
+}
+
+function toggleSuggestedFeeds() {
+    var section = document.getElementById("suggested-feeds-section");
+    var btn = document.getElementById("suggested-toggle-btn");
+    if (section.className.indexOf("hidden") >= 0) {
+        closeAllToggleSections();
+        FeedRenderer.renderSuggestedFeeds();
+        removeClass(section, "hidden");
+        if (btn) { addClass(btn, "btn-active"); }
+    } else {
+        deactivateToggle("suggested-feeds-section", "suggested-toggle-btn");
+    }
+}

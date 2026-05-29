@@ -1,0 +1,23 @@
+// Global Application State
+var AppState = {
+    currentFontSize: 0,
+    currentFontFamily: "",
+    boldText: false,
+    currentLetterSpacing: 0,
+    currentLineHeight: 1.5,
+    currentArticles: [],
+    currentArticleIndex: -1,
+    currentArticleUrl: "",
+    pendingScrollTarget: "",
+    feedScrollBackId: "",
+    readArticles: new Set(),
+    lastLoadedFeedUrl: "",
+    lastLoadedFeedTitle: ""
+};
+
+// Article selection state
+var ArticleSelectionState = {
+    downloadType: null,  // 'text' or 'mobi'
+    selectedIndices: new Set(),
+    inSelectionMode: false
+};
