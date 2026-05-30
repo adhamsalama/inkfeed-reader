@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -50,18 +51,18 @@ func fetchAndParseFeed(feedURL string) (FeedResponse, error) {
 	req.Header.Set("User-Agent", userAgent)
 
 	httpResp, err := client.Do(req)
-	if err != nil {
-		return FeedResponse{}, err
-	}
-	defer httpResp.Body.Close()
-	body, err := io.ReadAll(httpResp.Body)
-	if err != nil {
-		return FeedResponse{}, err
-	}
-
-	resp, err := parseFeed(feedURL, body)
 	if err == nil {
-		return resp, nil
+		defer httpResp.Body.Close()
+		body, err := io.ReadAll(httpResp.Body)
+		if err != nil {
+			return FeedResponse{}, err
+		}
+		resp, err := parseFeed(feedURL, body)
+		if err == nil {
+			return resp, nil
+		}
+	} else {
+		log.Printf("direct fetch failed for %s: %v", feedURL, err)
 	}
 
 	log.Printf("retrying %s via proxy", feedURL)
@@ -93,6 +94,7 @@ func feedHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := fetchAndParseFeed(feedURL)
 	if err != nil {
 		jsonError(w, "failed to parse feed", http.StatusBadGateway)
+		fmt.Printf("err: %v\n", err)
 		return
 	}
 
